@@ -41,6 +41,8 @@ app.*.map.json
 .vscode
 .github
 .vscode\mcp.json
+.env
+.env.local
 
 # Android Studio will place build artifacts here
 /android/app/debug

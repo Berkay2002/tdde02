@@ -95,7 +95,7 @@ Make the recipe practical and achievable for home cooks. Use simple language.
     final result = <String, dynamic>{};
     final ingredients = <String>[];
     final instructions = <String>[];
-    
+
     String? currentSection;
 
     for (final line in lines) {
@@ -124,7 +124,8 @@ Make the recipe practical and achievable for home cooks. Use simple language.
         currentSection = null;
       } else if (currentSection == 'ingredients' && trimmed.startsWith('-')) {
         ingredients.add(trimmed.replaceFirst('-', '').trim());
-      } else if (currentSection == 'instructions' && RegExp(r'^\d+\.').hasMatch(trimmed)) {
+      } else if (currentSection == 'instructions' &&
+          RegExp(r'^\d+\.').hasMatch(trimmed)) {
         instructions.add(trimmed.replaceFirst(RegExp(r'^\d+\.\s*'), '').trim());
       }
     }
@@ -143,13 +144,13 @@ Make the recipe practical and achievable for home cooks. Use simple language.
     for (final line in lines) {
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
-      
+
       // Remove bullet points and numbering
       var ingredient = trimmed
           .replaceFirst(RegExp(r'^[-*•]\s*'), '')
           .replaceFirst(RegExp(r'^\d+\.\s*'), '')
           .trim();
-      
+
       if (ingredient.isNotEmpty) {
         ingredients.add(ingredient);
       }

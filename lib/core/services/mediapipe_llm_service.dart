@@ -6,14 +6,16 @@ import '../constants/prompt_templates.dart';
 import '../errors/ai_exceptions.dart';
 
 /// Service for running AI inference using MediaPipe LLM Inference API
-/// 
+///
 /// This service uses platform channels to communicate with native Android
 /// MediaPipe implementation for on-device LLM inference.
 class MediaPipeLlmService {
-  static const MethodChannel _channel = MethodChannel('com.example.flutter_application_1/mediapipe_llm');
-  
+  static const MethodChannel _channel = MethodChannel(
+    'com.example.flutter_application_1/mediapipe_llm',
+  );
+
   bool _isInitialized = false;
-  
+
   bool get isInitialized => _isInitialized;
 
   /// Initialize the MediaPipe LLM with configuration
@@ -22,7 +24,7 @@ class MediaPipeLlmService {
 
     try {
       print('MediaPipeLlmService: Initializing MediaPipe LLM');
-      
+
       final result = await _channel.invokeMethod('initialize', {
         'modelPath': AppConstants.modelPath,
         'maxTokens': AppConstants.maxTokens,
@@ -38,7 +40,9 @@ class MediaPipeLlmService {
         throw ModelLoadException('Failed to initialize MediaPipe LLM');
       }
     } on PlatformException catch (e) {
-      print('MediaPipeLlmService: Platform exception during initialization: ${e.message}');
+      print(
+        'MediaPipeLlmService: Platform exception during initialization: ${e.message}',
+      );
       throw ModelLoadException('Failed to load AI model: ${e.message}');
     } catch (e) {
       print('MediaPipeLlmService: Unexpected error during initialization: $e');
@@ -47,7 +51,7 @@ class MediaPipeLlmService {
   }
 
   /// Detect ingredients from preprocessed image data
-  /// 
+  ///
   /// Uses multimodal prompting with image + text input
   Future<List<String>> detectIngredients(Uint8List imageData) async {
     if (!_isInitialized) {
@@ -56,9 +60,9 @@ class MediaPipeLlmService {
 
     try {
       print('MediaPipeLlmService: Starting ingredient detection');
-      
+
       final prompt = PromptTemplates.getIngredientDetectionPrompt();
-      
+
       final result = await _generateWithTimeout(
         prompt: prompt,
         imageData: imageData,
@@ -66,7 +70,7 @@ class MediaPipeLlmService {
       );
 
       final ingredients = PromptTemplates.parseIngredientResponse(result);
-      
+
       print('MediaPipeLlmService: Detected ${ingredients.length} ingredients');
       return ingredients;
     } catch (e) {
@@ -76,7 +80,7 @@ class MediaPipeLlmService {
   }
 
   /// Generate recipe from ingredients and preferences
-  /// 
+  ///
   /// Uses text-only prompting for recipe generation
   Future<Map<String, dynamic>> generateRecipe({
     required List<String> ingredients,
@@ -90,7 +94,7 @@ class MediaPipeLlmService {
 
     try {
       print('MediaPipeLlmService: Starting recipe generation');
-      
+
       final prompt = PromptTemplates.getRecipeGenerationPrompt(
         ingredients: ingredients,
         dietaryRestrictions: dietaryRestrictions,
@@ -104,7 +108,7 @@ class MediaPipeLlmService {
       );
 
       final recipe = PromptTemplates.parseRecipeResponse(result);
-      
+
       print('MediaPipeLlmService: Generated recipe: ${recipe['name']}');
       return recipe;
     } catch (e) {
@@ -121,7 +125,7 @@ class MediaPipeLlmService {
   }) async {
     try {
       final completer = Completer<String>();
-      
+
       // Create timeout timer
       final timer = Timer(timeout, () {
         if (!completer.isCompleted) {
@@ -130,20 +134,19 @@ class MediaPipeLlmService {
       });
 
       // Start inference
-      _generate(
-        prompt: prompt,
-        imageData: imageData,
-      ).then((result) {
-        timer.cancel();
-        if (!completer.isCompleted) {
-          completer.complete(result);
-        }
-      }).catchError((error) {
-        timer.cancel();
-        if (!completer.isCompleted) {
-          completer.completeError(error);
-        }
-      });
+      _generate(prompt: prompt, imageData: imageData)
+          .then((result) {
+            timer.cancel();
+            if (!completer.isCompleted) {
+              completer.complete(result);
+            }
+          })
+          .catchError((error) {
+            timer.cancel();
+            if (!completer.isCompleted) {
+              completer.completeError(error);
+            }
+          });
 
       return await completer.future;
     } catch (e) {
@@ -160,23 +163,26 @@ class MediaPipeLlmService {
     Uint8List? imageData,
   }) async {
     try {
-      final Map<String, dynamic> arguments = {
-        'prompt': prompt,
-      };
+      final Map<String, dynamic> arguments = {'prompt': prompt};
 
       if (imageData != null) {
         arguments['imageData'] = imageData;
       }
 
-      final String? result = await _channel.invokeMethod('generateResponse', arguments);
-      
+      final String? result = await _channel.invokeMethod(
+        'generateResponse',
+        arguments,
+      );
+
       if (result == null || result.isEmpty) {
         throw InferenceException('Received empty response from model');
       }
 
       return result;
     } on PlatformException catch (e) {
-      print('MediaPipeLlmService: Platform exception during inference: ${e.message}');
+      print(
+        'MediaPipeLlmService: Platform exception during inference: ${e.message}',
+      );
       throw InferenceException('Inference failed: ${e.message}');
     } catch (e) {
       print('MediaPipeLlmService: Unexpected error during inference: $e');
@@ -185,7 +191,7 @@ class MediaPipeLlmService {
   }
 
   /// Generate response asynchronously with streaming support
-  /// 
+  ///
   /// Returns a stream of partial results as they are generated
   Stream<String> generateResponseStream({
     required String prompt,
@@ -196,17 +202,17 @@ class MediaPipeLlmService {
     }
 
     try {
-      final Map<String, dynamic> arguments = {
-        'prompt': prompt,
-      };
+      final Map<String, dynamic> arguments = {'prompt': prompt};
 
       if (imageData != null) {
         arguments['imageData'] = imageData;
       }
 
       // Setup event channel for streaming responses
-      const eventChannel = EventChannel('com.example.flutter_application_1/mediapipe_llm_stream');
-      
+      const eventChannel = EventChannel(
+        'com.example.flutter_application_1/mediapipe_llm_stream',
+      );
+
       // Send request to start generation
       await _channel.invokeMethod('generateResponseAsync', arguments);
 
@@ -217,7 +223,9 @@ class MediaPipeLlmService {
         }
       }
     } on PlatformException catch (e) {
-      print('MediaPipeLlmService: Platform exception during streaming: ${e.message}');
+      print(
+        'MediaPipeLlmService: Platform exception during streaming: ${e.message}',
+      );
       throw InferenceException('Streaming inference failed: ${e.message}');
     } catch (e) {
       print('MediaPipeLlmService: Unexpected error during streaming: $e');

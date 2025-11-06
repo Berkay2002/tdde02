@@ -63,15 +63,17 @@ class RecipeRepositoryImpl implements RecipeRepository {
   Future<Recipe> createRecipe(Recipe recipe) async {
     try {
       final model = RecipeModel.fromEntity(recipe);
-      
+
       // Convert ingredients to JSONB format
       final ingredientsJson = model.ingredients
-          .map((i) => {
-                'name': i.name,
-                'quantity': i.quantity,
-                'unit': i.unit,
-                'notes': i.notes,
-              })
+          .map(
+            (i) => {
+              'name': i.name,
+              'quantity': i.quantity,
+              'unit': i.unit,
+              'notes': i.notes,
+            },
+          )
           .toList();
 
       final data = {
@@ -113,15 +115,17 @@ class RecipeRepositoryImpl implements RecipeRepository {
   Future<Recipe> updateRecipe(Recipe recipe) async {
     try {
       final model = RecipeModel.fromEntity(recipe);
-      
+
       // Convert ingredients to JSONB format
       final ingredientsJson = model.ingredients
-          .map((i) => {
-                'name': i.name,
-                'quantity': i.quantity,
-                'unit': i.unit,
-                'notes': i.notes,
-              })
+          .map(
+            (i) => {
+              'name': i.name,
+              'quantity': i.quantity,
+              'unit': i.unit,
+              'notes': i.notes,
+            },
+          )
           .toList();
 
       final data = {

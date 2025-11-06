@@ -20,16 +20,16 @@ class CameraControlsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final controlColor = Theme.of(context).colorScheme.onPrimary;
+    final overlayColor = Theme.of(context).shadowColor;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.black.withOpacity(0.7),
-          ],
+          colors: [Colors.transparent, overlayColor.withOpacity(0.7)],
         ),
       ),
       child: SafeArea(
@@ -38,40 +38,37 @@ class CameraControlsWidget extends ConsumerWidget {
           children: [
             IconButton(
               onPressed: onGalleryPick,
-              icon: const Icon(
-                Icons.photo_library,
-                color: Colors.white,
-                size: 32,
-              ),
+              icon: Icon(Icons.photo_library, color: controlColor, size: 32),
             ),
             GestureDetector(
-              onTap: isCapturing ? null : () {
-                HapticFeedback.mediumImpact();
-                onCapture();
-              },
+              onTap: isCapturing
+                  ? null
+                  : () {
+                      HapticFeedback.mediumImpact();
+                      onCapture();
+                    },
               child: Container(
                 width: 70,
                 height: 70,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 4,
-                  ),
+                  border: Border.all(color: controlColor, width: 4),
                 ),
                 child: isCapturing
-                    ? const Padding(
-                        padding: EdgeInsets.all(15),
+                    ? Padding(
+                        padding: const EdgeInsets.all(15),
                         child: CircularProgressIndicator(
                           strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            controlColor,
+                          ),
                         ),
                       )
                     : Container(
                         margin: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white,
+                          color: controlColor,
                         ),
                       ),
               ),
@@ -80,7 +77,7 @@ class CameraControlsWidget extends ConsumerWidget {
               onPressed: onToggleFlash,
               icon: Icon(
                 isFlashOn ? Icons.flash_on : Icons.flash_off,
-                color: Colors.white,
+                color: controlColor,
                 size: 32,
               ),
             ),

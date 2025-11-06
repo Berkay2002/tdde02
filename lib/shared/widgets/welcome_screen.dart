@@ -28,7 +28,7 @@ class WelcomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              
+
               // App logo/icon
               Icon(
                 Icons.restaurant_menu,
@@ -41,8 +41,8 @@ class WelcomeScreen extends ConsumerWidget {
               Text(
                 AppConstants.appName,
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppConstants.defaultPadding),
@@ -51,8 +51,10 @@ class WelcomeScreen extends ConsumerWidget {
               Text(
                 'AI-Powered Recipe Generation\nfrom Your Fridge',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppConstants.largePadding),
@@ -78,7 +80,7 @@ class WelcomeScreen extends ConsumerWidget {
                 'Works Offline',
                 'No internet needed after setup',
               ),
-              
+
               const Spacer(),
 
               // Get started button
@@ -98,10 +100,7 @@ class WelcomeScreen extends ConsumerWidget {
                 ),
                 child: const Text(
                   'Get Started',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: AppConstants.defaultPadding),
@@ -139,15 +138,17 @@ class WelcomeScreen extends ConsumerWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               Text(
                 description,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
               ),
             ],
           ),

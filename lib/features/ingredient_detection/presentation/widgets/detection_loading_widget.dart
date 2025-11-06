@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 class DetectionLoadingWidget extends StatelessWidget {
   final String? message;
 
-  const DetectionLoadingWidget({
-    super.key,
-    this.message,
-  });
+  const DetectionLoadingWidget({super.key, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -18,23 +15,21 @@ class DetectionLoadingWidget extends StatelessWidget {
           const SizedBox(
             width: 80,
             height: 80,
-            child: CircularProgressIndicator(
-              strokeWidth: 6,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 6),
           ),
           const SizedBox(height: 24),
           Text(
             message ?? 'Detecting ingredients...',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 12),
           Text(
             'This may take a few seconds',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
           ),
         ],
       ),

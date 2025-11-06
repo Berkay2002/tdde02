@@ -1,5 +1,5 @@
 /// Recipe entity - Pure business logic model
-/// 
+///
 /// This represents a recipe in the domain layer.
 class Recipe {
   final String id;
@@ -110,12 +110,7 @@ class Ingredient {
   final String? unit;
   final String? notes;
 
-  const Ingredient({
-    required this.name,
-    this.quantity,
-    this.unit,
-    this.notes,
-  });
+  const Ingredient({required this.name, this.quantity, this.unit, this.notes});
 
   Ingredient copyWith({
     String? name,

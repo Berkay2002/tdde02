@@ -10,10 +10,7 @@ abstract class AuthRepository {
   });
 
   /// Sign in with email and password
-  Future<Profile> signIn({
-    required String email,
-    required String password,
-  });
+  Future<Profile> signIn({required String email, required String password});
 
   /// Sign out current user
   Future<void> signOut();

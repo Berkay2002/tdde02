@@ -8,28 +8,29 @@ import 'features/recipe_history/presentation/screens/home_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'shared/widgets/splash_screen.dart';
 import 'shared/widgets/welcome_screen.dart';
+import 'shared/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Supabase
+  // Initialize Supabase with hardcoded values (from .env)
+  // Note: These are safe to expose as they are public API keys protected by RLS
   await Supabase.initialize(
-    url: const String.fromEnvironment('SUPABASE_URL'),
-    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+    url: 'https://mqdflykfxutypueeffts.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZGZseWtmeHV0eXB1ZWVmZnRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MjU2NDMsImV4cCI6MjA3ODAwMTY0M30.mpyyTWbttUtGc0NXKEZcjrVc4ox7k---Htoci4ZguWk',
   );
 
   // Initialize Hive for local storage
   await Hive.initFlutter();
-  
+
   // Open Hive boxes
   await Hive.openBox(AppConstants.hiveRecipeBox);
   await Hive.openBox(AppConstants.hivePreferencesBox);
 
   runApp(
     // Wrap app with ProviderScope for Riverpod
-    const ProviderScope(
-      child: MyApp(),
-    ),
+    const ProviderScope(child: MyApp()),
   );
 }
 
@@ -38,16 +39,16 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeNotifierProvider);
+
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: themeMode,
       // Start with welcome screen that checks auth
-      home: const SplashScreen(
-        nextScreen: WelcomeScreen(),
-      ),
+      home: const SplashScreen(nextScreen: WelcomeScreen()),
       routes: {
         '/welcome': (context) => const WelcomeScreen(),
         '/login': (context) => const LoginScreen(),

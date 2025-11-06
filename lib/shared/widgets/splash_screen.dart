@@ -6,10 +6,7 @@ import '../../features/ingredient_detection/presentation/providers/ingredient_de
 class SplashScreen extends ConsumerStatefulWidget {
   final Widget nextScreen;
 
-  const SplashScreen({
-    super.key,
-    required this.nextScreen,
-  });
+  const SplashScreen({super.key, required this.nextScreen});
 
   @override
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
@@ -26,18 +23,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
-    
+
     _animationController.forward();
-    
+
     _initializeApp();
   }
 
@@ -53,35 +50,35 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       setState(() {
         _statusMessage = 'Loading AI model...';
       });
-      
+
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       final inferenceService = ref.read(mediaPipeLlmServiceProvider);
       await inferenceService.initialize();
-      
+
       // Step 2: Verify model is ready
       setState(() {
         _statusMessage = 'Preparing AI engine...';
       });
-      
+
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       if (!inferenceService.isInitialized) {
         throw Exception('Failed to initialize AI model');
       }
-      
+
       // Step 3: Ready to go
       setState(() {
         _statusMessage = 'Ready!';
       });
-      
+
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // Navigate to home screen
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => widget.nextScreen),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => widget.nextScreen));
       }
     } catch (e) {
       print('SplashScreen: Initialization error: $e');
@@ -131,11 +128,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       width: 120,
       height: 120,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Theme.of(context).shadowColor.withOpacity(0.2),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -156,19 +153,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     return Column(
       children: [
-        const SizedBox(
+        SizedBox(
           width: 40,
           height: 40,
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.onPrimary,
+            ),
             strokeWidth: 3,
           ),
         ),
         const SizedBox(height: 24),
         Text(
           _statusMessage,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w500,
           ),
@@ -177,7 +176,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         Text(
           'This may take a few moments',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
+            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
             fontSize: 14,
           ),
         ),
@@ -186,20 +185,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Widget _buildErrorContent(BuildContext context) {
+    final onPrimaryColor = Theme.of(context).colorScheme.onPrimary;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         children: [
-          const Icon(
-            Icons.error_outline,
-            color: Colors.white,
-            size: 60,
-          ),
+          Icon(Icons.error_outline, color: onPrimaryColor, size: 60),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Initialization Failed',
             style: TextStyle(
-              color: Colors.white,
+              color: onPrimaryColor,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -208,7 +204,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           Text(
             _errorMessage ?? 'Unknown error occurred',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
+              color: onPrimaryColor.withOpacity(0.9),
               fontSize: 14,
             ),
             textAlign: TextAlign.center,
@@ -227,8 +223,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   _initializeApp();
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white),
+                  foregroundColor: onPrimaryColor,
+                  side: BorderSide(color: onPrimaryColor),
                 ),
                 child: const Text('Retry'),
               ),
@@ -241,7 +237,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   );
                 },
                 style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                   foregroundColor: Theme.of(context).primaryColor,
                 ),
                 child: const Text('Continue Anyway'),

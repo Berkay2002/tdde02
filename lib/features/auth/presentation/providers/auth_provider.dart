@@ -36,10 +36,7 @@ class AuthNotifier extends _$AuthNotifier {
     return await authRepository.getCurrentProfile();
   }
 
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final authRepository = ref.read(authRepositoryProvider);

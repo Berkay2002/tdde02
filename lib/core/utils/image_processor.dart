@@ -105,17 +105,14 @@ class ImageProcessor {
   static List<List<List<double>>> normalizePixels(img.Image image) {
     final normalized = List.generate(
       image.height,
-      (y) => List.generate(
-        image.width,
-        (x) {
-          final pixel = image.getPixel(x, y);
-          return [
-            pixel.r / 255.0, // Red channel
-            pixel.g / 255.0, // Green channel
-            pixel.b / 255.0, // Blue channel
-          ];
-        },
-      ),
+      (y) => List.generate(image.width, (x) {
+        final pixel = image.getPixel(x, y);
+        return [
+          pixel.r / 255.0, // Red channel
+          pixel.g / 255.0, // Green channel
+          pixel.b / 255.0, // Blue channel
+        ];
+      }),
     );
 
     return normalized;

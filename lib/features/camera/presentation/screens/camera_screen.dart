@@ -91,8 +91,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   }
 
   Future<void> _handleCapture() async {
-    final image =
-        await ref.read(cameraNotifierProvider.notifier).takePicture();
+    final image = await ref.read(cameraNotifierProvider.notifier).takePicture();
 
     if (image != null && mounted) {
       _navigateToPreview(image.path);
@@ -155,10 +154,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Scan Fridge',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Scan Fridge', style: TextStyle(color: Colors.white)),
       ),
       body: _buildBody(cameraState),
     );
@@ -189,11 +185,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.red,
-                ),
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(
                   cameraState.errorMessage ?? 'An error occurred',

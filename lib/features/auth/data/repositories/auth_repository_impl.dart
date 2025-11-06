@@ -16,37 +16,26 @@ class AuthRepositoryImpl implements AuthRepository {
     String? displayName,
   }) async {
     try {
+      // Pass display_name as metadata - the database trigger will handle profile creation
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
+        data: displayName != null ? {'display_name': displayName} : null,
       );
 
       if (response.user == null) {
         throw Exception('Sign up failed: No user returned');
       }
 
-      // Create profile in profiles table
-      final profileData = {
-        'id': response.user!.id,
-        'email': email,
-        'display_name': displayName,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
+      // The database trigger automatically creates profile and preferences
+      // Retry fetching profile with exponential backoff (handles trigger delay)
+      Profile? profile;
+      for (int i = 0; i < 5; i++) {
+        await Future.delayed(Duration(milliseconds: 200 * (i + 1)));
+        profile = await getCurrentProfile();
+        if (profile != null) break;
+      }
 
-      await _supabase.from('profiles').insert(profileData);
-
-      // Create default user preferences
-      final preferencesData = {
-        'user_id': response.user!.id,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-
-      await _supabase.from('user_preferences').insert(preferencesData);
-
-      // Fetch the created profile
-      final profile = await getCurrentProfile();
       if (profile == null) {
         throw Exception('Failed to create profile');
       }

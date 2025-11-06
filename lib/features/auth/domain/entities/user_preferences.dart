@@ -1,5 +1,5 @@
 /// UserPreferences entity - Pure business logic model
-/// 
+///
 /// This represents user cooking preferences in the domain layer.
 class UserPreferences {
   final String userId;
@@ -48,13 +48,15 @@ class UserPreferences {
       userId: userId ?? this.userId,
       skillLevel: skillLevel ?? this.skillLevel,
       spiceTolerance: spiceTolerance ?? this.spiceTolerance,
-      cookingTimePreference: cookingTimePreference ?? this.cookingTimePreference,
+      cookingTimePreference:
+          cookingTimePreference ?? this.cookingTimePreference,
       dietaryRestrictions: dietaryRestrictions ?? this.dietaryRestrictions,
       excludedIngredients: excludedIngredients ?? this.excludedIngredients,
       favoriteCuisines: favoriteCuisines ?? this.favoriteCuisines,
       favoriteProteins: favoriteProteins ?? this.favoriteProteins,
       kitchenEquipment: kitchenEquipment ?? this.kitchenEquipment,
-      servingSizePreference: servingSizePreference ?? this.servingSizePreference,
+      servingSizePreference:
+          servingSizePreference ?? this.servingSizePreference,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

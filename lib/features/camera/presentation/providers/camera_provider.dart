@@ -4,13 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'camera_provider.g.dart';
 
-enum CameraStatus {
-  initial,
-  loading,
-  ready,
-  error,
-  capturing,
-}
+enum CameraStatus { initial, loading, ready, error, capturing }
 
 class CameraState {
   final CameraStatus status;
@@ -60,7 +54,7 @@ class CameraNotifier extends _$CameraNotifier {
 
     try {
       final cameras = await availableCameras();
-      
+
       if (cameras.isEmpty) {
         state = state.copyWith(
           status: CameraStatus.error,
@@ -70,7 +64,7 @@ class CameraNotifier extends _$CameraNotifier {
       }
 
       final camera = cameras.first;
-      
+
       final controller = CameraController(
         camera,
         ResolutionPreset.high,
@@ -79,7 +73,7 @@ class CameraNotifier extends _$CameraNotifier {
       );
 
       await controller.initialize();
-      
+
       await controller.setFlashMode(FlashMode.off);
 
       state = state.copyWith(

@@ -12,12 +12,12 @@ part 'ingredient_detection_provider.g.dart';
 @riverpod
 MediaPipeLlmService mediaPipeLlmService(Ref ref) {
   final service = MediaPipeLlmService();
-  
+
   // Dispose when provider is destroyed
   ref.onDispose(() {
     service.dispose();
   });
-  
+
   return service;
 }
 
@@ -69,19 +69,23 @@ class IngredientDetection extends _$IngredientDetection {
     try {
       // Step 1: Preprocess the image
       print('IngredientDetection: Preprocessing image...');
-      final processedImage = await ImageProcessor.preprocessForInference(imageBytes);
-      
+      final processedImage = await ImageProcessor.preprocessForInference(
+        imageBytes,
+      );
+
       state = state.copyWith(processedImage: processedImage);
 
       // Step 2: Run inference
       print('IngredientDetection: Running inference...');
       final inferenceService = ref.read(mediaPipeLlmServiceProvider);
-      
+
       if (!inferenceService.isInitialized) {
         throw ModelNotInitializedException('AI model not initialized');
       }
 
-      final ingredients = await inferenceService.detectIngredients(processedImage);
+      final ingredients = await inferenceService.detectIngredients(
+        processedImage,
+      );
 
       // Step 3: Create DetectedIngredients entity
       final detected = DetectedIngredients(
@@ -91,18 +95,14 @@ class IngredientDetection extends _$IngredientDetection {
         isManuallyEdited: false,
       );
 
-      state = state.copyWith(
-        detectedIngredients: detected,
-        isLoading: false,
-      );
+      state = state.copyWith(detectedIngredients: detected, isLoading: false);
 
-      print('IngredientDetection: Successfully detected ${ingredients.length} ingredients');
+      print(
+        'IngredientDetection: Successfully detected ${ingredients.length} ingredients',
+      );
     } on AIException catch (e) {
       print('IngredientDetection: AI error: $e');
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.message,
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (e) {
       print('IngredientDetection: Unexpected error: $e');
       state = state.copyWith(
@@ -136,7 +136,7 @@ class IngredientDetection extends _$IngredientDetection {
 
     final updatedIngredients = List<String>.from(current.ingredients)
       ..removeAt(index);
-    
+
     final updated = current.copyWith(
       ingredients: updatedIngredients,
       isManuallyEdited: true,
@@ -155,14 +155,16 @@ class IngredientDetection extends _$IngredientDetection {
 
     final updatedIngredients = List<String>.from(current.ingredients);
     updatedIngredients[index] = newValue;
-    
+
     final updated = current.copyWith(
       ingredients: updatedIngredients,
       isManuallyEdited: true,
     );
 
     state = state.copyWith(detectedIngredients: updated);
-    print('IngredientDetection: Updated ingredient at index $index to: $newValue');
+    print(
+      'IngredientDetection: Updated ingredient at index $index to: $newValue',
+    );
   }
 
   /// Clear all detected ingredients
@@ -175,15 +177,14 @@ class IngredientDetection extends _$IngredientDetection {
   Future<void> retryDetection() async {
     final processedImage = state.processedImage;
     if (processedImage == null) {
-      state = state.copyWith(
-        errorMessage: 'No image available to retry',
-      );
+      state = state.copyWith(errorMessage: 'No image available to retry');
       return;
     }
 
-    final imageId = state.detectedIngredients?.imageId ?? 
-                    DateTime.now().millisecondsSinceEpoch.toString();
-    
+    final imageId =
+        state.detectedIngredients?.imageId ??
+        DateTime.now().millisecondsSinceEpoch.toString();
+
     await detectIngredients(processedImage, imageId);
   }
 }

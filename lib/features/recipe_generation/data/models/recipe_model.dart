@@ -110,12 +110,7 @@ class IngredientModel with _$IngredientModel {
 
   /// Convert model to domain entity
   Ingredient toEntity() {
-    return Ingredient(
-      name: name,
-      quantity: quantity,
-      unit: unit,
-      notes: notes,
-    );
+    return Ingredient(name: name, quantity: quantity, unit: unit, notes: notes);
   }
 
   /// Create model from domain entity

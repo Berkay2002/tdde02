@@ -5,7 +5,7 @@ part 'profile_model.freezed.dart';
 part 'profile_model.g.dart';
 
 /// Profile model for data layer with JSON serialization
-/// 
+///
 /// This model handles conversion between Supabase JSON and domain entities.
 @freezed
 class ProfileModel with _$ProfileModel {
@@ -20,10 +20,18 @@ class ProfileModel with _$ProfileModel {
     @JsonKey(name: 'phone_number') String? phoneNumber,
     @JsonKey(name: 'date_of_birth') DateTime? dateOfBirth,
     String? country,
-    @JsonKey(name: 'language_preference') @Default('en') String languagePreference,
-    @JsonKey(name: 'theme_preference') @Default('system') String themePreference,
-    @JsonKey(name: 'notifications_enabled') @Default(true) bool notificationsEnabled,
-    @JsonKey(name: 'email_notifications') @Default(true) bool emailNotificationsEnabled,
+    @JsonKey(name: 'language_preference')
+    @Default('en')
+    String languagePreference,
+    @JsonKey(name: 'theme_preference')
+    @Default('system')
+    String themePreference,
+    @JsonKey(name: 'notifications_enabled')
+    @Default(true)
+    bool notificationsEnabled,
+    @JsonKey(name: 'email_notifications')
+    @Default(true)
+    bool emailNotificationsEnabled,
     @JsonKey(name: 'created_at') required DateTime createdAt,
     @JsonKey(name: 'updated_at') required DateTime updatedAt,
   }) = _ProfileModel;

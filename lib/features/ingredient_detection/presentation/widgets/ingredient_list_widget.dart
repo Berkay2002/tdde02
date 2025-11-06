@@ -35,21 +35,21 @@ class IngredientListWidget extends ConsumerWidget {
           Icon(
             Icons.info_outline,
             size: 64,
-            color: Colors.grey[400],
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
           ),
           const SizedBox(height: 16),
           Text(
             'No ingredients detected',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Try taking a clearer photo or add ingredients manually',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[500],
-                ),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -62,9 +62,9 @@ class IngredientListWidget extends ConsumerWidget {
       children: [
         Text(
           'Detected Ingredients',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(width: 8),
         Container(
@@ -95,12 +95,7 @@ class IngredientListWidget extends ConsumerWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: ingredients.length,
       itemBuilder: (context, index) {
-        return _buildIngredientChip(
-          context,
-          ref,
-          ingredients[index],
-          index,
-        );
+        return _buildIngredientChip(context, ref, ingredients[index], index);
       },
     );
   }
@@ -115,12 +110,14 @@ class IngredientListWidget extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Theme.of(context).shadowColor.withOpacity(0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -137,22 +134,27 @@ class IngredientListWidget extends ConsumerWidget {
           ),
           title: Text(
             ingredient,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w500),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
                 icon: const Icon(Icons.edit, size: 20),
-                onPressed: () => _showEditDialog(context, ref, ingredient, index),
+                onPressed: () =>
+                    _showEditDialog(context, ref, ingredient, index),
                 tooltip: 'Edit ingredient',
               ),
               IconButton(
-                icon: Icon(Icons.delete, size: 20, color: Colors.red[400]),
+                icon: Icon(
+                  Icons.delete,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 onPressed: () {
-                  ref.read(ingredientDetectionProvider.notifier).removeIngredient(index);
+                  ref
+                      .read(ingredientDetectionProvider.notifier)
+                      .removeIngredient(index);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Removed $ingredient'),
@@ -188,7 +190,7 @@ class IngredientListWidget extends ConsumerWidget {
 
   void _showAddDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -211,7 +213,9 @@ class IngredientListWidget extends ConsumerWidget {
             onPressed: () {
               final ingredient = controller.text.trim();
               if (ingredient.isNotEmpty) {
-                ref.read(ingredientDetectionProvider.notifier).addIngredient(ingredient);
+                ref
+                    .read(ingredientDetectionProvider.notifier)
+                    .addIngredient(ingredient);
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -235,7 +239,7 @@ class IngredientListWidget extends ConsumerWidget {
     int index,
   ) {
     final controller = TextEditingController(text: currentValue);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -258,7 +262,9 @@ class IngredientListWidget extends ConsumerWidget {
             onPressed: () {
               final ingredient = controller.text.trim();
               if (ingredient.isNotEmpty) {
-                ref.read(ingredientDetectionProvider.notifier).updateIngredient(index, ingredient);
+                ref
+                    .read(ingredientDetectionProvider.notifier)
+                    .updateIngredient(index, ingredient);
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

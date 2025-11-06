@@ -17,16 +17,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  // User preferences data
-  String _skillLevel = 'beginner';
-  String _spiceTolerance = 'medium';
-  String _cookingTimePreference = 'moderate';
+  // Essential preferences collected during onboarding
+  String _skillLevel = 'intermediate'; // Smart default: most common
   final Set<String> _dietaryRestrictions = {};
-  final Set<String> _excludedIngredients = {};
-  final Set<String> _favoriteCuisines = {};
-  final Set<String> _favoriteProteins = {};
-  final Set<String> _kitchenEquipment = {};
-  int _servingSizePreference = 2;
+
+  // Deferred preferences with smart defaults (collected contextually later)
+  final String _spiceTolerance = 'medium'; // Safe default
+  final String _cookingTimePreference = 'moderate'; // Middle ground
+  final List<String> _excludedIngredients = []; // Empty by default
+  final List<String> _favoriteCuisines = []; // Collect when relevant
+  final List<String> _favoriteProteins = []; // Collect when relevant
+  final List<String> _kitchenEquipment = []; // Infer from usage
+  final int _servingSizePreference = 2; // Typical couple/small family
 
   @override
   void dispose() {
@@ -35,7 +37,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < 5) {
+    if (_currentPage < 1) {
+      // Only 2 pages now (0 and 1)
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -43,6 +46,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } else {
       _finishOnboarding();
     }
+  }
+
+  void _skipOnboarding() {
+    // Allow users to skip and use defaults
+    _finishOnboarding();
   }
 
   void _previousPage() {
@@ -62,23 +70,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       spiceTolerance: _spiceTolerance,
       cookingTimePreference: _cookingTimePreference,
       dietaryRestrictions: _dietaryRestrictions.toList(),
-      excludedIngredients: _excludedIngredients.toList(),
-      favoriteCuisines: _favoriteCuisines.toList(),
-      favoriteProteins: _favoriteProteins.toList(),
-      kitchenEquipment: _kitchenEquipment.toList(),
+      excludedIngredients: _excludedIngredients,
+      favoriteCuisines: _favoriteCuisines,
+      favoriteProteins: _favoriteProteins,
+      kitchenEquipment: _kitchenEquipment,
       servingSizePreference: _servingSizePreference,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
 
-    await ref.read(userPreferencesNotifierProvider.notifier).updatePreferences(preferences);
+    await ref
+        .read(userPreferencesNotifierProvider.notifier)
+        .updatePreferences(preferences);
 
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const HomeScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
     );
   }
 
@@ -100,21 +108,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   Expanded(
                     child: LinearProgressIndicator(
-                      value: (_currentPage + 1) / 6,
-                      backgroundColor: Colors.grey[300],
+                      value: (_currentPage + 1) / 2,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceVariant,
                       minHeight: 8,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                   TextButton(
-                    onPressed: _finishOnboarding,
+                    onPressed: _skipOnboarding,
                     child: const Text('Skip'),
                   ),
                 ],
               ),
             ),
 
-            // Pages
+            // Pages - Streamlined to 2 essential pages
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -125,12 +135,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   });
                 },
                 children: [
-                  _buildWelcomePage(),
-                  _buildSkillLevelPage(),
-                  _buildDietaryPage(),
-                  _buildCuisinePage(),
-                  _buildKitchenPage(),
-                  _buildServingSizePage(),
+                  _buildQuickSetupPage(), // Skill + Dietary in one page
+                  _buildWelcomeSummaryPage(), // Summary and celebration
                 ],
               ),
             ),
@@ -148,7 +154,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                 ),
                 child: Text(
-                  _currentPage == 5 ? 'Get Started' : 'Continue',
+                  _currentPage == 1 ? 'Get Cooking!' : 'Continue',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -162,471 +168,298 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildWelcomePage() {
+  // Page 1: Quick Setup - Essential preferences only
+  Widget _buildQuickSetupPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppConstants.largePadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Quick Setup',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: AppConstants.smallPadding),
+          Text(
+            'Just the essentials to get you started',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: AppConstants.largePadding * 1.5),
+
+          // Skill Level Section
+          Text(
+            'What\'s your cooking skill level?',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: AppConstants.defaultPadding),
+          _buildOptionCard(
+            'Beginner',
+            'Just starting out with simple recipes',
+            Icons.star_outline,
+            _skillLevel == 'beginner',
+            () => setState(() => _skillLevel = 'beginner'),
+          ),
+          const SizedBox(height: AppConstants.smallPadding),
+          _buildOptionCard(
+            'Intermediate',
+            'Comfortable with most cooking techniques',
+            Icons.star_half,
+            _skillLevel == 'intermediate',
+            () => setState(() => _skillLevel = 'intermediate'),
+          ),
+          const SizedBox(height: AppConstants.smallPadding),
+          _buildOptionCard(
+            'Advanced',
+            'Experienced and adventurous chef',
+            Icons.star,
+            _skillLevel == 'advanced',
+            () => setState(() => _skillLevel = 'advanced'),
+          ),
+
+          const SizedBox(height: AppConstants.largePadding * 2),
+
+          // Dietary Restrictions Section
+          Text(
+            'Any dietary restrictions?',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: AppConstants.smallPadding),
+          Text(
+            'Optional - we\'ll only suggest compatible recipes',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: AppConstants.defaultPadding),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                [
+                  'Vegetarian',
+                  'Vegan',
+                  'Gluten-Free',
+                  'Dairy-Free',
+                  'Nut-Free',
+                  'None',
+                ].map((restriction) {
+                  final isSelected = restriction == 'None'
+                      ? _dietaryRestrictions.isEmpty
+                      : _dietaryRestrictions.contains(restriction);
+                  return FilterChip(
+                    label: Text(restriction),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (restriction == 'None') {
+                          _dietaryRestrictions.clear();
+                        } else {
+                          if (selected) {
+                            _dietaryRestrictions.add(restriction);
+                          } else {
+                            _dietaryRestrictions.remove(restriction);
+                          }
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+          ),
+
+          const SizedBox(height: AppConstants.largePadding),
+
+          // Info box
+          Container(
+            padding: const EdgeInsets.all(AppConstants.defaultPadding),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.lightbulb_outline,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: AppConstants.defaultPadding),
+                Expanded(
+                  child: Text(
+                    'You can customize more preferences later in your profile',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Page 2: Welcome Summary - Celebration & app capabilities
+  Widget _buildWelcomeSummaryPage() {
     return Padding(
       padding: const EdgeInsets.all(AppConstants.largePadding),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.waving_hand,
-            size: 80,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: AppConstants.largePadding),
-          Text(
-            'Welcome!',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.defaultPadding),
-          Text(
-            "Let's personalize your cooking experience. We'll ask a few questions to tailor recipes just for you.",
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey[600],
-                ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSkillLevelPage() {
-    return Padding(
-      padding: const EdgeInsets.all(AppConstants.largePadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'What\'s your cooking skill level?',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.smallPadding),
-          Text(
-            'This helps us suggest recipes that match your experience.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
-          const SizedBox(height: AppConstants.largePadding),
-          _buildOptionCard(
-            'Beginner',
-            'Just starting out',
-            Icons.star_outline,
-            _skillLevel == 'beginner',
-            () => setState(() => _skillLevel = 'beginner'),
-          ),
-          _buildOptionCard(
-            'Intermediate',
-            'Comfortable in the kitchen',
-            Icons.star_half,
-            _skillLevel == 'intermediate',
-            () => setState(() => _skillLevel = 'intermediate'),
-          ),
-          _buildOptionCard(
-            'Advanced',
-            'Experienced home chef',
-            Icons.star,
-            _skillLevel == 'advanced',
-            () => setState(() => _skillLevel = 'advanced'),
-          ),
-          const SizedBox(height: AppConstants.largePadding),
-          Text(
-            'Spice Tolerance',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.defaultPadding),
-          Wrap(
-            spacing: 8,
-            children: ['none', 'mild', 'medium', 'hot', 'very_hot'].map((level) {
-              final labels = {
-                'none': '🚫 None',
-                'mild': '🌶️ Mild',
-                'medium': '🌶️🌶️ Medium',
-                'hot': '🌶️🌶️🌶️ Hot',
-                'very_hot': '🌶️🌶️🌶️🌶️ Very Hot',
-              };
-              return ChoiceChip(
-                label: Text(labels[level]!),
-                selected: _spiceTolerance == level,
-                onSelected: (selected) {
-                  if (selected) {
-                    setState(() => _spiceTolerance = level);
-                  }
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: AppConstants.largePadding),
-          Text(
-            'Cooking Time Preference',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.defaultPadding),
-          Wrap(
-            spacing: 8,
-            children: ['quick', 'moderate', 'long'].map((time) {
-              final labels = {
-                'quick': '⚡ Quick (<30 min)',
-                'moderate': '⏱️ Moderate (30-60 min)',
-                'long': '🕐 Long (60+ min)',
-              };
-              return ChoiceChip(
-                label: Text(labels[time]!),
-                selected: _cookingTimePreference == time,
-                onSelected: (selected) {
-                  if (selected) {
-                    setState(() => _cookingTimePreference = time);
-                  }
-                },
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDietaryPage() {
-    final restrictions = [
-      'Vegetarian',
-      'Vegan',
-      'Gluten-Free',
-      'Dairy-Free',
-      'Nut-Free',
-      'Halal',
-      'Kosher',
-      'Low-Carb',
-      'Keto',
-      'Paleo',
-    ];
-
-    final commonAllergens = [
-      'Peanuts',
-      'Tree Nuts',
-      'Shellfish',
-      'Fish',
-      'Eggs',
-      'Soy',
-      'Wheat',
-      'Dairy',
-    ];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppConstants.largePadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Dietary Preferences',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.smallPadding),
-          Text(
-            'Select any dietary restrictions or preferences.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
-          const SizedBox(height: AppConstants.largePadding),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: restrictions.map((restriction) {
-              final isSelected = _dietaryRestrictions.contains(restriction);
-              return FilterChip(
-                label: Text(restriction),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _dietaryRestrictions.add(restriction);
-                    } else {
-                      _dietaryRestrictions.remove(restriction);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: AppConstants.largePadding * 2),
-          Text(
-            'Ingredients to Avoid',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.smallPadding),
-          Text(
-            'We\'ll exclude recipes containing these ingredients.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
-          const SizedBox(height: AppConstants.defaultPadding),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: commonAllergens.map((ingredient) {
-              final isSelected = _excludedIngredients.contains(ingredient);
-              return FilterChip(
-                label: Text(ingredient),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _excludedIngredients.add(ingredient);
-                    } else {
-                      _excludedIngredients.remove(ingredient);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCuisinePage() {
-    final cuisines = [
-      '🍕 Italian',
-      '🍜 Chinese',
-      '🍛 Indian',
-      '🍣 Japanese',
-      '🌮 Mexican',
-      '🥖 French',
-      '🍔 American',
-      '🥙 Mediterranean',
-      '🍲 Thai',
-      '🍖 Korean',
-      '🥘 Spanish',
-      '🍝 Greek',
-    ];
-
-    final proteins = [
-      '🍗 Chicken',
-      '🥩 Beef',
-      '🐷 Pork',
-      '🐟 Fish',
-      '🦐 Seafood',
-      '🥚 Eggs',
-      '🫘 Beans',
-      '🌱 Tofu',
-    ];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppConstants.largePadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Favorite Cuisines',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.smallPadding),
-          Text(
-            'What types of food do you love?',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
-          const SizedBox(height: AppConstants.largePadding),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: cuisines.map((cuisine) {
-              final isSelected = _favoriteCuisines.contains(cuisine);
-              return FilterChip(
-                label: Text(cuisine),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _favoriteCuisines.add(cuisine);
-                    } else {
-                      _favoriteCuisines.remove(cuisine);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: AppConstants.largePadding * 2),
-          Text(
-            'Favorite Proteins',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.defaultPadding),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: proteins.map((protein) {
-              final isSelected = _favoriteProteins.contains(protein);
-              return FilterChip(
-                label: Text(protein),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _favoriteProteins.add(protein);
-                    } else {
-                      _favoriteProteins.remove(protein);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKitchenPage() {
-    final equipment = [
-      'Oven',
-      'Microwave',
-      'Air Fryer',
-      'Slow Cooker',
-      'Pressure Cooker',
-      'Blender',
-      'Food Processor',
-      'Stand Mixer',
-      'Grill',
-      'Wok',
-    ];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppConstants.largePadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Kitchen Equipment',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.smallPadding),
-          Text(
-            'What equipment do you have available?',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
-          const SizedBox(height: AppConstants.largePadding),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: equipment.map((item) {
-              final isSelected = _kitchenEquipment.contains(item);
-              return FilterChip(
-                label: Text(item),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _kitchenEquipment.add(item);
-                    } else {
-                      _kitchenEquipment.remove(item);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildServingSizePage() {
-    return Padding(
-      padding: const EdgeInsets.all(AppConstants.largePadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Default Serving Size',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppConstants.smallPadding),
-          Text(
-            'How many people do you typically cook for?',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
-          const SizedBox(height: AppConstants.largePadding * 2),
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  '$_servingSizePreference',
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                ),
-                const SizedBox(height: AppConstants.smallPadding),
-                Text(
-                  _servingSizePreference == 1 ? 'person' : 'people',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: AppConstants.largePadding),
-                Slider(
-                  value: _servingSizePreference.toDouble(),
-                  min: 1,
-                  max: 8,
-                  divisions: 7,
-                  label: '$_servingSizePreference',
-                  onChanged: (value) {
-                    setState(() {
-                      _servingSizePreference = value.toInt();
-                    });
-                  },
-                ),
-              ],
+          // Success animation
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.check_circle_outline,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
+
+          const SizedBox(height: AppConstants.largePadding * 2),
+
+          Text(
+            'You\'re all set!',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+
+          const SizedBox(height: AppConstants.defaultPadding),
+
+          Text(
+            'Here\'s what you can do now:',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: AppConstants.largePadding * 2),
+
+          // Feature highlights
+          _buildFeatureHighlight(
+            icon: Icons.camera_alt,
+            title: 'Scan Your Fridge',
+            description: 'Snap a photo to instantly detect ingredients',
+          ),
+
+          const SizedBox(height: AppConstants.defaultPadding),
+
+          _buildFeatureHighlight(
+            icon: Icons.auto_awesome,
+            title: 'Get AI Recipes',
+            description: 'Personalized recipes based on what you have',
+          ),
+
+          const SizedBox(height: AppConstants.defaultPadding),
+
+          _buildFeatureHighlight(
+            icon: Icons.bookmark,
+            title: 'Save Favorites',
+            description: 'Keep track of recipes you love',
+          ),
+
           const Spacer(),
+
+          // Info text
           Container(
             padding: const EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              ),
             ),
             child: Row(
               children: [
                 Icon(
-                  Icons.info_outline,
+                  Icons.settings,
                   color: Theme.of(context).colorScheme.primary,
+                  size: 20,
                 ),
-                const SizedBox(width: AppConstants.defaultPadding),
+                const SizedBox(width: AppConstants.smallPadding),
                 Expanded(
                   child: Text(
-                    'You can adjust serving sizes for individual recipes later.',
-                    style: TextStyle(
+                    'Customize more preferences anytime in Settings',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureHighlight({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.defaultPadding),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.primary,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: AppConstants.defaultPadding),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -646,9 +479,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ) {
     return Card(
       elevation: isSelected ? 4 : 1,
-      color: isSelected
-          ? Theme.of(context).colorScheme.primaryContainer
-          : null,
+      color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -661,7 +492,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 size: 40,
                 color: isSelected
                     ? Theme.of(context).colorScheme.primary
-                    : Colors.grey,
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
               ),
               const SizedBox(width: AppConstants.defaultPadding),
               Expanded(
@@ -671,14 +502,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
+                      ),
                     ),
                   ],
                 ),

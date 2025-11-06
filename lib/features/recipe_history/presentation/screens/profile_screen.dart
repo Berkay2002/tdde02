@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
+import '../../../auth/presentation/screens/preferences_screen.dart';
+import 'settings_screen.dart';
 
 /// Profile screen - user preferences and settings
 class ProfileScreen extends ConsumerWidget {
@@ -10,7 +12,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userProfile = ref.watch(authNotifierProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
@@ -30,14 +32,29 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
       body: userProfile.when(
-        data: (user) => _buildProfileContent(context, ref, user?.displayName ?? 'User', user?.email ?? ''),
+        data: (user) => _buildProfileContent(
+          context,
+          ref,
+          user?.displayName ?? 'User',
+          user?.email ?? '',
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => _buildProfileContent(context, ref, 'Guest User', 'Using offline mode'),
+        error: (_, __) => _buildProfileContent(
+          context,
+          ref,
+          'Guest User',
+          'Using offline mode',
+        ),
       ),
     );
   }
 
-  Widget _buildProfileContent(BuildContext context, WidgetRef ref, String name, String email) {
+  Widget _buildProfileContent(
+    BuildContext context,
+    WidgetRef ref,
+    String name,
+    String email,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -50,9 +67,9 @@ class ProfileScreen extends ConsumerWidget {
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 40,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -61,15 +78,17 @@ class ProfileScreen extends ConsumerWidget {
               Text(
                 name,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 email,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
               ),
             ],
           ),
@@ -82,27 +101,15 @@ class ProfileScreen extends ConsumerWidget {
           title: 'Preferences',
           items: [
             _SettingsItem(
-              icon: Icons.restaurant,
-              title: 'Dietary Restrictions',
-              subtitle: 'None',
+              icon: Icons.tune,
+              title: 'Cooking Preferences',
+              subtitle: 'Customize your cooking experience',
               onTap: () {
-                // TODO: Navigate to dietary restrictions
-              },
-            ),
-            _SettingsItem(
-              icon: Icons.public,
-              title: 'Cuisine Preferences',
-              subtitle: 'All cuisines',
-              onTap: () {
-                // TODO: Navigate to cuisine preferences
-              },
-            ),
-            _SettingsItem(
-              icon: Icons.emoji_events,
-              title: 'Skill Level',
-              subtitle: 'Beginner',
-              onTap: () {
-                // TODO: Navigate to skill level
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const PreferencesScreen(),
+                  ),
+                );
               },
             ),
           ],
@@ -114,19 +121,15 @@ class ProfileScreen extends ConsumerWidget {
           title: 'App Settings',
           items: [
             _SettingsItem(
-              icon: Icons.dark_mode_outlined,
-              title: 'Theme',
-              subtitle: 'Light',
+              icon: Icons.settings,
+              title: 'App Settings',
+              subtitle: 'Theme, notifications, and more',
               onTap: () {
-                // TODO: Theme settings
-              },
-            ),
-            _SettingsItem(
-              icon: Icons.notifications_outlined,
-              title: 'Notifications',
-              subtitle: 'Enabled',
-              onTap: () {
-                // TODO: Notification settings
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
               },
             ),
           ],
@@ -172,9 +175,9 @@ class ProfileScreen extends ConsumerWidget {
           child: Text(
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ),
         Card(

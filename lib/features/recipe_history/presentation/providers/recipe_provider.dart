@@ -50,7 +50,7 @@ class RecipeNotifier extends _$RecipeNotifier {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(recipeRepositoryProvider);
       final newRecipe = await repository.createRecipe(recipe);
-      
+
       final currentRecipes = state.value ?? [];
       return [newRecipe, ...currentRecipes];
     });
@@ -61,7 +61,7 @@ class RecipeNotifier extends _$RecipeNotifier {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(recipeRepositoryProvider);
       final updatedRecipe = await repository.updateRecipe(recipe);
-      
+
       final currentRecipes = state.value ?? [];
       return currentRecipes.map((r) {
         return r.id == updatedRecipe.id ? updatedRecipe : r;
@@ -74,7 +74,7 @@ class RecipeNotifier extends _$RecipeNotifier {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(recipeRepositoryProvider);
       await repository.deleteRecipe(recipeId);
-      
+
       final currentRecipes = state.value ?? [];
       return currentRecipes.where((r) => r.id != recipeId).toList();
     });
@@ -83,8 +83,11 @@ class RecipeNotifier extends _$RecipeNotifier {
   Future<void> toggleFavorite(String recipeId, bool isFavorite) async {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(recipeRepositoryProvider);
-      final updatedRecipe = await repository.toggleFavorite(recipeId, isFavorite);
-      
+      final updatedRecipe = await repository.toggleFavorite(
+        recipeId,
+        isFavorite,
+      );
+
       final currentRecipes = state.value ?? [];
       return currentRecipes.map((r) {
         return r.id == updatedRecipe.id ? updatedRecipe : r;
@@ -96,7 +99,7 @@ class RecipeNotifier extends _$RecipeNotifier {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(recipeRepositoryProvider);
       final updatedRecipe = await repository.rateRecipe(recipeId, rating);
-      
+
       final currentRecipes = state.value ?? [];
       return currentRecipes.map((r) {
         return r.id == updatedRecipe.id ? updatedRecipe : r;

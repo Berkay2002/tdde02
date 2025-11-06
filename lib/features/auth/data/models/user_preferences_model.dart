@@ -13,13 +13,27 @@ class UserPreferencesModel with _$UserPreferencesModel {
     @JsonKey(name: 'user_id') required String userId,
     @JsonKey(name: 'skill_level') @Default('beginner') String skillLevel,
     @JsonKey(name: 'spice_tolerance') @Default('medium') String spiceTolerance,
-    @JsonKey(name: 'cooking_time_preference') @Default('moderate') String cookingTimePreference,
-    @JsonKey(name: 'dietary_restrictions') @Default([]) List<String> dietaryRestrictions,
-    @JsonKey(name: 'excluded_ingredients') @Default([]) List<String> excludedIngredients,
-    @JsonKey(name: 'favorite_cuisines') @Default([]) List<String> favoriteCuisines,
-    @JsonKey(name: 'favorite_proteins') @Default([]) List<String> favoriteProteins,
-    @JsonKey(name: 'kitchen_equipment') @Default([]) List<String> kitchenEquipment,
-    @JsonKey(name: 'serving_size_preference') @Default(2) int servingSizePreference,
+    @JsonKey(name: 'cooking_time_preference')
+    @Default('moderate')
+    String cookingTimePreference,
+    @JsonKey(name: 'dietary_restrictions')
+    @Default([])
+    List<String> dietaryRestrictions,
+    @JsonKey(name: 'excluded_ingredients')
+    @Default([])
+    List<String> excludedIngredients,
+    @JsonKey(name: 'favorite_cuisines')
+    @Default([])
+    List<String> favoriteCuisines,
+    @JsonKey(name: 'favorite_proteins')
+    @Default([])
+    List<String> favoriteProteins,
+    @JsonKey(name: 'kitchen_equipment')
+    @Default([])
+    List<String> kitchenEquipment,
+    @JsonKey(name: 'serving_size_preference')
+    @Default(2)
+    int servingSizePreference,
     @JsonKey(name: 'created_at') required DateTime createdAt,
     @JsonKey(name: 'updated_at') required DateTime updatedAt,
   }) = _UserPreferencesModel;

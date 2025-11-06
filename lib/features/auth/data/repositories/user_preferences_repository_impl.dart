@@ -48,10 +48,7 @@ class UserPreferencesRepositoryImpl implements UserPreferencesRepository {
   @override
   Future<void> deleteUserPreferences(String userId) async {
     try {
-      await _supabase
-          .from('user_preferences')
-          .delete()
-          .eq('user_id', userId);
+      await _supabase.from('user_preferences').delete().eq('user_id', userId);
     } catch (e) {
       throw Exception('Failed to delete user preferences: $e');
     }

@@ -1,5 +1,5 @@
 /// Profile entity - Pure business logic model
-/// 
+///
 /// This represents a user profile in the domain layer.
 /// It contains no knowledge of JSON serialization or database structure.
 class Profile {
@@ -63,7 +63,8 @@ class Profile {
       languagePreference: languagePreference ?? this.languagePreference,
       themePreference: themePreference ?? this.themePreference,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
-      emailNotificationsEnabled: emailNotificationsEnabled ?? this.emailNotificationsEnabled,
+      emailNotificationsEnabled:
+          emailNotificationsEnabled ?? this.emailNotificationsEnabled,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

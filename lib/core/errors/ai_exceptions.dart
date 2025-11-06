@@ -43,7 +43,7 @@ class InferenceTimeoutException extends AIException {
   final Duration timeout;
 
   InferenceTimeoutException(this.timeout)
-      : super('Inference operation timed out after ${timeout.inSeconds} seconds');
+    : super('Inference operation timed out after ${timeout.inSeconds} seconds');
 
   @override
   String toString() => 'InferenceTimeoutException: $message';

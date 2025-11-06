@@ -8,10 +8,7 @@ import '../widgets/detection_loading_widget.dart';
 class IngredientDetectionScreen extends ConsumerWidget {
   final String? imageId;
 
-  const IngredientDetectionScreen({
-    super.key,
-    this.imageId,
-  });
+  const IngredientDetectionScreen({super.key, this.imageId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,10 +22,15 @@ class IngredientDetectionScreen extends ConsumerWidget {
               detectionState.detectedIngredients!.ingredients.isNotEmpty)
             TextButton.icon(
               onPressed: () => _generateRecipe(context, ref),
-              icon: const Icon(Icons.restaurant_menu, color: Colors.white),
-              label: const Text(
+              icon: Icon(
+                Icons.restaurant_menu,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+              label: Text(
                 'Generate Recipe',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
               ),
             ),
         ],
@@ -75,21 +77,21 @@ class IngredientDetectionScreen extends ConsumerWidget {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red[400],
+              color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 16),
             Text(
               'Detection Failed',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               error,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -104,7 +106,9 @@ class IngredientDetectionScreen extends ConsumerWidget {
                 const SizedBox(width: 16),
                 FilledButton.icon(
                   onPressed: () {
-                    ref.read(ingredientDetectionProvider.notifier).retryDetection();
+                    ref
+                        .read(ingredientDetectionProvider.notifier)
+                        .retryDetection();
                   },
                   icon: const Icon(Icons.refresh),
                   label: const Text('Retry'),
@@ -122,19 +126,25 @@ class IngredientDetectionScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.blue[50],
+        color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.edit, color: Colors.blue[700], size: 20),
+          Icon(
+            Icons.edit,
+            color: Theme.of(context).colorScheme.primary,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'You\'ve edited the ingredient list',
               style: TextStyle(
-                color: Colors.blue[900],
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -149,7 +159,8 @@ class IngredientDetectionScreen extends ConsumerWidget {
     WidgetRef ref,
     IngredientDetectionState state,
   ) {
-    final hasIngredients = state.detectedIngredients != null &&
+    final hasIngredients =
+        state.detectedIngredients != null &&
         state.detectedIngredients!.ingredients.isNotEmpty;
 
     return Column(
@@ -193,8 +204,11 @@ class IngredientDetectionScreen extends ConsumerWidget {
   }
 
   void _generateRecipe(BuildContext context, WidgetRef ref) {
-    final ingredients = ref.read(ingredientDetectionProvider).detectedIngredients?.ingredients;
-    
+    final ingredients = ref
+        .read(ingredientDetectionProvider)
+        .detectedIngredients
+        ?.ingredients;
+
     if (ingredients == null || ingredients.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -209,11 +223,13 @@ class IngredientDetectionScreen extends ConsumerWidget {
     // For now, show a placeholder message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Generating recipe from ${ingredients.length} ingredients...'),
+        content: Text(
+          'Generating recipe from ${ingredients.length} ingredients...',
+        ),
         duration: const Duration(seconds: 2),
       ),
     );
-    
+
     // This will be implemented in Phase 4
     print('Generate recipe with ingredients: $ingredients');
   }

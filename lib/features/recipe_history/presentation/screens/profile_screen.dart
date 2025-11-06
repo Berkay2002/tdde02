@@ -1,131 +1,161 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 
 /// Profile screen - user preferences and settings
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userProfile = ref.watch(authNotifierProvider);
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Profile header
-          Center(
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  child: const Icon(
-                    Icons.person,
-                    size: 50,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Guest User',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Using offline mode',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Settings sections
-          _buildSettingsSection(
-            context,
-            title: 'Preferences',
-            items: [
-              _SettingsItem(
-                icon: Icons.restaurant,
-                title: 'Dietary Restrictions',
-                subtitle: 'None',
-                onTap: () {
-                  // TODO: Navigate to dietary restrictions
-                },
-              ),
-              _SettingsItem(
-                icon: Icons.public,
-                title: 'Cuisine Preferences',
-                subtitle: 'All cuisines',
-                onTap: () {
-                  // TODO: Navigate to cuisine preferences
-                },
-              ),
-              _SettingsItem(
-                icon: Icons.emoji_events,
-                title: 'Skill Level',
-                subtitle: 'Beginner',
-                onTap: () {
-                  // TODO: Navigate to skill level
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          _buildSettingsSection(
-            context,
-            title: 'App Settings',
-            items: [
-              _SettingsItem(
-                icon: Icons.dark_mode_outlined,
-                title: 'Theme',
-                subtitle: 'Light',
-                onTap: () {
-                  // TODO: Theme settings
-                },
-              ),
-              _SettingsItem(
-                icon: Icons.notifications_outlined,
-                title: 'Notifications',
-                subtitle: 'Enabled',
-                onTap: () {
-                  // TODO: Notification settings
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          _buildSettingsSection(
-            context,
-            title: 'About',
-            items: [
-              _SettingsItem(
-                icon: Icons.info_outline,
-                title: 'About App',
-                subtitle: 'Version 1.0.0',
-                onTap: () {
-                  _showAboutDialog(context);
-                },
-              ),
-              _SettingsItem(
-                icon: Icons.help_outline,
-                title: 'Help & Support',
-                subtitle: 'Get help',
-                onTap: () {
-                  // TODO: Help screen
-                },
-              ),
-            ],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await ref.read(authNotifierProvider.notifier).signOut();
+              if (!context.mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+            tooltip: 'Sign Out',
           ),
         ],
       ),
+      body: userProfile.when(
+        data: (user) => _buildProfileContent(context, ref, user?.displayName ?? 'User', user?.email ?? ''),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => _buildProfileContent(context, ref, 'Guest User', 'Using offline mode'),
+      ),
+    );
+  }
+
+  Widget _buildProfileContent(BuildContext context, WidgetRef ref, String name, String email) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Profile header
+        Center(
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                  style: const TextStyle(
+                    fontSize: 40,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                name,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                email,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // Settings sections
+        _buildSettingsSection(
+          context,
+          title: 'Preferences',
+          items: [
+            _SettingsItem(
+              icon: Icons.restaurant,
+              title: 'Dietary Restrictions',
+              subtitle: 'None',
+              onTap: () {
+                // TODO: Navigate to dietary restrictions
+              },
+            ),
+            _SettingsItem(
+              icon: Icons.public,
+              title: 'Cuisine Preferences',
+              subtitle: 'All cuisines',
+              onTap: () {
+                // TODO: Navigate to cuisine preferences
+              },
+            ),
+            _SettingsItem(
+              icon: Icons.emoji_events,
+              title: 'Skill Level',
+              subtitle: 'Beginner',
+              onTap: () {
+                // TODO: Navigate to skill level
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        _buildSettingsSection(
+          context,
+          title: 'App Settings',
+          items: [
+            _SettingsItem(
+              icon: Icons.dark_mode_outlined,
+              title: 'Theme',
+              subtitle: 'Light',
+              onTap: () {
+                // TODO: Theme settings
+              },
+            ),
+            _SettingsItem(
+              icon: Icons.notifications_outlined,
+              title: 'Notifications',
+              subtitle: 'Enabled',
+              onTap: () {
+                // TODO: Notification settings
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        _buildSettingsSection(
+          context,
+          title: 'About',
+          items: [
+            _SettingsItem(
+              icon: Icons.info_outline,
+              title: 'About App',
+              subtitle: 'Version 1.0.0',
+              onTap: () {
+                _showAboutDialog(context);
+              },
+            ),
+            _SettingsItem(
+              icon: Icons.help_outline,
+              title: 'Help & Support',
+              subtitle: 'Get help',
+              onTap: () {
+                // TODO: Help screen
+              },
+            ),
+          ],
+        ),
+      ],
     );
   }
 

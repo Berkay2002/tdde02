@@ -1,19 +1,24 @@
+import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
 /// Image preprocessing utilities for AI inference
 class ImageProcessor {
   /// Preprocess image for Gemma 3n model inference
   /// Resizes to 512x512 and normalizes pixel values
+  /// Uses compute() for heavy processing on a separate isolate
   static Future<Uint8List> preprocessForInference(Uint8List imageBytes) async {
+    return compute(_preprocessImageIsolate, imageBytes);
+  }
+
+  static Uint8List _preprocessImageIsolate(Uint8List imageBytes) {
     try {
-      // Decode image
       final image = img.decodeImage(imageBytes);
       if (image == null) {
         throw Exception('Failed to decode image');
       }
 
-      // Resize to 512x512 (Gemma 3n recommended size)
       final resized = img.copyResize(
         image,
         width: 512,
@@ -21,15 +26,24 @@ class ImageProcessor {
         interpolation: img.Interpolation.linear,
       );
 
-      // Convert to RGB (remove alpha channel if present)
       final rgb = img.Image.from(resized);
 
-      // Encode back to bytes
       final processedBytes = Uint8List.fromList(img.encodeJpg(rgb, quality: 85));
 
       return processedBytes;
     } catch (e) {
       throw Exception('Image preprocessing failed: $e');
+    }
+  }
+
+  /// Load and preprocess image from file path
+  static Future<Uint8List> preprocessFromFile(String filePath) async {
+    try {
+      final file = File(filePath);
+      final imageBytes = await file.readAsBytes();
+      return await preprocessForInference(imageBytes);
+    } catch (e) {
+      throw Exception('Failed to load image from file: $e');
     }
   }
 

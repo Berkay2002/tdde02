@@ -21,12 +21,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   String _selectedSkillLevel = 'beginner';
   String _selectedSpiceTolerance = 'medium';
   String _selectedCookingTime = 'moderate';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPreferences();
-  }
+  bool _hasLoadedPreferences = false;
 
   @override
   void dispose() {
@@ -36,70 +31,128 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     super.dispose();
   }
 
-  void _loadPreferences() {
-    final prefsAsync = ref.read(userPreferencesNotifierProvider);
-    prefsAsync.whenData((prefs) {
-      if (prefs != null) {
-        setState(() {
-          _selectedSkillLevel = prefs.skillLevel;
-          _selectedSpiceTolerance = prefs.spiceTolerance;
-          _selectedCookingTime = prefs.cookingTimePreference;
-          _dietaryRestrictionsController.text = prefs.dietaryRestrictions.join(
-            ', ',
-          );
-          _excludedIngredientsController.text = prefs.excludedIngredients.join(
-            ', ',
-          );
-          _favoriteCuisinesController.text = prefs.favoriteCuisines.join(', ');
-        });
-      }
-    });
+  void _loadPreferencesFromState(UserPreferences? prefs) {
+    if (prefs != null && !_hasLoadedPreferences) {
+      _hasLoadedPreferences = true;
+      _selectedSkillLevel = prefs.skillLevel;
+      _selectedSpiceTolerance = prefs.spiceTolerance;
+      _selectedCookingTime = prefs.cookingTimePreference;
+      _dietaryRestrictionsController.text = prefs.dietaryRestrictions.join(
+        ', ',
+      );
+      _excludedIngredientsController.text = prefs.excludedIngredients.join(
+        ', ',
+      );
+      _favoriteCuisinesController.text = prefs.favoriteCuisines.join(', ');
+    }
   }
 
   Future<void> _savePreferences() async {
-    final currentPrefs = await ref.read(userPreferencesNotifierProvider.future);
-
-    if (currentPrefs == null) return;
-
-    final updatedPrefs = UserPreferences(
-      userId: currentPrefs.userId,
-      skillLevel: _selectedSkillLevel,
-      spiceTolerance: _selectedSpiceTolerance,
-      cookingTimePreference: _selectedCookingTime,
-      dietaryRestrictions: _dietaryRestrictionsController.text
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList(),
-      excludedIngredients: _excludedIngredientsController.text
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList(),
-      favoriteCuisines: _favoriteCuisinesController.text
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList(),
-      favoriteProteins: currentPrefs.favoriteProteins,
-      kitchenEquipment: currentPrefs.kitchenEquipment,
-      servingSizePreference: currentPrefs.servingSizePreference,
-      createdAt: currentPrefs.createdAt,
-      updatedAt: DateTime.now(),
+    // Show loading indicator
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 16),
+            Text('Saving preferences...'),
+          ],
+        ),
+        duration: Duration(seconds: 60), // Long duration, we'll dismiss it
+      ),
     );
 
-    await ref
-        .read(userPreferencesNotifierProvider.notifier)
-        .updatePreferences(updatedPrefs);
+    try {
+      final currentPrefs = await ref.read(userPreferencesNotifierProvider.future);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Preferences saved successfully'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
+      if (currentPrefs == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unable to load current preferences'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final updatedPrefs = UserPreferences(
+        userId: currentPrefs.userId,
+        skillLevel: _selectedSkillLevel,
+        spiceTolerance: _selectedSpiceTolerance,
+        cookingTimePreference: _selectedCookingTime,
+        dietaryRestrictions: _dietaryRestrictionsController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList(),
+        excludedIngredients: _excludedIngredientsController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList(),
+        favoriteCuisines: _favoriteCuisinesController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList(),
+        favoriteProteins: currentPrefs.favoriteProteins,
+        kitchenEquipment: currentPrefs.kitchenEquipment,
+        servingSizePreference: currentPrefs.servingSizePreference,
+        createdAt: currentPrefs.createdAt,
+        updatedAt: DateTime.now(),
       );
-      Navigator.of(context).pop();
+
+      await ref
+          .read(userPreferencesNotifierProvider.notifier)
+          .updatePreferences(updatedPrefs);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 16),
+                Text('Preferences saved successfully!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        // Small delay before popping to show the success message
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 16),
+                Expanded(child: Text('Error: ${e.toString()}')),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 
@@ -111,14 +164,55 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       appBar: AppBar(
         title: const Text('Cooking Preferences'),
         actions: [
-          TextButton(onPressed: _savePreferences, child: const Text('Save')),
+          TextButton(
+            onPressed: prefsAsync.isLoading ? null : _savePreferences,
+            child: const Text('Save'),
+          ),
         ],
       ),
       body: prefsAsync.when(
-        data: (prefs) => _buildPreferencesForm(),
+        data: (prefs) {
+          // Load preferences into form fields once when data is first available
+          if (prefs != null && !_hasLoadedPreferences) {
+            // Schedule state update for after build
+            Future.microtask(() {
+              if (mounted) {
+                setState(() {
+                  _loadPreferencesFromState(prefs);
+                });
+              }
+            });
+          }
+          return _buildPreferencesForm();
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) =>
-            Center(child: Text('Error loading preferences: $error')),
+        error: (error, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading preferences',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.invalidate(userPreferencesNotifierProvider);
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

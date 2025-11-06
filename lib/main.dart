@@ -28,6 +28,11 @@ void main() async {
   await Hive.openBox(AppConstants.hiveRecipeBox);
   await Hive.openBox(AppConstants.hivePreferencesBox);
 
+  // Force a frame to ensure proper initialization
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Ensure first frame is drawn properly
+  });
+
   runApp(
     // Wrap app with ProviderScope for Riverpod
     const ProviderScope(child: MyApp()),
@@ -42,11 +47,28 @@ class MyApp extends ConsumerWidget {
     final themeMode = ref.watch(themeNotifierProvider);
 
     return MaterialApp(
+      key: const ValueKey('main_app'),
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      builder: (context, child) {
+        // Fix viewport/scaling issues by wrapping in LayoutBuilder
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: MediaQuery.of(context).textScaler.clamp(
+                  minScaleFactor: 0.8,
+                  maxScaleFactor: 1.3,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+      },
       // Start with welcome screen that checks auth
       home: const SplashScreen(nextScreen: WelcomeScreen()),
       routes: {

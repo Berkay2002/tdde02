@@ -43,7 +43,10 @@ class UserPreferencesNotifier extends _$UserPreferencesNotifier {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(userPreferencesRepositoryProvider);
-      return await repository.upsertUserPreferences(preferences);
+      final updated = await repository.upsertUserPreferences(preferences);
+      // Invalidate the current user preferences provider to refresh
+      ref.invalidate(currentUserPreferencesProvider);
+      return updated;
     });
   }
 }

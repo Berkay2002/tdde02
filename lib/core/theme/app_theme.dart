@@ -55,7 +55,7 @@ class AppTheme {
         foregroundColor: onPrimaryColor,
         elevation: 4,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

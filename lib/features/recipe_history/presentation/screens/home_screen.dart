@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/constants/app_constants.dart';
-import '../camera/presentation/screens/camera_screen.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../camera/presentation/screens/camera_screen.dart';
 import 'recipe_list_screen.dart';
 import 'profile_screen.dart';
 

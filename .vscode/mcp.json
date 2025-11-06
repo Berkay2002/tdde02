@@ -8,6 +8,10 @@
         "run"
       ],
       "type": "stdio"
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=mqdflykfxutypueeffts"
     }
   }
 }

@@ -1,0 +1,31 @@
+targets:
+  $default:
+    builders:
+      freezed:
+        generate_for:
+          - lib/**/*.dart
+          - test/**/*.dart
+        options:
+          # Generate toJson methods
+          to_json: true
+          # Generate fromJson methods
+          from_json: true
+          # Generate copyWith methods
+          copy_with: true
+          # Generate equality operators
+          equal: true
+          # Generate toString methods
+          to_string: true
+      json_serializable:
+        generate_for:
+          - lib/**/*.dart
+          - test/**/*.dart
+        options:
+          # Use explicit_to_json for nested objects
+          explicit_to_json: true
+          # Include fields with null values in JSON
+          include_if_null: true
+          # Use checked conversions for type safety
+          checked: true
+          # Create generic factories
+          generic_argument_factories: true

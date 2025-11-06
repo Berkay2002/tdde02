@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
+import '../constants/app_constants.dart';
+import '../errors/ai_exceptions.dart';
 
 /// Image preprocessing utilities for AI inference
 class ImageProcessor {
@@ -9,30 +11,82 @@ class ImageProcessor {
   /// Resizes to 512x512 and normalizes pixel values
   /// Uses compute() for heavy processing on a separate isolate
   static Future<Uint8List> preprocessForInference(Uint8List imageBytes) async {
-    return compute(_preprocessImageIsolate, imageBytes);
+    try {
+      return await compute(_preprocessImageIsolate, imageBytes);
+    } catch (e) {
+      throw ImagePreprocessingException('Failed to preprocess image', e);
+    }
   }
 
   static Uint8List _preprocessImageIsolate(Uint8List imageBytes) {
     try {
       final image = img.decodeImage(imageBytes);
       if (image == null) {
-        throw Exception('Failed to decode image');
+        throw ImagePreprocessingException('Failed to decode image');
       }
 
+      // Resize to model's expected input size
       final resized = img.copyResize(
         image,
-        width: 512,
-        height: 512,
+        width: AppConstants.imageSize,
+        height: AppConstants.imageSize,
         interpolation: img.Interpolation.linear,
       );
 
-      final rgb = img.Image.from(resized);
-
-      final processedBytes = Uint8List.fromList(img.encodeJpg(rgb, quality: 85));
+      // Encode back to JPEG for model input
+      final processedBytes = Uint8List.fromList(
+        img.encodeJpg(resized, quality: AppConstants.imageQuality),
+      );
 
       return processedBytes;
     } catch (e) {
-      throw Exception('Image preprocessing failed: $e');
+      throw ImagePreprocessingException('Image preprocessing failed: $e');
+    }
+  }
+
+  /// Preprocess image and convert to normalized Float32 array
+  /// This is the format expected by many TFLite models
+  static Future<Float32List> preprocessToFloat32(Uint8List imageBytes) async {
+    try {
+      return await compute(_preprocessToFloat32Isolate, imageBytes);
+    } catch (e) {
+      throw ImagePreprocessingException('Failed to convert to Float32', e);
+    }
+  }
+
+  static Float32List _preprocessToFloat32Isolate(Uint8List imageBytes) {
+    try {
+      final image = img.decodeImage(imageBytes);
+      if (image == null) {
+        throw ImagePreprocessingException('Failed to decode image');
+      }
+
+      // Resize to model's expected input size
+      final resized = img.copyResize(
+        image,
+        width: AppConstants.imageSize,
+        height: AppConstants.imageSize,
+        interpolation: img.Interpolation.linear,
+      );
+
+      // Convert to Float32 and normalize to [0, 1]
+      final float32Data = Float32List(
+        AppConstants.imageSize * AppConstants.imageSize * 3,
+      );
+
+      int index = 0;
+      for (int y = 0; y < resized.height; y++) {
+        for (int x = 0; x < resized.width; x++) {
+          final pixel = resized.getPixel(x, y);
+          float32Data[index++] = pixel.r / 255.0; // Red
+          float32Data[index++] = pixel.g / 255.0; // Green
+          float32Data[index++] = pixel.b / 255.0; // Blue
+        }
+      }
+
+      return float32Data;
+    } catch (e) {
+      throw ImagePreprocessingException('Float32 conversion failed: $e');
     }
   }
 

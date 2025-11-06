@@ -39,7 +39,9 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 .vscode
-.github
+.github/instructions
+.github/memory-bank
+.github/prompts
 .vscode
 .env
 .env.local
@@ -49,3 +51,8 @@ AGENTS.md
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# AI Models (too large for git)
+assets/models/*.tflite
+assets/models/*.bin
+assets/models/*.gguf

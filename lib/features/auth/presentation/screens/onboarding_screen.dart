@@ -16,19 +16,20 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isLoading = false;
 
   // Essential preferences collected during onboarding
-  String _skillLevel = 'intermediate'; // Smart default: most common
+  String _skillLevel = 'intermediate';
+  String _spiceTolerance = 'medium';
   final Set<String> _dietaryRestrictions = {};
+  final Set<String> _favoriteCuisines = {};
+  final Set<String> _excludedIngredients = {};
 
-  // Deferred preferences with smart defaults (collected contextually later)
-  final String _spiceTolerance = 'medium'; // Safe default
-  final String _cookingTimePreference = 'moderate'; // Middle ground
-  final List<String> _excludedIngredients = []; // Empty by default
-  final List<String> _favoriteCuisines = []; // Collect when relevant
-  final List<String> _favoriteProteins = []; // Collect when relevant
-  final List<String> _kitchenEquipment = []; // Infer from usage
-  final int _servingSizePreference = 2; // Typical couple/small family
+  // Default values for preferences not collected in onboarding
+  final String _cookingTimePreference = 'moderate';
+  final List<String> _favoriteProteins = [];
+  final List<String> _kitchenEquipment = [];
+  final int _servingSizePreference = 2;
 
   @override
   void dispose() {
@@ -37,8 +38,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < 1) {
-      // Only 2 pages now (0 and 1)
+    if (_currentPage < 4) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -48,9 +48,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  void _skipOnboarding() {
-    // Allow users to skip and use defaults
-    _finishOnboarding();
+  Future<void> _skipOnboarding() async {
+    final shouldSkip = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Skip Setup?'),
+        content: const Text(
+          'We\'ll use smart defaults for your preferences. You can customize them anytime in Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Continue Setup'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Skip'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSkip == true && mounted) {
+      await _finishOnboarding(useDefaults: true);
+    }
   }
 
   void _previousPage() {
@@ -60,34 +81,58 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Future<void> _finishOnboarding() async {
-    final userId = ref.read(supabaseProvider).auth.currentUser?.id;
-    if (userId == null) return;
+  Future<void> _finishOnboarding({bool useDefaults = false}) async {
+    setState(() => _isLoading = true);
 
-    final preferences = UserPreferences(
-      userId: userId,
-      skillLevel: _skillLevel,
-      spiceTolerance: _spiceTolerance,
-      cookingTimePreference: _cookingTimePreference,
-      dietaryRestrictions: _dietaryRestrictions.toList(),
-      excludedIngredients: _excludedIngredients,
-      favoriteCuisines: _favoriteCuisines,
-      favoriteProteins: _favoriteProteins,
-      kitchenEquipment: _kitchenEquipment,
-      servingSizePreference: _servingSizePreference,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+    try {
+      final userId = ref.read(supabaseProvider).auth.currentUser?.id;
+      if (userId == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User not found. Please sign in again.')),
+          );
+        }
+        return;
+      }
 
-    await ref
-        .read(userPreferencesNotifierProvider.notifier)
-        .updatePreferences(preferences);
+      final preferences = UserPreferences(
+        userId: userId,
+        skillLevel: useDefaults ? 'intermediate' : _skillLevel,
+        spiceTolerance: useDefaults ? 'medium' : _spiceTolerance,
+        cookingTimePreference: _cookingTimePreference,
+        dietaryRestrictions: useDefaults ? [] : _dietaryRestrictions.toList(),
+        excludedIngredients: useDefaults ? [] : _excludedIngredients.toList(),
+        favoriteCuisines: useDefaults ? [] : _favoriteCuisines.toList(),
+        favoriteProteins: _favoriteProteins,
+        kitchenEquipment: _kitchenEquipment,
+        servingSizePreference: _servingSizePreference,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
 
-    if (!mounted) return;
+      await ref
+          .read(userPreferencesNotifierProvider.notifier)
+          .updatePreferences(preferences);
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-    );
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving preferences: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -96,7 +141,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Progress indicator
+            // Header with progress and skip
             Padding(
               padding: const EdgeInsets.all(AppConstants.defaultPadding),
               child: Row(
@@ -104,27 +149,42 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   if (_currentPage > 0)
                     IconButton(
                       icon: const Icon(Icons.arrow_back),
-                      onPressed: _previousPage,
+                      onPressed: _isLoading ? null : _previousPage,
                     ),
                   Expanded(
-                    child: LinearProgressIndicator(
-                      value: (_currentPage + 1) / 2,
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.surfaceVariant,
-                      minHeight: 8,
-                      borderRadius: BorderRadius.circular(4),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                          Text(
+                            'Step ${_currentPage + 1} of 5',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                            TextButton.icon(
+                              onPressed: _isLoading ? null : _skipOnboarding,
+                              icon: const Icon(Icons.skip_next, size: 18),
+                              label: const Text('Skip'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        LinearProgressIndicator(
+                          value: (_currentPage + 1) / 5,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          minHeight: 6,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ],
                     ),
-                  ),
-                  TextButton(
-                    onPressed: _skipOnboarding,
-                    child: const Text('Skip'),
                   ),
                 ],
               ),
             ),
 
-            // Pages - Streamlined to 2 essential pages
+            // Pages
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -135,8 +195,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   });
                 },
                 children: [
-                  _buildQuickSetupPage(), // Skill + Dietary in one page
-                  _buildWelcomeSummaryPage(), // Summary and celebration
+                  _buildSkillLevelPage(),
+                  _buildDietaryRestrictionsPage(),
+                  _buildSpiceTolerancePage(),
+                  _buildFavoriteCuisinesPage(),
+                  _buildExcludedIngredientsPage(),
                 ],
               ),
             ),
@@ -145,7 +208,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.all(AppConstants.largePadding),
               child: ElevatedButton(
-                onPressed: _nextPage,
+                onPressed: _isLoading ? null : _nextPage,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   minimumSize: const Size(double.infinity, 50),
@@ -153,13 +216,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
-                  _currentPage == 1 ? 'Get Cooking!' : 'Continue',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        _currentPage == 4 ? 'Get Cooking!' : 'Continue',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
           ],
@@ -168,36 +237,38 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  // Page 1: Quick Setup - Essential preferences only
-  Widget _buildQuickSetupPage() {
+  // Page 1: Skill Level
+  Widget _buildSkillLevelPage() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppConstants.largePadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Quick Setup',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: AppConstants.smallPadding),
-          Text(
-            'Just the essentials to get you started',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          const SizedBox(height: AppConstants.defaultPadding),
+          Center(
+            child: Icon(
+              Icons.restaurant_menu,
+              size: 60,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
-          const SizedBox(height: AppConstants.largePadding * 1.5),
-
-          // Skill Level Section
+          const SizedBox(height: AppConstants.largePadding),
           Text(
             'What\'s your cooking skill level?',
             style: Theme.of(
               context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppConstants.defaultPadding),
+          const SizedBox(height: AppConstants.smallPadding),
+          Text(
+            'This helps us suggest recipes that match your experience',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.largePadding * 2),
           _buildOptionCard(
             'Beginner',
             'Just starting out with simple recipes',
@@ -205,7 +276,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             _skillLevel == 'beginner',
             () => setState(() => _skillLevel = 'beginner'),
           ),
-          const SizedBox(height: AppConstants.smallPadding),
+          const SizedBox(height: AppConstants.defaultPadding),
           _buildOptionCard(
             'Intermediate',
             'Comfortable with most cooking techniques',
@@ -213,7 +284,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             _skillLevel == 'intermediate',
             () => setState(() => _skillLevel = 'intermediate'),
           ),
-          const SizedBox(height: AppConstants.smallPadding),
+          const SizedBox(height: AppConstants.defaultPadding),
           _buildOptionCard(
             'Advanced',
             'Experienced and adventurous chef',
@@ -221,86 +292,368 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             _skillLevel == 'advanced',
             () => setState(() => _skillLevel = 'advanced'),
           ),
+        ],
+      ),
+    );
+  }
 
-          const SizedBox(height: AppConstants.largePadding * 2),
-
-          // Dietary Restrictions Section
+  // Page 2: Dietary Restrictions
+  Widget _buildDietaryRestrictionsPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppConstants.largePadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppConstants.defaultPadding),
+          Center(
+            child: Icon(
+              Icons.set_meal,
+              size: 60,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: AppConstants.largePadding),
           Text(
             'Any dietary restrictions?',
             style: Theme.of(
               context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppConstants.smallPadding),
           Text(
-            'Optional - we\'ll only suggest compatible recipes',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            'Select all that apply. We\'ll only suggest compatible recipes.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.largePadding * 2),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            alignment: WrapAlignment.center,
+            children: [
+              'Vegetarian',
+              'Vegan',
+              'Gluten-Free',
+              'Dairy-Free',
+              'Nut-Free',
+              'Halal',
+              'Kosher',
+              'None',
+            ].map((restriction) {
+              final isSelected = restriction == 'None'
+                  ? _dietaryRestrictions.isEmpty
+                  : _dietaryRestrictions.contains(restriction);
+              return FilterChip(
+                label: Text(restriction),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (restriction == 'None') {
+                      _dietaryRestrictions.clear();
+                    } else {
+                      if (selected) {
+                        _dietaryRestrictions.add(restriction);
+                      } else {
+                        _dietaryRestrictions.remove(restriction);
+                      }
+                    }
+                  });
+                },
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: AppConstants.largePadding * 2),
+          if (_dietaryRestrictions.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(AppConstants.defaultPadding),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: AppConstants.defaultPadding),
+                  Expanded(
+                    child: Text(
+                      '${_dietaryRestrictions.length} restriction${_dietaryRestrictions.length > 1 ? 's' : ''} selected',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Page 3: Spice Tolerance
+  Widget _buildSpiceTolerancePage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppConstants.largePadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppConstants.defaultPadding),
+          Center(
+            child: Icon(
+              Icons.local_fire_department,
+              size: 60,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: AppConstants.largePadding),
+          Text(
+            'How spicy do you like it?',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.smallPadding),
+          Text(
+            'We\'ll adjust recipe suggestions based on your preference',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.largePadding * 2),
+          _buildSpiceOption(
+            'None',
+            'No spice for me, thanks',
+            '😊',
+            'none',
           ),
           const SizedBox(height: AppConstants.defaultPadding),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children:
-                [
-                  'Vegetarian',
-                  'Vegan',
-                  'Gluten-Free',
-                  'Dairy-Free',
-                  'Nut-Free',
-                  'None',
-                ].map((restriction) {
-                  final isSelected = restriction == 'None'
-                      ? _dietaryRestrictions.isEmpty
-                      : _dietaryRestrictions.contains(restriction);
-                  return FilterChip(
-                    label: Text(restriction),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (restriction == 'None') {
-                          _dietaryRestrictions.clear();
-                        } else {
-                          if (selected) {
-                            _dietaryRestrictions.add(restriction);
-                          } else {
-                            _dietaryRestrictions.remove(restriction);
-                          }
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
+          _buildSpiceOption(
+            'Mild',
+            'Just a hint of spice',
+            '🌶️',
+            'mild',
           ),
+          const SizedBox(height: AppConstants.defaultPadding),
+          _buildSpiceOption(
+            'Medium',
+            'I like a good kick',
+            '🌶️🌶️',
+            'medium',
+          ),
+          const SizedBox(height: AppConstants.defaultPadding),
+          _buildSpiceOption(
+            'Hot',
+            'Bring on the heat!',
+            '🌶️🌶️🌶️',
+            'hot',
+          ),
+          const SizedBox(height: AppConstants.defaultPadding),
+          _buildSpiceOption(
+            'Very Hot',
+            'I love extra spicy food',
+            '🔥🔥🔥',
+            'very_hot',
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildSpiceOption(
+    String title,
+    String subtitle,
+    String emoji,
+    String value,
+  ) {
+    final isSelected = _spiceTolerance == value;
+    return Card(
+      elevation: isSelected ? 4 : 1,
+      color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
+      child: InkWell(
+        onTap: () => setState(() => _spiceTolerance = value),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.defaultPadding),
+          child: Row(
+            children: [
+              Text(
+                emoji,
+                style: const TextStyle(fontSize: 36),
+              ),
+              const SizedBox(width: AppConstants.defaultPadding),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                            : null,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8)
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  size: 28,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Page 4: Favorite Cuisines
+  Widget _buildFavoriteCuisinesPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppConstants.largePadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppConstants.defaultPadding),
+          Center(
+            child: Icon(
+              Icons.public,
+              size: 60,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
           const SizedBox(height: AppConstants.largePadding),
-
-          // Info box
+          Text(
+            'What cuisines do you love?',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.smallPadding),
+          Text(
+            'Select your favorites to get personalized recipe suggestions',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.largePadding * 2),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            alignment: WrapAlignment.center,
+            children: [
+              'Italian',
+              'Mexican',
+              'Chinese',
+              'Japanese',
+              'Indian',
+              'Thai',
+              'French',
+              'Mediterranean',
+              'Korean',
+              'Vietnamese',
+              'American',
+              'Greek',
+              'Spanish',
+              'Middle Eastern',
+              'Caribbean',
+              'Brazilian',
+            ].map((cuisine) {
+              final isSelected = _favoriteCuisines.contains(cuisine);
+              return FilterChip(
+                label: Text(cuisine),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _favoriteCuisines.add(cuisine);
+                    } else {
+                      _favoriteCuisines.remove(cuisine);
+                    }
+                  });
+                },
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: AppConstants.largePadding * 2),
+          if (_favoriteCuisines.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(AppConstants.defaultPadding),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: AppConstants.defaultPadding),
+                  Expanded(
+                    child: Text(
+                      '${_favoriteCuisines.length} cuisine${_favoriteCuisines.length > 1 ? 's' : ''} selected',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: AppConstants.defaultPadding),
           Container(
             padding: const EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.primaryContainer.withOpacity(0.3),
+              ).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-              ),
             ),
             child: Row(
               children: [
                 Icon(
-                  Icons.lightbulb_outline,
+                  Icons.info_outline,
                   color: Theme.of(context).colorScheme.primary,
-                  size: 24,
+                  size: 20,
                 ),
                 const SizedBox(width: AppConstants.defaultPadding),
                 Expanded(
                   child: Text(
-                    'You can customize more preferences later in your profile',
+                    'You can skip this if you\'re open to all cuisines',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ),
@@ -312,154 +665,139 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  // Page 2: Welcome Summary - Celebration & app capabilities
-  Widget _buildWelcomeSummaryPage() {
-    return Padding(
+  // Page 5: Excluded Ingredients
+  Widget _buildExcludedIngredientsPage() {
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(AppConstants.largePadding),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Success animation
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
+          const SizedBox(height: AppConstants.defaultPadding),
+          Center(
             child: Icon(
-              Icons.check_circle_outline,
-              size: 80,
+              Icons.block,
+              size: 60,
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
-
-          const SizedBox(height: AppConstants.largePadding * 2),
-
+          const SizedBox(height: AppConstants.largePadding),
           Text(
-            'You\'re all set!',
+            'Any ingredients to avoid?',
             style: Theme.of(
               context,
-            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-
-          const SizedBox(height: AppConstants.defaultPadding),
-
-          Text(
-            'Here\'s what you can do now:',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
-
+          const SizedBox(height: AppConstants.smallPadding),
+          Text(
+            'We\'ll exclude recipes containing these ingredients',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: AppConstants.largePadding * 2),
-
-          // Feature highlights
-          _buildFeatureHighlight(
-            icon: Icons.camera_alt,
-            title: 'Scan Your Fridge',
-            description: 'Snap a photo to instantly detect ingredients',
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            alignment: WrapAlignment.center,
+            children: [
+              'Peanuts',
+              'Tree Nuts',
+              'Shellfish',
+              'Fish',
+              'Eggs',
+              'Soy',
+              'Wheat',
+              'Sesame',
+              'Mushrooms',
+              'Cilantro',
+              'Coconut',
+              'Onions',
+              'Garlic',
+              'Tomatoes',
+              'Bell Peppers',
+              'Celery',
+              'Olives',
+              'Blue Cheese',
+              'None',
+            ].map((ingredient) {
+              final isSelected = ingredient == 'None'
+                  ? _excludedIngredients.isEmpty
+                  : _excludedIngredients.contains(ingredient);
+              return FilterChip(
+                label: Text(ingredient),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (ingredient == 'None') {
+                      _excludedIngredients.clear();
+                    } else {
+                      if (selected) {
+                        _excludedIngredients.add(ingredient);
+                      } else {
+                        _excludedIngredients.remove(ingredient);
+                      }
+                    }
+                  });
+                },
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              );
+            }).toList(),
           ),
-
+          const SizedBox(height: AppConstants.largePadding * 2),
+          if (_excludedIngredients.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(AppConstants.defaultPadding),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 24,
+                  ),
+                  const SizedBox(width: AppConstants.defaultPadding),
+                  Expanded(
+                    child: Text(
+                      '${_excludedIngredients.length} ingredient${_excludedIngredients.length > 1 ? 's' : ''} excluded',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: AppConstants.defaultPadding),
-
-          _buildFeatureHighlight(
-            icon: Icons.auto_awesome,
-            title: 'Get AI Recipes',
-            description: 'Personalized recipes based on what you have',
-          ),
-
-          const SizedBox(height: AppConstants.defaultPadding),
-
-          _buildFeatureHighlight(
-            icon: Icons.bookmark,
-            title: 'Save Favorites',
-            description: 'Keep track of recipes you love',
-          ),
-
-          const Spacer(),
-
-          // Info text
           Container(
             padding: const EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-              ),
             ),
             child: Row(
               children: [
                 Icon(
-                  Icons.settings,
+                  Icons.info_outline,
                   color: Theme.of(context).colorScheme.primary,
                   size: 20,
                 ),
-                const SizedBox(width: AppConstants.smallPadding),
+                const SizedBox(width: AppConstants.defaultPadding),
                 Expanded(
                   child: Text(
-                    'Customize more preferences anytime in Settings',
+                    'This is separate from dietary restrictions and helps personalize your experience',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureHighlight({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.defaultPadding),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: Theme.of(context).colorScheme.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: AppConstants.defaultPadding),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -491,7 +829,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 icon,
                 size: 40,
                 color: isSelected
-                    ? Theme.of(context).colorScheme.primary
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
                     : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
               ),
               const SizedBox(width: AppConstants.defaultPadding),
@@ -503,14 +841,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                            : null,
                       ),
                     ),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8)
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ],
@@ -519,7 +860,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
             ],
           ),

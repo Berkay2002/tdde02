@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import '../constants/app_constants.dart';
@@ -45,7 +44,7 @@ class ImageProcessor {
   }
 
   /// Preprocess image and convert to normalized Float32 array
-  /// This is the format expected by many TFLite models
+  /// This is the format expected by MediaPipe LLM models for advanced processing
   static Future<Float32List> preprocessToFloat32(Uint8List imageBytes) async {
     try {
       return await compute(_preprocessToFloat32Isolate, imageBytes);

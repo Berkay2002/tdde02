@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/services/gemma_inference_service.dart';
 import '../../features/ingredient_detection/presentation/providers/ingredient_detection_provider.dart';
 
 /// Splash screen that loads the AI model on app startup
@@ -57,7 +56,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       
       await Future.delayed(const Duration(milliseconds: 500));
       
-      final inferenceService = ref.read(gemmaInferenceServiceProvider);
+      final inferenceService = ref.read(mediaPipeLlmServiceProvider);
       await inferenceService.initialize();
       
       // Step 2: Verify model is ready

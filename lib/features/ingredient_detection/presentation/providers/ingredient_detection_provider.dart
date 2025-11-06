@@ -1,16 +1,17 @@
 import 'dart:typed_data';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../core/services/gemma_inference_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
+import '../../../../core/services/mediapipe_llm_service.dart';
 import '../../../../core/utils/image_processor.dart';
 import '../../../../core/errors/ai_exceptions.dart';
 import '../../domain/entities/detected_ingredients.dart';
 
 part 'ingredient_detection_provider.g.dart';
 
-/// Provider for the GemmaInferenceService singleton
+/// Provider for the MediaPipeLlmService singleton
 @riverpod
-GemmaInferenceService gemmaInferenceService(GemmaInferenceServiceRef ref) {
-  final service = GemmaInferenceService();
+MediaPipeLlmService mediaPipeLlmService(Ref ref) {
+  final service = MediaPipeLlmService();
   
   // Dispose when provider is destroyed
   ref.onDispose(() {
@@ -74,7 +75,7 @@ class IngredientDetection extends _$IngredientDetection {
 
       // Step 2: Run inference
       print('IngredientDetection: Running inference...');
-      final inferenceService = ref.read(gemmaInferenceServiceProvider);
+      final inferenceService = ref.read(mediaPipeLlmServiceProvider);
       
       if (!inferenceService.isInitialized) {
         throw ModelNotInitializedException('AI model not initialized');

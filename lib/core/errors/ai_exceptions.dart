@@ -16,8 +16,7 @@ class AIException implements Exception {
 
 /// Exception thrown when model fails to load
 class ModelLoadException extends AIException {
-  ModelLoadException(String message, [dynamic originalError])
-      : super(message, originalError);
+  ModelLoadException(super.message, [super.originalError]);
 
   @override
   String toString() => 'ModelLoadException: $message';
@@ -25,8 +24,7 @@ class ModelLoadException extends AIException {
 
 /// Exception thrown when trying to use uninitialized model
 class ModelNotInitializedException extends AIException {
-  ModelNotInitializedException(String message)
-      : super(message);
+  ModelNotInitializedException(super.message);
 
   @override
   String toString() => 'ModelNotInitializedException: $message';
@@ -34,8 +32,7 @@ class ModelNotInitializedException extends AIException {
 
 /// Exception thrown when inference fails
 class InferenceException extends AIException {
-  InferenceException(String message, [dynamic originalError])
-      : super(message, originalError);
+  InferenceException(super.message, [super.originalError]);
 
   @override
   String toString() => 'InferenceException: $message';
@@ -49,13 +46,12 @@ class InferenceTimeoutException extends AIException {
       : super('Inference operation timed out after ${timeout.inSeconds} seconds');
 
   @override
-  String toString() => 'InferenceTimeoutException: ${message}';
+  String toString() => 'InferenceTimeoutException: $message';
 }
 
 /// Exception thrown when image preprocessing fails
 class ImagePreprocessingException extends AIException {
-  ImagePreprocessingException(String message, [dynamic originalError])
-      : super(message, originalError);
+  ImagePreprocessingException(super.message, [super.originalError]);
 
   @override
   String toString() => 'ImagePreprocessingException: $message';

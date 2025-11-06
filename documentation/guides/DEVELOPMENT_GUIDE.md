@@ -90,7 +90,8 @@ flutter pub get
 ```
 
 **What This Does:**
-- Downloads packages: `supabase_flutter`, `camera`, `tflite_flutter`, `riverpod`, etc.
+- Downloads packages: `supabase_flutter`, `camera`, `image`, `riverpod`, etc.
+- Note: MediaPipe LLM is configured in native Android code, not as a Dart package
 - Creates `.dart_tool` folder with package metadata
 
 ### 4. Configure Environment Variables

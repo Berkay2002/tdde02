@@ -36,7 +36,7 @@ Build an innovative Flutter mobile application that leverages on-device AI (Gemm
   - Context length: 32K tokens
   - Image processing: 256×256, 512×512, or 768×768 resolution
   - 4-bit integer quantization for mobile efficiency
-- **Inference**: `tflite_flutter` ^0.10.0
+- **Inference**: MediaPipe LLM Inference API (native Android/iOS)
 - **Image Processing**: `image` package for preprocessing/resizing
 
 ### Camera & Media
@@ -100,7 +100,7 @@ class CameraController {
 **Gemma 3n Input Requirements**:
 - Image resolution: 512×512 (balance between quality and speed)
 - Normalization: Scale pixel values appropriately
-- Format: Tensor compatible with TFLite model
+- Format: JPEG/PNG compatible with MediaPipe LLM (multimodal)
 
 ---
 
@@ -119,7 +119,7 @@ class CameraController {
 ```dart
 // Gemma 3n Wrapper Service
 class GemmaInferenceService {
-  - Load TFLite model from assets (gemma-3n-e4b-it-int4.tflite)
+  - Load MediaPipe model from device storage (gemma3-1b-it.task)
   - Configure interpreter options (threads: 4, NNAPI delegate)
   - Run multimodal inference: image → text output
   - Parse structured output (ingredient list)
@@ -440,7 +440,7 @@ lib/
 
 assets/
 ├── models/
-│   └── gemma-3n-e4b-it-int4.tflite (to be downloaded)
+│   └── README.md (models stored on device, not in assets)
 └── images/
 
 supabase/
@@ -453,43 +453,88 @@ supabase/
 
 ## 6. Model Integration Details
 
-### 6.1 Gemma 3n Model Acquisition
-**Source**: Hugging Face - `google/gemma-3n-e4b-it` or `unsloth/gemma-3n-E4B-it-GGUF`
+### 6.1 Gemma 3 1B Model Acquisition
+**Source**: Hugging Face - `litert-community/Gemma3-1B-IT`
 
-**Conversion to TFLite**:
-1. Download GGUF or original model weights
-2. Convert to TFLite format using official Google tools
-3. Apply int4 quantization for mobile optimization
-4. Expected model size: ~2-3 GB (int4 quantized)
+**Using MediaPipe Models**:
+1. Download .task file from Hugging Face (litert-community/Gemma3-1B-IT)
+2. Models are pre-optimized for mobile (4-bit quantization)
+3. Push to device storage during development (adb push)
+4. For production: Download from CDN on first launch
+5. Expected model size: ~2 GB (4-bit quantized)
 
-**Alternative**: Use pre-converted TFLite model from `google/gemma-3n-e4b-it-tflite` (if available)
+**Alternative Models**: 
+- Gemma-3n E2B (effective 2B, ~2.5 GB) - Better quality
+- Gemma-3n E4B (effective 4B, ~4 GB) - Best quality, requires high-end device
 
-### 6.2 TFLite Configuration
+### 6.2 MediaPipe LLM Configurationuration
 ```dart
-// lib/features/ingredient_detection/data/services/gemma_inference_service.dart
+// lib/core/services/mediapipe_llm_service.dart
 
-import 'package:tflite_flutter/tflite_flutter.dart';
-
-class GemmaInferenceService {
-  Interpreter? _interpreter;
+class MediaPipeLlmService {
+  static const MethodChannel _channel = MethodChannel('com.example.../mediapipe_llm');
   
   Future<void> initialize() async {
-    final options = InterpreterOptions()
-      ..threads = 4  // Optimize for quad-core CPUs
-      ..useNnApiForAndroid = true  // Android Neural Networks API
-      ..addDelegate(GpuDelegateV2());  // GPU acceleration (if available)
+    await _channel.invokeMethod('initialize', {
+      'modelPath': '/data/local/tmp/llm/gemma3-1b-it.task',
+      'maxTokens': 1000,
+      'topK': 64,
+      'temperature': 0.8,
+      'randomSeed': 101,
+    });
+  }
+
+  Future<List<String>> detectIngredients(Uint8List imageData) async {
+    final response = await _channel.invokeMethod('generateResponse', {
+      'prompt': promptTemplate,
+      'imageData': imageData,
+    });
+    return parseIngredientList(response);
+  }
+}
+```
+
+**Android Native (Kotlin)**:
+```kotlin
+import com.google.mediapipe.tasks.genai.llminference.LlmInference
+
+class MainActivity: FlutterActivity() {
+  private var llmInference: LlmInference? = null
+  
+  private fun initializeLlm(modelPath: String, ...) {
+    val options = LlmInference.LlmInferenceOptions.builder()
+      .setModelPath(modelPath)
+      .setMaxTokens(maxTokens)
+      .setTopK(topK)
+      .setTemperature(temperature)
+      .setRandomSeed(randomSeed)
+      .build()
     
-    _interpreter = await Interpreter.fromAsset(
-      'models/gemma-3n-e4b-it-int4.tflite',
-      options: options,
-    );
-    
-    _interpreter?.allocateTensors();
+    llmInference = LlmInference.createFromOptions(applicationContext, options)
   }
   
-  Future<String> detectIngredients(Uint8List imageBytes) async {
-    // 1. Preprocess image to 512x512
-    final processedImage = _preprocessImage(imageBytes);
+  private fun generateResponse(prompt: String, imageData: ByteArray?) {
+    if (imageData != null) {
+      // Multimodal inference with image
+      val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+      val mpImage = BitmapImageBuilder(bitmap).build()
+      
+      llmInference!!.createSession(sessionOptions).use { session ->
+        session.addQueryChunk(prompt)
+        session.addImage(mpImage)
+        return session.generateResponse()
+      }
+    } else {
+      // Text-only inference
+      return llmInference!!.generateResponse(prompt)
+    }
+  }
+}
+```
+
+### 6.3 Image Preprocessing
+
+**Preprocessing for MediaPipe**:
     
     // 2. Create input tensor with system prompt + image
     final input = _createMultimodalInput(
@@ -618,8 +663,8 @@ class GemmaInferenceService {
 - [ ] Image preprocessing pipeline (resize, normalize)
 
 ### Phase 3: AI Model Integration (Week 3)
-- [ ] Download and convert Gemma 3n model to TFLite
-- [ ] Integrate tflite_flutter package
+- [ ] Download Gemma 3 1B model (.task format)
+- [ ] Integrate MediaPipe LLM Inference API (Android native)
 - [ ] Implement GemmaInferenceService
 - [ ] Test ingredient detection with sample images
 - [ ] Optimize inference performance (delegates, threading)
@@ -649,7 +694,7 @@ class GemmaInferenceService {
 | Gemma 3n model too large for mobile | High | Medium | Use int4 quantization; consider Gemma 3n-E2B (2B version) |
 | Slow inference on low-end devices | High | High | Set performance expectations; add "processing" animation |
 | Inaccurate ingredient detection | Medium | Medium | Allow manual editing; improve prompt engineering |
-| Model conversion issues (TFLite) | High | Medium | Use pre-converted models; fallback to GGUF format |
+| Model issues | High | Medium | Use pre-optimized MediaPipe models; test on recommended devices |
 | Supabase free tier limits | Low | Low | Free tier supports 500MB database (sufficient for MVP) |
 
 ### Medium-Risk Items
@@ -723,8 +768,9 @@ dependencies:
   riverpod_annotation: ^2.3.0
   
   # AI/ML
-  tflite_flutter: ^0.10.0
-  tflite_flutter_helper: ^0.3.1
+  # AI/ML - Configured in native platform code
+  # Android: com.google.mediapipe:tasks-genai:0.10.27
+  # iOS: MediaPipe Tasks GenAI (future)
   image: ^4.1.0
   
   # Camera
@@ -768,7 +814,8 @@ See `lib/core/constants/prompt_templates.dart` for full prompt engineering templ
 
 ### D. Model Download Links
 - **Gemma 3n (Hugging Face)**: https://huggingface.co/google/gemma-3n-e4b-it
-- **TFLite Conversion Guide**: https://ai.google.dev/gemma/docs/gemma-3n
+- **MediaPipe LLM Guide**: https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference
+- **Gemma Models**: https://huggingface.co/litert-community
 - **Unsloth GGUF Version**: https://huggingface.co/unsloth/gemma-3n-E4B-it-GGUF
 
 ---

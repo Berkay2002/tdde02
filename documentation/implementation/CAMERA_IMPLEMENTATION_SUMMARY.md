@@ -155,7 +155,7 @@ Camera Screen
 
 ### Immediate (Phase 3)
 1. **Download Gemma 3n Model**
-   - Find TFLite-compatible version
+   - Find MediaPipe-compatible version
    - Add to `assets/models/` directory
    - Update `pubspec.yaml` if needed
 

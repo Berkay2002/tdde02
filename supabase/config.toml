@@ -1,0 +1,61 @@
+# Supabase Local Development Configuration
+# This file is used when running Supabase locally with `supabase start`
+
+[project]
+name = "ai-recipe-generator"
+# version = "1.0.0"
+
+[api]
+# Port for the API server (default: 54321)
+port = 54321
+# API schemas (default: ["public", "storage"])
+schemas = ["public", "storage", "graphql_public"]
+# Extra search path (default: ["public", "extensions"])
+extra_search_path = ["public", "extensions"]
+# Max rows returned (default: 1000)
+max_rows = 1000
+
+[db]
+# Port for the database (default: 54322)
+port = 54322
+# Major version of PostgreSQL (default: 15)
+major_version = 15
+
+[studio]
+# Port for the Studio UI (default: 54323)
+port = 54323
+
+[inbucket]
+# Port for Inbucket email testing (default: 54324)
+port = 54324
+
+[storage]
+# File size limit in bytes (default: 50MB)
+file_size_limit = 52428800
+
+[auth]
+# Enable email authentication
+enable_signup = true
+
+[auth.email]
+# Enable email authentication
+enable_signup = true
+enable_confirmations = false
+# Disable automatic confirmations for development
+double_confirm_changes = false
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.apple]
+enabled = false
+client_id = ""
+secret = ""
+
+# Add more external providers as needed
+
+[edge_functions]
+# Enable Edge Functions (default: true)
+enabled = false

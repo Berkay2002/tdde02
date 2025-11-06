@@ -16,7 +16,7 @@
 7. [Development Workflow](#development-workflow)
 8. [Testing on Different Platforms](#testing-on-different-platforms)
 9. [Working with AI Model](#working-with-ai-model)
-10. [Team Collaboration Tips](#team-collaboration-tips)
+10. [Git Handling](#git-handling)
 
 ---
 

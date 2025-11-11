@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/providers/app_state_provider.dart';
+import '../../domain/entities/pantry_item.dart';
+import '../widgets/pantry_item_card.dart';
+import '../widgets/empty_pantry_widget.dart';
+import '../widgets/pantry_search_bar.dart';
 import '../../../camera/presentation/screens/camera_screen.dart';
 
 /// MyPantryScreen - Tab 2
@@ -119,14 +123,17 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final pantryIngredients = ref.watch(pantryIngredientsProvider);
+    final notifier = ref.watch(pantryIngredientsProvider.notifier);
+    final pantryItems = notifier.filteredItems;
+    final searchQuery = notifier.searchQuery;
+    final allItems = ref.watch(pantryIngredientsProvider);
     
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Pantry'),
         centerTitle: true,
         actions: [
-          if (pantryIngredients.isNotEmpty)
+          if (allItems.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep),
               tooltip: 'Clear pantry',
@@ -136,6 +143,11 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
       ),
       body: Column(
         children: [
+          PantrySearchBar(
+            query: searchQuery,
+            onChanged: (q) => ref.read(pantryIngredientsProvider.notifier).setSearchQuery(q),
+            onClear: () => ref.read(pantryIngredientsProvider.notifier).setSearchQuery(''),
+          ),
           // Add buttons
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -191,68 +203,26 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
 
           // Ingredients list
           Expanded(
-            child: pantryIngredients.isEmpty
-                ? _buildEmptyState(theme)
-                : _buildIngredientsList(pantryIngredients, theme),
+            child: allItems.isEmpty
+                ? EmptyPantryWidget(
+                    onScan: _handleCameraScan,
+                    onManual: _toggleManualAdd,
+                  )
+                : _buildIngredientsList(pantryItems, theme),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildEmptyState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.kitchen_outlined,
-            size: 80,
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Your pantry is empty',
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add ingredients you have at home',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIngredientsList(List<String> ingredients, ThemeData theme) {
+  Widget _buildIngredientsList(List<PantryItem> items, ThemeData theme) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: ingredients.length,
+      itemCount: items.length,
       itemBuilder: (context, index) {
-        final ingredient = ingredients[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: theme.colorScheme.primaryContainer,
-              child: Icon(
-                Icons.egg_outlined,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
-            ),
-            title: Text(
-              ingredient,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => _removeIngredient(ingredient),
-              tooltip: 'Remove',
-            ),
-          ),
+        final item = items[index];
+        return PantryItemCard(
+          item: item,
+          onDelete: () => _removeIngredient(item.name),
         );
       },
     );

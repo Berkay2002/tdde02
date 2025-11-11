@@ -209,13 +209,14 @@ class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
 
   void _generateRecipes() {
     final sessionIngredients = ref.read(sessionIngredientsProvider);
-    final pantryIngredients = ref.read(pantryIngredientsProvider);
+    final pantryItems = ref.read(pantryIngredientsProvider);
     final profile = ref.read(dietaryProfileProvider);
 
     // Use sessionIngredients if available, otherwise use pantryIngredients
+    final pantryNames = pantryItems.map((e) => e.name).toList();
     final ingredients = sessionIngredients.isNotEmpty 
-        ? sessionIngredients 
-        : pantryIngredients;
+      ? sessionIngredients 
+      : pantryNames;
 
     if (ingredients.isNotEmpty) {
       ref.read(recipeGenerationProvider.notifier).generateRecipes(ingredients, profile);
@@ -226,13 +227,14 @@ class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sessionIngredients = ref.watch(sessionIngredientsProvider);
-    final pantryIngredients = ref.watch(pantryIngredientsProvider);
+    final pantryItems = ref.watch(pantryIngredientsProvider);
     final recipesAsync = ref.watch(recipeGenerationProvider);
 
     // Determine which ingredients are being used
+    final pantryNames = pantryItems.map((e) => e.name).toList();
     final activeIngredients = sessionIngredients.isNotEmpty 
-        ? sessionIngredients 
-        : pantryIngredients;
+      ? sessionIngredients 
+      : pantryNames;
     final isQuickSearch = sessionIngredients.isNotEmpty;
 
     return Scaffold(

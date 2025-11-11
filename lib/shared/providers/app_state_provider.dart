@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../core/constants/app_constants.dart';
+import '../../features/pantry/domain/entities/pantry_item.dart';
+import '../../features/pantry/domain/entities/ingredient_category.dart';
 
 /// Model for dietary profile/preferences
 class DietaryProfile {
@@ -124,32 +126,57 @@ class SessionIngredientsNotifier extends StateNotifier<List<String>> {
 }
 
 /// State notifier for pantry ingredients (persistent)
-class PantryIngredientsNotifier extends StateNotifier<List<String>> {
+class PantryIngredientsNotifier extends StateNotifier<List<PantryItem>> {
   final Box prefsBox;
+  String _searchQuery = '';
 
-  PantryIngredientsNotifier(this.prefsBox) : super([]) {
+  PantryIngredientsNotifier(this.prefsBox) : super(const []) {
     _loadFromStorage();
   }
 
   void _loadFromStorage() {
-    final stored = prefsBox.get('pantryIngredients', defaultValue: <String>[]);
-    state = List<String>.from(stored);
+    final stored = prefsBox.get('pantryIngredients', defaultValue: <dynamic>[]);
+    final loaded = <PantryItem>[];
+    for (final raw in stored as List) {
+      if (raw is String) {
+        loaded.add(PantryItem.fromLegacy(raw));
+      } else if (raw is Map) {
+        loaded.add(PantryItem.fromJson(Map<String, dynamic>.from(raw)));
+      }
+    }
+    state = loaded;
   }
 
   void _saveToStorage() {
-    prefsBox.put('pantryIngredients', state);
+    final serialized = state.map((e) => e.toJson()).toList();
+    prefsBox.put('pantryIngredients', serialized);
+  }
+
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    // Trigger rebuild by reassigning same list
+    state = [...state];
+  }
+
+  String get searchQuery => _searchQuery;
+
+  List<PantryItem> get filteredItems {
+    if (_searchQuery.isEmpty) return state;
+    final q = _searchQuery.toLowerCase();
+    return state.where((e) => e.name.toLowerCase().contains(q)).toList();
   }
 
   void setIngredients(List<String> ingredients) {
-    state = List.from(ingredients);
+    final converted = ingredients.map(PantryItem.fromLegacy).toList();
+    state = converted;
     _saveToStorage();
   }
 
   void addIngredients(List<String> ingredients) {
     final newState = [...state];
     for (final ingredient in ingredients) {
-      if (!newState.contains(ingredient)) {
-        newState.add(ingredient);
+      if (!newState.any((e) => e.name.toLowerCase() == ingredient.toLowerCase())) {
+        newState.add(PantryItem.fromLegacy(ingredient));
       }
     }
     state = newState;
@@ -157,19 +184,19 @@ class PantryIngredientsNotifier extends StateNotifier<List<String>> {
   }
 
   void addIngredient(String ingredient) {
-    if (!state.contains(ingredient)) {
-      state = [...state, ingredient];
+    if (!state.any((e) => e.name.toLowerCase() == ingredient.toLowerCase())) {
+      state = [...state, PantryItem.fromLegacy(ingredient)];
       _saveToStorage();
     }
   }
 
   void removeIngredient(String ingredient) {
-    state = state.where((item) => item != ingredient).toList();
+    state = state.where((item) => item.name != ingredient).toList();
     _saveToStorage();
   }
 
   void clear() {
-    state = [];
+    state = const [];
     _saveToStorage();
   }
 }
@@ -277,7 +304,7 @@ final sessionIngredientsProvider = StateNotifierProvider<SessionIngredientsNotif
 });
 
 /// Provider for pantry ingredients (persistent)
-final pantryIngredientsProvider = StateNotifierProvider<PantryIngredientsNotifier, List<String>>((ref) {
+final pantryIngredientsProvider = StateNotifierProvider<PantryIngredientsNotifier, List<PantryItem>>((ref) {
   final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
   return PantryIngredientsNotifier(prefsBox);
 });

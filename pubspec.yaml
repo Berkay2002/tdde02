@@ -67,6 +67,7 @@ dependencies:
   firebase_core: ^4.2.1
   firebase_ai: ^3.5.0
   firebase_app_check: ^0.4.1+2
+  font_awesome_flutter: ^10.12.0
 
 dev_dependencies:
   flutter_test:

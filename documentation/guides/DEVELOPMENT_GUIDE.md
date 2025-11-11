@@ -1,7 +1,7 @@
 # Development Guide - AI Recipe Generator
 **Team Guide for Setup, Development, and Troubleshooting**
 
-> 📱 Flutter + Firebase + Cloud AI (Gemini API)  
+> Flutter + Firebase + Cloud AI (Gemini API)  
 > Target Platforms: iOS & Android
 
 ---
@@ -33,7 +33,7 @@
 
 #### Windows Developers
 - **Android Studio**: For Android development
-- **PowerShell**: Already installed (you're good!)
+- **PowerShell**: Already installed
 - **Visual Studio** (optional): For Windows desktop development
 
 #### Mac Developers
@@ -43,7 +43,7 @@
 - **CocoaPods**: `sudo gem install cocoapods`
 
 ### Accounts Needed
-- ✅ **GitHub Account**: Access to repository (already have this)
+- ✅ **GitHub Account**: Access to repository
 - ✅ **Firebase Project Access**: Access to team project `eternal-water-477911-m6` (project owner will grant access)
 - ✅ **Google Account**: Required for Firebase authentication and testing
 
@@ -163,8 +163,8 @@ flutter run
 
 **Create an Emulator (if none exist):**
 1. Open **Android Studio** → **Device Manager**
-2. Click **Create Device** → Choose **Pixel 5** or similar
-3. Download system image (API 33+ recommended)
+2. Click **Create Device** → Choose **Pixel 9** or similar
+3. Download system image (API 36+ recommended)
 4. Finish setup and launch
 
 #### 📱 Android Physical Device
@@ -215,7 +215,7 @@ flutter run
 flutter run -d chrome
 ```
 
-> ⚠️ **Note**: Camera and AI features require physical device or emulator, not web.
+> ⚠️ **Note**: Camera features require physical device, but you can add images via google photos with emulator and it will work.
 
 ---
 

@@ -168,7 +168,7 @@ flutter run
 # 4. Save your work
 git add .
 git commit -m "feat: Describe what you changed"
-git push origin dev/your-name
+git push origin dev-your-name
 ```
 
 **First time setup:**

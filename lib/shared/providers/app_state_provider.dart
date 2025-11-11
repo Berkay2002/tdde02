@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../core/constants/app_constants.dart';
 import '../../features/pantry/domain/entities/pantry_item.dart';
-import '../../features/pantry/domain/entities/ingredient_category.dart';
 
 /// Model for dietary profile/preferences
 class DietaryProfile {

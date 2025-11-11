@@ -104,7 +104,7 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
           );
 
           final recipe = Recipe(
-            id: DateTime.now().millisecondsSinceEpoch.toString() + '_$i',
+            id: '${DateTime.now().millisecondsSinceEpoch}_$i',
             name: recipeData['name'] as String? ?? 'Untitled Recipe',
             description: recipeData['description'] as String? ?? '',
             ingredients: (recipeData['ingredients'] as List?)?.cast<String>() ?? ingredients,

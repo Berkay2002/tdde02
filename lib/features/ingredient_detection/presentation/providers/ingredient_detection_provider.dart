@@ -8,8 +8,8 @@ import '../../domain/entities/detected_ingredients.dart';
 
 part 'ingredient_detection_provider.g.dart';
 
-/// Provider for the GeminiAIService singleton
-@riverpod
+/// Provider for the GeminiAIService singleton (kept alive for app lifetime)
+@Riverpod(keepAlive: true)
 GeminiAIService geminiAIService(Ref ref) {
   final service = GeminiAIService();
 

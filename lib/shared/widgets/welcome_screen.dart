@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../features/auth/presentation/screens/login_screen.dart';
-import '../../../features/recipe_history/presentation/screens/home_screen.dart';
+import 'app_shell.dart';
 import '../../../shared/providers/firebase_provider.dart';
 
 class WelcomeScreen extends ConsumerWidget {
@@ -14,8 +14,8 @@ class WelcomeScreen extends ConsumerWidget {
 
     // Check if user is authenticated
     if (user != null) {
-      // User is authenticated, go to home
-      return const HomeScreen();
+      // User is authenticated, go to the main app shell with tabs
+      return AppShell(key: appShellKey);
     }
 
     // User not authenticated, show welcome screen

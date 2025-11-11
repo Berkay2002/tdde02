@@ -4,15 +4,12 @@ class AppConstants {
   static const String appName = 'AI Recipe Generator';
   static const String appVersion = '1.0.0';
 
-  // AI Model Configuration
-  // Note: Model is downloaded to device storage, not bundled in assets
-  // Use adb to push model during development: adb push model.task /data/local/tmp/llm/
-  static const String modelPath = '/data/local/tmp/llm/gemma3-1b-it.task';
-  static const int modelContextLength = 32768;
-  static const int maxTokens = 1000;
-  static const int topK = 64;
-  static const double temperature = 0.8;
-  static const int randomSeed = 101;
+  // AI Model Configuration - Firebase AI with Gemini API
+  // Cloud-based AI, no local model downloads required
+  static const String geminiModel = 'gemini-2.5-flash'; // Multimodal model
+  static const int maxTokens = 2048; // Increased for better recipe generation
+  static const int topK = 40;
+  static const double temperature = 0.7; // Slightly lower for more consistent results
 
   // Image Processing
   static const int imageSize = 512; // 512x512 resolution for Gemma 3n

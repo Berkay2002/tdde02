@@ -27,7 +27,7 @@ android {
         applicationId = "com.example.flutter_application_1"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 24  // MediaPipe LLM requires API 24+ (Android 7.0)
+        minSdk = 21  // Standard Android minimum SDK
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -46,7 +46,4 @@ flutter {
     source = "../.."
 }
 
-dependencies {
-    // MediaPipe Tasks GenAI for LLM Inference
-    implementation("com.google.mediapipe:tasks-genai:0.10.27")
-}
+// No additional dependencies needed - Firebase AI uses cloud-based Gemini API

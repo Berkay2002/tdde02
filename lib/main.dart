@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:firebase_ai/firebase_ai.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'features/recipe_history/presentation/screens/home_screen.dart';
@@ -20,6 +19,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Note: Firebase AI (Gemini) is initialized lazily when GeminiAIService is first used
+  // No upfront initialization needed - it will use Firebase credentials automatically
+
   // Initialize Hive for local storage
   await Hive.initFlutter();
 
@@ -27,26 +29,12 @@ void main() async {
   await Hive.openBox(AppConstants.hiveRecipeBox);
   await Hive.openBox(AppConstants.hivePreferencesBox);
 
-  // Initialize the Gemini Developer API backend service
-  // Create a GenerativeModel instance with a model that supports your use case
-  final geminiModel = FirebaseAI.googleAI().generativeModel(model: 'gemini-2.5-flash');
-
-  // Provide a prompt that contains text
-  final prompt = [Content.text('Write a story about a magic backpack.')];
-
-  // To generate text output, call generateContent with the text input
-  final response = await geminiModel.generateContent(prompt);
-  print(response.text);
-  // Force a frame to ensure proper initialization
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    // Ensure first frame is drawn properly
-  });
-
   runApp(
     // Wrap app with ProviderScope for Riverpod
     const ProviderScope(child: MyApp()),
   );
 }
+
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});

@@ -53,7 +53,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
       await Future.delayed(const Duration(milliseconds: 500));
 
-      final inferenceService = ref.read(mediaPipeLlmServiceProvider);
+      final inferenceService = ref.read(geminiAIServiceProvider);
       await inferenceService.initialize();
 
       // Step 2: Verify model is ready

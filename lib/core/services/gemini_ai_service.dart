@@ -1,0 +1,230 @@
+import 'dart:async';
+import 'dart:typed_data';
+import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import '../constants/app_constants.dart';
+import '../constants/prompt_templates.dart';
+import '../errors/ai_exceptions.dart';
+
+/// Service for running AI inference using Firebase AI Logic with Gemini API
+///
+/// This service uses Google's Gemini models via Firebase AI for cloud-based
+/// multimodal AI inference. No local model downloads required.
+class GeminiAIService {
+  GenerativeModel? _model;
+  bool _isInitialized = false;
+
+  bool get isInitialized => _isInitialized;
+
+  /// Initialize Firebase AI with Gemini model
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+
+    try {
+      print('GeminiAIService: Initializing Firebase AI with Gemini API');
+
+      // Ensure Firebase is initialized
+      if (Firebase.apps.isEmpty) {
+        throw ModelLoadException(
+          'Firebase has not been initialized. Call Firebase.initializeApp() first.',
+        );
+      }
+
+      // Initialize Firebase AI with Google AI backend (Gemini Developer API)
+      final ai = FirebaseAI.googleAI();
+
+      // Create a GenerativeModel instance with multimodal support
+      _model = ai.generativeModel(
+        model: AppConstants.geminiModel,
+        generationConfig: GenerationConfig(
+          temperature: AppConstants.temperature,
+          topK: AppConstants.topK,
+          maxOutputTokens: AppConstants.maxTokens,
+        ),
+      );
+
+      _isInitialized = true;
+      print('GeminiAIService: Initialization successful with ${AppConstants.geminiModel}');
+    } catch (e) {
+      print('GeminiAIService: Initialization failed: $e');
+      throw ModelLoadException('Failed to initialize Gemini AI: $e');
+    }
+  }
+
+  /// Detect ingredients from preprocessed image data using multimodal prompting
+  Future<List<String>> detectIngredients(Uint8List imageData) async {
+    if (!_isInitialized || _model == null) {
+      throw ModelNotInitializedException('Model has not been initialized');
+    }
+
+    try {
+      print('GeminiAIService: Starting ingredient detection');
+
+      final prompt = PromptTemplates.getIngredientDetectionPrompt();
+
+      // Create multimodal content with image and text
+      final content = [
+        Content.multi([
+          TextPart(prompt),
+          InlineDataPart('image/jpeg', imageData),
+        ])
+      ];
+
+      // Generate response with timeout
+      final response = await _generateWithTimeout(
+        content: content,
+        timeout: AppConstants.ingredientDetectionTimeout,
+      );
+
+      final ingredients = PromptTemplates.parseIngredientResponse(response);
+
+      print('GeminiAIService: Detected ${ingredients.length} ingredients');
+      return ingredients;
+    } catch (e) {
+      print('GeminiAIService: Ingredient detection failed: $e');
+      throw InferenceException('Failed to detect ingredients: $e');
+    }
+  }
+
+  /// Generate recipe from ingredients and preferences using text prompting
+  Future<Map<String, dynamic>> generateRecipe({
+    required List<String> ingredients,
+    String? dietaryRestrictions,
+    String? skillLevel,
+    String? cuisinePreference,
+  }) async {
+    if (!_isInitialized || _model == null) {
+      throw ModelNotInitializedException('Model has not been initialized');
+    }
+
+    try {
+      print('GeminiAIService: Starting recipe generation');
+
+      final prompt = PromptTemplates.getRecipeGenerationPrompt(
+        ingredients: ingredients,
+        dietaryRestrictions: dietaryRestrictions,
+        skillLevel: skillLevel,
+        cuisinePreference: cuisinePreference,
+      );
+
+      // Create text-only content
+      final content = [Content.text(prompt)];
+
+      // Generate response with timeout
+      final response = await _generateWithTimeout(
+        content: content,
+        timeout: AppConstants.recipeGenerationTimeout,
+      );
+
+      final recipe = PromptTemplates.parseRecipeResponse(response);
+
+      print('GeminiAIService: Generated recipe: ${recipe['name']}');
+      return recipe;
+    } catch (e) {
+      print('GeminiAIService: Recipe generation failed: $e');
+      throw InferenceException('Failed to generate recipe: $e');
+    }
+  }
+
+  /// Generate response with timeout protection
+  Future<String> _generateWithTimeout({
+    required List<Content> content,
+    required Duration timeout,
+  }) async {
+    try {
+      final completer = Completer<String>();
+
+      // Create timeout timer
+      final timer = Timer(timeout, () {
+        if (!completer.isCompleted) {
+          completer.completeError(InferenceTimeoutException(timeout));
+        }
+      });
+
+      // Start inference
+      _generate(content: content)
+          .then((result) {
+            timer.cancel();
+            if (!completer.isCompleted) {
+              completer.complete(result);
+            }
+          })
+          .catchError((error) {
+            timer.cancel();
+            if (!completer.isCompleted) {
+              completer.completeError(error);
+            }
+          });
+
+      return await completer.future;
+    } catch (e) {
+      if (e is InferenceTimeoutException) {
+        rethrow;
+      }
+      throw InferenceException('Inference failed: $e');
+    }
+  }
+
+  /// Core inference method using Firebase AI
+  Future<String> _generate({required List<Content> content}) async {
+    try {
+      final response = await _model!.generateContent(content);
+
+      final text = response.text;
+      if (text == null || text.isEmpty) {
+        throw InferenceException('Received empty response from model');
+      }
+
+      return text;
+    } catch (e) {
+      print('GeminiAIService: Generation error: $e');
+      throw InferenceException('Generation failed: $e');
+    }
+  }
+
+  /// Generate response with streaming support
+  ///
+  /// Returns a stream of partial results as they are generated
+  Stream<String> generateResponseStream({
+    required String prompt,
+    Uint8List? imageData,
+  }) async* {
+    if (!_isInitialized || _model == null) {
+      throw ModelNotInitializedException('Model has not been initialized');
+    }
+
+    try {
+      // Create content based on whether image is provided
+      final content = imageData != null
+          ? [
+              Content.multi([
+                TextPart(prompt),
+                InlineDataPart('image/jpeg', imageData),
+              ])
+            ]
+          : [Content.text(prompt)];
+
+      // Stream the response
+      final response = _model!.generateContentStream(content);
+
+      await for (final chunk in response) {
+        final text = chunk.text;
+        if (text != null && text.isNotEmpty) {
+          yield text;
+        }
+      }
+    } catch (e) {
+      print('GeminiAIService: Streaming error: $e');
+      throw InferenceException('Streaming failed: $e');
+    }
+  }
+
+  /// Dispose of resources
+  Future<void> dispose() async {
+    if (_isInitialized) {
+      _model = null;
+      _isInitialized = false;
+      print('GeminiAIService: Service disposed');
+    }
+  }
+}

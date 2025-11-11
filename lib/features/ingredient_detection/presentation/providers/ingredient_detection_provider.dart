@@ -1,17 +1,17 @@
 import 'dart:typed_data';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
-import '../../../../core/services/mediapipe_llm_service.dart';
+import '../../../../core/services/gemini_ai_service.dart';
 import '../../../../core/utils/image_processor.dart';
 import '../../../../core/errors/ai_exceptions.dart';
 import '../../domain/entities/detected_ingredients.dart';
 
 part 'ingredient_detection_provider.g.dart';
 
-/// Provider for the MediaPipeLlmService singleton
+/// Provider for the GeminiAIService singleton
 @riverpod
-MediaPipeLlmService mediaPipeLlmService(Ref ref) {
-  final service = MediaPipeLlmService();
+GeminiAIService geminiAIService(Ref ref) {
+  final service = GeminiAIService();
 
   // Dispose when provider is destroyed
   ref.onDispose(() {
@@ -77,7 +77,7 @@ class IngredientDetection extends _$IngredientDetection {
 
       // Step 2: Run inference
       print('IngredientDetection: Running inference...');
-      final inferenceService = ref.read(mediaPipeLlmServiceProvider);
+      final inferenceService = ref.read(geminiAIServiceProvider);
 
       if (!inferenceService.isInitialized) {
         throw ModelNotInitializedException('AI model not initialized');

@@ -39,9 +39,8 @@ dependencies:
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
   
-  # AI/ML - MediaPipe LLM Inference
-  # Note: MediaPipe uses native Android/iOS implementations
-  # Dependencies are configured in platform-specific build files
+  # AI/ML - Firebase AI Logic with Gemini API
+  # Cloud-based generative AI, no local models required
   image: ^4.2.0
   
   # Camera

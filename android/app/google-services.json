@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "593064071345",
+    "project_id": "eternal-water-477911-m6",
+    "storage_bucket": "eternal-water-477911-m6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:593064071345:android:65206fcaee9311bbb71290",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7fjSfxdGciLM6fbKrodhG5-rNEJoQDik"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -26,7 +26,7 @@ class CustomDialog extends StatelessWidget {
     final effectiveIconBgColor = iconColor?.withOpacity(0.1) ?? 
         (isDark
             ? Theme.of(context).colorScheme.surfaceContainerHighest
-            : Theme.of(context).colorScheme.surfaceVariant);
+            : Theme.of(context).colorScheme.surfaceContainerHighest);
     final effectiveIconColor = iconColor ?? Theme.of(context).colorScheme.onSurface;
     
     return Dialog(
@@ -126,7 +126,7 @@ class _OptionSelectionDialogState<T> extends State<OptionSelectionDialog<T>> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final iconBgColor = isDark
         ? Theme.of(context).colorScheme.surfaceContainerHighest
-        : Theme.of(context).colorScheme.surfaceVariant;
+        : Theme.of(context).colorScheme.surfaceContainerHighest;
     final iconColor = Theme.of(context).colorScheme.onSurface;
     
     return Dialog(
@@ -195,7 +195,7 @@ class _OptionSelectionDialogState<T> extends State<OptionSelectionDialog<T>> {
                               .primaryContainer
                           : Theme.of(context)
                               .colorScheme
-                              .surfaceVariant
+                              .surfaceContainerHighest
                               .withOpacity(0.3),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(

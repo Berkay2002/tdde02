@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:firebase_ai/firebase_ai.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'features/recipe_history/presentation/screens/home_screen.dart';
@@ -12,6 +15,11 @@ import 'shared/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Initialize Supabase with hardcoded values (from .env)
   // Note: These are safe to expose as they are public API keys protected by RLS
@@ -28,6 +36,16 @@ void main() async {
   await Hive.openBox(AppConstants.hiveRecipeBox);
   await Hive.openBox(AppConstants.hivePreferencesBox);
 
+  // Initialize the Gemini Developer API backend service
+  // Create a GenerativeModel instance with a model that supports your use case
+  final geminiModel = FirebaseAI.googleAI().generativeModel(model: 'gemini-2.5-flash');
+
+  // Provide a prompt that contains text
+  final prompt = [Content.text('Write a story about a magic backpack.')];
+
+  // To generate text output, call generateContent with the text input
+  final response = await geminiModel.generateContent(prompt);
+  print(response.text);
   // Force a frame to ensure proper initialization
   WidgetsBinding.instance.addPostFrameCallback((_) {
     // Ensure first frame is drawn properly

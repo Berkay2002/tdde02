@@ -1,15 +1,29 @@
+import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/services/permission_service.dart';
+import '../../../../core/services/gemini_ai_service.dart';
+import '../../../../core/utils/image_processor.dart';
 import '../providers/camera_provider.dart';
 import '../widgets/camera_controls_widget.dart';
 import 'image_preview_screen.dart';
 
+/// Camera mode determines the context and behavior
+enum CameraMode {
+  quickScan,  // From HomeScreen - for quick recipe search
+  pantryAdd,  // From MyPantryScreen - for adding to pantry
+}
+
 class CameraScreen extends ConsumerStatefulWidget {
-  const CameraScreen({super.key});
+  final CameraMode mode;
+  
+  const CameraScreen({
+    super.key,
+    this.mode = CameraMode.quickScan,
+  });
 
   @override
   ConsumerState<CameraScreen> createState() => _CameraScreenState();
@@ -132,18 +146,92 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         builder: (context) => ImagePreviewScreen(
           imagePath: imagePath,
           onRetake: () => Navigator.pop(context),
-          onConfirm: () {
-            Navigator.pop(context);
-            Navigator.pop(context, imagePath);
+          onConfirm: () async {
+            Navigator.pop(context); // Close preview
+            
+            // Process the image and return ingredients
+            await _processAndReturnIngredients(imagePath);
           },
         ),
       ),
     );
   }
 
+  Future<void> _processAndReturnIngredients(String imagePath) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Detecting ingredients...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Load and preprocess the image
+      final file = File(imagePath);
+      final bytes = await file.readAsBytes();
+      final processedBytes = await ImageProcessor.preprocessForInference(bytes);
+
+      // Initialize AI service if needed
+      final aiService = GeminiAIService();
+      if (!aiService.isInitialized) {
+        await aiService.initialize();
+      }
+
+      // Detect ingredients
+      final ingredients = await aiService.detectIngredients(processedBytes);
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        if (ingredients.isNotEmpty) {
+          // Return the ingredients list
+          Navigator.pop(context, ingredients);
+        } else {
+          // Show error if no ingredients detected
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No ingredients detected. Please try again.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error detecting ingredients: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cameraState = ref.watch(cameraNotifierProvider);
+    
+    // Change title based on mode
+    final title = widget.mode == CameraMode.quickScan 
+        ? 'Scan Ingredients' 
+        : 'Add to Pantry';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -154,7 +242,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Scan Fridge', style: TextStyle(color: Colors.white)),
+        title: Text(title, style: const TextStyle(color: Colors.white)),
       ),
       body: _buildBody(cameraState),
     );

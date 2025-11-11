@@ -5,7 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
-import 'features/recipe_history/presentation/screens/home_screen.dart';
+import 'shared/widgets/app_shell.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'shared/widgets/splash_screen.dart';
 import 'shared/widgets/welcome_screen.dart';
@@ -71,7 +71,7 @@ class MyApp extends ConsumerWidget {
       routes: {
         '/welcome': (context) => const WelcomeScreen(),
         '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) => AppShell(key: appShellKey),
       },
     );
   }

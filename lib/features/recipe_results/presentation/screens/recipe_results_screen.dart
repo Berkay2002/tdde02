@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../shared/providers/app_state_provider.dart';
 import '../../../../core/services/gemini_ai_service.dart';
+import '../../../recipe_generation/data/repositories/recipe_repository_impl.dart';
 import '../../../recipe_detail/presentation/screens/recipe_detail_screen.dart';
 
 /// Provider for recipe generation state
@@ -12,25 +15,83 @@ final recipeGenerationProvider = StateNotifierProvider<RecipeGenerationNotifier,
 class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
   final Ref ref;
   final GeminiAIService _aiService = GeminiAIService();
+  final RecipeRepositoryImpl _repository = RecipeRepositoryImpl(FirebaseFirestore.instance);
+  
+  // Track last ingredients used to avoid unnecessary regeneration
+  List<String> _lastIngredients = [];
+  DietaryProfile? _lastProfile;
 
   RecipeGenerationNotifier(this.ref) : super(const AsyncValue.data([]));
 
   Future<void> generateRecipes(List<String> ingredients, DietaryProfile profile) async {
     if (ingredients.isEmpty) {
       state = const AsyncValue.data([]);
+      _lastIngredients = [];
+      _lastProfile = null;
+      return;
+    }
+
+    // Check if ingredients or profile have changed
+    final ingredientsChanged = !_listEquals(_lastIngredients, ingredients);
+    final profileChanged = _lastProfile == null || 
+                          _lastProfile!.restrictions != profile.restrictions ||
+                          _lastProfile!.skillLevel != profile.skillLevel ||
+                          _lastProfile!.cuisinePreference != profile.cuisinePreference;
+
+    // Skip regeneration if nothing changed and we have existing recipes
+    if (!ingredientsChanged && !profileChanged && state.hasValue && state.value!.isNotEmpty) {
       return;
     }
 
     state = const AsyncValue.loading();
 
     try {
-      // Initialize AI service if needed
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Try to get cached recipes from Firestore first
+      final cachedRecipes = await _repository.getCachedRecipes(
+        userId,
+        ingredients,
+        profile.restrictions.join(', '),
+        profile.skillLevel,
+        profile.cuisinePreference,
+      );
+
+      if (cachedRecipes != null && cachedRecipes.isNotEmpty) {
+        // Use cached recipes
+        final recipes = cachedRecipes.map((recipeData) {
+          return Recipe(
+            id: recipeData['id'] as String? ?? DateTime.now().millisecondsSinceEpoch.toString(),
+            name: recipeData['name'] as String? ?? 'Untitled Recipe',
+            description: recipeData['description'] as String? ?? '',
+            ingredients: (recipeData['ingredients'] as List?)?.cast<String>() ?? ingredients,
+            instructions: (recipeData['instructions'] as List?)?.cast<String>() ?? [],
+            prepTime: recipeData['prepTime'] as int? ?? 15,
+            cookTime: recipeData['cookTime'] as int? ?? 30,
+            difficulty: recipeData['difficulty'] as String? ?? 'medium',
+            tags: (recipeData['tags'] as List?)?.cast<String>() ?? [],
+            createdAt: DateTime.now(),
+          );
+        }).toList();
+
+        _lastIngredients = List.from(ingredients);
+        _lastProfile = profile;
+        state = AsyncValue.data(recipes);
+        return;
+      }
+
+      // No cache found - generate new recipes
       if (!_aiService.isInitialized) {
         await _aiService.initialize();
       }
 
       // Generate 3 recipe suggestions
       final recipes = <Recipe>[];
+      final recipesData = <Map<String, dynamic>>[];
+      
       for (int i = 0; i < 3; i++) {
         final recipeData = await _aiService.generateRecipe(
           ingredients: ingredients,
@@ -53,7 +114,34 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
         );
 
         recipes.add(recipe);
+        
+        // Store recipe data for caching
+        recipesData.add({
+          'id': recipe.id,
+          'name': recipe.name,
+          'description': recipe.description,
+          'ingredients': recipe.ingredients,
+          'instructions': recipe.instructions,
+          'prepTime': recipe.prepTime,
+          'cookTime': recipe.cookTime,
+          'difficulty': recipe.difficulty,
+          'tags': recipe.tags,
+        });
       }
+
+      // Save to Firestore cache (fire and forget)
+      _repository.saveCachedRecipes(
+        userId,
+        ingredients,
+        recipesData,
+        profile.restrictions.join(', '),
+        profile.skillLevel,
+        profile.cuisinePreference,
+      );
+
+      // Update tracking variables
+      _lastIngredients = List.from(ingredients);
+      _lastProfile = profile;
 
       state = AsyncValue.data(recipes);
     } catch (e, stack) {
@@ -61,8 +149,21 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
     }
   }
 
+  // Helper to compare lists
+  bool _listEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    final sortedA = List<String>.from(a)..sort();
+    final sortedB = List<String>.from(b)..sort();
+    for (int i = 0; i < sortedA.length; i++) {
+      if (sortedA[i] != sortedB[i]) return false;
+    }
+    return true;
+  }
+
   void clear() {
     state = const AsyncValue.data([]);
+    _lastIngredients = [];
+    _lastProfile = null;
   }
 }
 
@@ -267,11 +368,17 @@ class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      _buildMetaChip(Icons.schedule, '${recipe.prepTime + recipe.cookTime} min'),
+                      Flexible(
+                        child: _buildMetaChip(Icons.schedule, '${recipe.prepTime + recipe.cookTime} min'),
+                      ),
                       const SizedBox(width: 8),
-                      _buildMetaChip(Icons.signal_cellular_alt, recipe.difficulty),
+                      Flexible(
+                        child: _buildMetaChip(Icons.signal_cellular_alt, recipe.difficulty),
+                      ),
                       const SizedBox(width: 8),
-                      _buildMetaChip(Icons.restaurant, '${recipe.ingredients.length} items'),
+                      Flexible(
+                        child: _buildMetaChip(Icons.restaurant, '${recipe.ingredients.length} items'),
+                      ),
                     ],
                   ),
                 ),

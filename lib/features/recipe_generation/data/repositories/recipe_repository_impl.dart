@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/recipe.dart';
 import '../../domain/repositories/recipe_repository.dart';
 import '../models/recipe_model.dart';
+import '../models/recipe_cache_model.dart';
 
 /// Firestore implementation of RecipeRepository
 class RecipeRepositoryImpl implements RecipeRepository {
@@ -226,6 +227,89 @@ class RecipeRepositoryImpl implements RecipeRepository {
       return recipe;
     } catch (e) {
       throw Exception('Failed to rate recipe: $e');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>?> getCachedRecipes(
+    String userId,
+    List<String> ingredients,
+    String? dietaryRestrictions,
+    String? skillLevel,
+    String? cuisinePreference,
+  ) async {
+    try {
+      final cacheKey = RecipeCacheModel.generateCacheKey(
+        ingredients,
+        dietaryRestrictions,
+        skillLevel,
+        cuisinePreference,
+      );
+
+      final doc = await _firestore
+          .collection('recipe_cache')
+          .doc('${userId}_$cacheKey')
+          .get();
+
+      if (!doc.exists) return null;
+
+      final data = doc.data();
+      if (data == null) return null;
+
+      final cache = RecipeCacheModel.fromJson(data);
+
+      // Check if cache is still valid (not expired)
+      if (!cache.isValid) {
+        // Delete expired cache
+        await _firestore.collection('recipe_cache').doc('${userId}_$cacheKey').delete();
+        return null;
+      }
+
+      return cache.recipes;
+    } catch (e) {
+      print('Failed to get cached recipes: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> saveCachedRecipes(
+    String userId,
+    List<String> ingredients,
+    List<Map<String, dynamic>> recipes,
+    String? dietaryRestrictions,
+    String? skillLevel,
+    String? cuisinePreference,
+  ) async {
+    try {
+      final cacheKey = RecipeCacheModel.generateCacheKey(
+        ingredients,
+        dietaryRestrictions,
+        skillLevel,
+        cuisinePreference,
+      );
+
+      final sortedIngredients = List<String>.from(ingredients)..sort();
+
+      final cache = RecipeCacheModel(
+        id: '${userId}_$cacheKey',
+        userId: userId,
+        ingredients: sortedIngredients,
+        recipes: recipes,
+        dietaryRestrictions: dietaryRestrictions,
+        skillLevel: skillLevel,
+        cuisinePreference: cuisinePreference,
+        createdAt: DateTime.now(),
+        expiresAt: DateTime.now().add(const Duration(days: 7)), // 7-day cache
+      );
+
+      await _firestore
+          .collection('recipe_cache')
+          .doc(cache.id)
+          .set(cache.toJson());
+    } catch (e) {
+      print('Failed to save cached recipes: $e');
+      // Don't throw - caching is optional
     }
   }
 }

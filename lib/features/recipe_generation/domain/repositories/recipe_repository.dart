@@ -25,4 +25,24 @@ abstract class RecipeRepository {
 
   /// Rate a recipe
   Future<Recipe> rateRecipe(String recipeId, int rating);
+
+  /// Get cached generated recipes for ingredients
+  Future<List<Map<String, dynamic>>?> getCachedRecipes(
+    String userId,
+    List<String> ingredients,
+    String? dietaryRestrictions,
+    String? skillLevel,
+    String? cuisinePreference,
+  );
+
+  /// Save generated recipes to cache
+  Future<void> saveCachedRecipes(
+    String userId,
+    List<String> ingredients,
+    List<Map<String, dynamic>> recipes,
+    String? dietaryRestrictions,
+    String? skillLevel,
+    String? cuisinePreference,
+  );
 }
+

@@ -30,6 +30,15 @@ service cloud.firestore {
       allow read, update, delete: if isSignedIn() && resource.data.user_id == request.auth.uid;
     }
 
+    // Recipe cache: stores generated recipes per user+ingredient combination
+    match /recipe_cache/{cacheId} {
+      // Cache ID format: {userId}_{cacheKey}
+      // Only allow access if cache belongs to user
+      allow read, write: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      // On create, ensure user_id matches auth
+      allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
+    }
+
     // Deny all other access by default
     match /{document=**} {
       allow read, write: if false;

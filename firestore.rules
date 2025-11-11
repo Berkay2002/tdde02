@@ -1,18 +1,38 @@
-rules_version='2'
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // User profile: one document per user, id == uid
+    match /profiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User preferences: one document per user, id == uid
+    match /user_preferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Recipes: documents include user_id field
+    match /recipes/{recipeId} {
+      // Ensure creator sets their own uid on create
+      allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
+
+      // Only owner can read/update/delete their recipe
+      allow read, update, delete: if isSignedIn() && resource.data.user_id == request.auth.uid;
+    }
+
+    // Deny all other access by default
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 12, 11);
+      allow read, write: if false;
     }
   }
 }

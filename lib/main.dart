@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -18,6 +19,15 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Activate Firebase App Check
+  // Use Debug provider for local dev (register token in Console),
+  // switch to Play Integrity for production builds.
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.debug,
+    appleProvider: AppleProvider.debug,
+  );
+  await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
 
   // Note: Firebase AI (Gemini) is initialized lazily when GeminiAIService is first used
   // No upfront initialization needed - it will use Firebase credentials automatically

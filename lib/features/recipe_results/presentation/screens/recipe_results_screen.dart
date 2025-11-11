@@ -88,60 +88,79 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
         await _aiService.initialize();
       }
 
-      // Generate 3 recipe suggestions
+      // Generate 3 recipe suggestions with graceful failure handling
       final recipes = <Recipe>[];
       final recipesData = <Map<String, dynamic>>[];
+      int successCount = 0;
+      int failCount = 0;
       
       for (int i = 0; i < 3; i++) {
-        final recipeData = await _aiService.generateRecipe(
-          ingredients: ingredients,
-          dietaryRestrictions: profile.restrictions.join(', '),
-          skillLevel: profile.skillLevel,
-          cuisinePreference: profile.cuisinePreference,
-        );
+        try {
+          final recipeData = await _aiService.generateRecipe(
+            ingredients: ingredients,
+            dietaryRestrictions: profile.restrictions.join(', '),
+            skillLevel: profile.skillLevel,
+            cuisinePreference: profile.cuisinePreference,
+          );
 
-        final recipe = Recipe(
-          id: DateTime.now().millisecondsSinceEpoch.toString() + '_$i',
-          name: recipeData['name'] as String? ?? 'Untitled Recipe',
-          description: recipeData['description'] as String? ?? '',
-          ingredients: (recipeData['ingredients'] as List?)?.cast<String>() ?? ingredients,
-          instructions: (recipeData['instructions'] as List?)?.cast<String>() ?? [],
-          prepTime: recipeData['prepTime'] as int? ?? 15,
-          cookTime: recipeData['cookTime'] as int? ?? 30,
-          difficulty: recipeData['difficulty'] as String? ?? 'medium',
-          tags: (recipeData['tags'] as List?)?.cast<String>() ?? [],
-          createdAt: DateTime.now(),
-        );
+          final recipe = Recipe(
+            id: DateTime.now().millisecondsSinceEpoch.toString() + '_$i',
+            name: recipeData['name'] as String? ?? 'Untitled Recipe',
+            description: recipeData['description'] as String? ?? '',
+            ingredients: (recipeData['ingredients'] as List?)?.cast<String>() ?? ingredients,
+            instructions: (recipeData['instructions'] as List?)?.cast<String>() ?? [],
+            prepTime: recipeData['prepTime'] as int? ?? 15,
+            cookTime: recipeData['cookTime'] as int? ?? 30,
+            difficulty: recipeData['difficulty'] as String? ?? 'medium',
+            tags: (recipeData['tags'] as List?)?.cast<String>() ?? [],
+            createdAt: DateTime.now(),
+          );
 
-        recipes.add(recipe);
-        
-        // Store recipe data for caching
-        recipesData.add({
-          'id': recipe.id,
-          'name': recipe.name,
-          'description': recipe.description,
-          'ingredients': recipe.ingredients,
-          'instructions': recipe.instructions,
-          'prepTime': recipe.prepTime,
-          'cookTime': recipe.cookTime,
-          'difficulty': recipe.difficulty,
-          'tags': recipe.tags,
-        });
+          recipes.add(recipe);
+          successCount++;
+          
+          // Store recipe data for caching
+          recipesData.add({
+            'id': recipe.id,
+            'name': recipe.name,
+            'description': recipe.description,
+            'ingredients': recipe.ingredients,
+            'instructions': recipe.instructions,
+            'prepTime': recipe.prepTime,
+            'cookTime': recipe.cookTime,
+            'difficulty': recipe.difficulty,
+            'tags': recipe.tags,
+          });
+        } catch (e) {
+          failCount++;
+          print('Failed to generate recipe ${i + 1}/3: $e');
+          
+          // Continue with other recipes - only fail if we get zero recipes
+          if (successCount == 0 && i == 2) {
+            // All attempts failed
+            throw Exception('Failed to generate any recipes. Please try again.');
+          }
+          // Otherwise continue to next recipe
+        }
       }
 
-      // Save to Firestore cache (fire and forget)
-      _repository.saveCachedRecipes(
-        userId,
-        ingredients,
-        recipesData,
-        profile.restrictions.join(', '),
-        profile.skillLevel,
-        profile.cuisinePreference,
-      );
+      // Save successful recipes to Firestore cache (fire and forget)
+      if (recipesData.isNotEmpty) {
+        _repository.saveCachedRecipes(
+          userId,
+          ingredients,
+          recipesData,
+          profile.restrictions.join(', '),
+          profile.skillLevel,
+          profile.cuisinePreference,
+        );
+      }
 
       // Update tracking variables
       _lastIngredients = List.from(ingredients);
       _lastProfile = profile;
+      
+      print('Recipe generation complete: $successCount succeeded, $failCount failed');
 
       state = AsyncValue.data(recipes);
     } catch (e, stack) {

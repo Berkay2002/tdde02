@@ -110,10 +110,11 @@ class GeminiAIService {
       // Create text-only content
       final content = [Content.text(prompt)];
 
-      // Generate response with timeout
-      final response = await _generateWithTimeout(
+      // Generate response with timeout and retry
+      final response = await _generateWithTimeoutAndRetry(
         content: content,
         timeout: AppConstants.recipeGenerationTimeout,
+        maxRetries: AppConstants.maxRetries,
       );
 
       final recipe = PromptTemplates.parseRecipeResponse(response);
@@ -123,6 +124,43 @@ class GeminiAIService {
     } catch (e) {
       print('GeminiAIService: Recipe generation failed: $e');
       throw InferenceException('Failed to generate recipe: $e');
+    }
+  }
+
+  /// Generate response with timeout and retry protection
+  Future<String> _generateWithTimeoutAndRetry({
+    required List<Content> content,
+    required Duration timeout,
+    int maxRetries = 0,
+  }) async {
+    int attempt = 0;
+    Duration retryDelay = AppConstants.initialRetryDelay;
+
+    while (true) {
+      try {
+        return await _generateWithTimeout(
+          content: content,
+          timeout: timeout,
+        );
+      } catch (e) {
+        attempt++;
+        
+        // Check if we should retry
+        final shouldRetry = attempt <= maxRetries && 
+                           (e is InferenceTimeoutException || 
+                            e.toString().contains('network') ||
+                            e.toString().contains('connection'));
+        
+        if (!shouldRetry) {
+          rethrow;
+        }
+
+        print('GeminiAIService: Attempt $attempt failed: $e. Retrying in ${retryDelay.inSeconds}s...');
+        
+        // Wait before retrying with exponential backoff
+        await Future.delayed(retryDelay);
+        retryDelay *= 2; // Double the delay for next retry
+      }
     }
   }
 

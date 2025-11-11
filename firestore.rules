@@ -33,9 +33,20 @@ service cloud.firestore {
     // Recipe cache: stores generated recipes per user+ingredient combination
     match /recipe_cache/{cacheId} {
       // Cache ID format: {userId}_{cacheKey}
-      // Only allow access if cache belongs to user
-      allow read, write: if isSignedIn() && resource.data.user_id == request.auth.uid;
-      // On create, ensure user_id matches auth
+      // Extract userId from cache ID (everything before the first underscore)
+      function getCacheUserId() {
+        return cacheId.split('_')[0];
+      }
+      
+      // Allow read if signed in and cache belongs to user
+      allow read: if isSignedIn() && getCacheUserId() == request.auth.uid;
+      
+      // Allow write/update if signed in, cache belongs to user, and user_id field matches
+      allow write, update: if isSignedIn() && 
+                              getCacheUserId() == request.auth.uid &&
+                              request.resource.data.user_id == request.auth.uid;
+      
+      // Allow create if signed in and user_id matches auth
       allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
     }
 

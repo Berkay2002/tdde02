@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../features/auth/presentation/screens/login_screen.dart';
 import '../../../features/recipe_history/presentation/screens/home_screen.dart';
-import '../../../shared/providers/supabase_provider.dart';
+import '../../../shared/providers/firebase_provider.dart';
 
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key});

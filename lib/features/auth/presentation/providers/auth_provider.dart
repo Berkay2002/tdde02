@@ -1,16 +1,25 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../shared/providers/supabase_provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../../../../shared/providers/firebase_provider.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 
 part 'auth_provider.g.dart';
 
+/// Provider for GoogleSignIn instance
+@riverpod
+GoogleSignIn googleSignIn(GoogleSignInRef ref) {
+  return GoogleSignIn();
+}
+
 /// Provider for AuthRepository
 @riverpod
 AuthRepository authRepository(AuthRepositoryRef ref) {
-  final supabase = ref.watch(supabaseProvider);
-  return AuthRepositoryImpl(supabase);
+  final auth = ref.watch(firebaseAuthProvider);
+  final firestore = ref.watch(firestoreProvider);
+  final googleSignIn = ref.watch(googleSignInProvider);
+  return AuthRepositoryImpl(auth, firestore, googleSignIn);
 }
 
 /// Provider for current user profile
@@ -41,6 +50,14 @@ class AuthNotifier extends _$AuthNotifier {
     state = await AsyncValue.guard(() async {
       final authRepository = ref.read(authRepositoryProvider);
       return await authRepository.signIn(email: email, password: password);
+    });
+  }
+
+  Future<void> signInWithGoogle() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final authRepository = ref.read(authRepositoryProvider);
+      return await authRepository.signInWithGoogle();
     });
   }
 

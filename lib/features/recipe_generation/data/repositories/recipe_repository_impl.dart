@@ -1,25 +1,25 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/recipe.dart';
 import '../../domain/repositories/recipe_repository.dart';
 import '../models/recipe_model.dart';
 
-/// Supabase implementation of RecipeRepository
+/// Firestore implementation of RecipeRepository
 class RecipeRepositoryImpl implements RecipeRepository {
-  final SupabaseClient _supabase;
+  final FirebaseFirestore _firestore;
 
-  RecipeRepositoryImpl(this._supabase);
+  RecipeRepositoryImpl(this._firestore);
 
   @override
   Future<List<Recipe>> getUserRecipes(String userId) async {
     try {
-      final response = await _supabase
-          .from('recipes')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
+      final snapshot = await _firestore
+          .collection('recipes')
+          .where('user_id', isEqualTo: userId)
+          .orderBy('created_at', descending: true)
+          .get();
 
-      return (response as List)
-          .map((json) => RecipeModel.fromJson(json).toEntity())
+      return snapshot.docs
+          .map((doc) => RecipeModel.fromJson(doc.data()).toEntity())
           .toList();
     } catch (e) {
       throw Exception('Failed to fetch user recipes: $e');
@@ -29,13 +29,16 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<Recipe?> getRecipeById(String recipeId) async {
     try {
-      final response = await _supabase
-          .from('recipes')
-          .select()
-          .eq('id', recipeId)
-          .single();
+      final doc = await _firestore
+          .collection('recipes')
+          .doc(recipeId)
+          .get();
 
-      return RecipeModel.fromJson(response).toEntity();
+      if (!doc.exists) return null;
+      final data = doc.data();
+      if (data == null) return null;
+
+      return RecipeModel.fromJson(data).toEntity();
     } catch (e) {
       return null;
     }
@@ -44,15 +47,15 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<List<Recipe>> getFavoriteRecipes(String userId) async {
     try {
-      final response = await _supabase
-          .from('recipes')
-          .select()
-          .eq('user_id', userId)
-          .eq('is_favorite', true)
-          .order('created_at', ascending: false);
+      final snapshot = await _firestore
+          .collection('recipes')
+          .where('user_id', isEqualTo: userId)
+          .where('is_favorite', isEqualTo: true)
+          .orderBy('created_at', descending: true)
+          .get();
 
-      return (response as List)
-          .map((json) => RecipeModel.fromJson(json).toEntity())
+      return snapshot.docs
+          .map((doc) => RecipeModel.fromJson(doc.data()).toEntity())
           .toList();
     } catch (e) {
       throw Exception('Failed to fetch favorite recipes: $e');
@@ -64,7 +67,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
     try {
       final model = RecipeModel.fromEntity(recipe);
 
-      // Convert ingredients to JSONB format
+      // Convert ingredients to map format
       final ingredientsJson = model.ingredients
           .map(
             (i) => {
@@ -76,7 +79,10 @@ class RecipeRepositoryImpl implements RecipeRepository {
           )
           .toList();
 
+      final docRef = _firestore.collection('recipes').doc();
+      
       final data = {
+        'id': docRef.id,
         'user_id': recipe.userId,
         'recipe_name': recipe.recipeName,
         'description': recipe.description,
@@ -95,17 +101,18 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'is_favorite': recipe.isFavorite,
         'rating': recipe.rating,
         'notes': recipe.notes,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
       };
 
-      final response = await _supabase
-          .from('recipes')
-          .insert(data)
-          .select()
-          .single();
+      await docRef.set(data);
 
-      return RecipeModel.fromJson(response).toEntity();
+      final createdRecipe = await getRecipeById(docRef.id);
+      if (createdRecipe == null) {
+        throw Exception('Failed to retrieve created recipe');
+      }
+
+      return createdRecipe;
     } catch (e) {
       throw Exception('Failed to create recipe: $e');
     }
@@ -116,7 +123,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
     try {
       final model = RecipeModel.fromEntity(recipe);
 
-      // Convert ingredients to JSONB format
+      // Convert ingredients to map format
       final ingredientsJson = model.ingredients
           .map(
             (i) => {
@@ -146,17 +153,20 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'is_favorite': recipe.isFavorite,
         'rating': recipe.rating,
         'notes': recipe.notes,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': FieldValue.serverTimestamp(),
       };
 
-      final response = await _supabase
-          .from('recipes')
-          .update(data)
-          .eq('id', recipe.id)
-          .select()
-          .single();
+      await _firestore
+          .collection('recipes')
+          .doc(recipe.id)
+          .update(data);
 
-      return RecipeModel.fromJson(response).toEntity();
+      final updatedRecipe = await getRecipeById(recipe.id);
+      if (updatedRecipe == null) {
+        throw Exception('Failed to retrieve updated recipe');
+      }
+
+      return updatedRecipe;
     } catch (e) {
       throw Exception('Failed to update recipe: $e');
     }
@@ -165,7 +175,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<void> deleteRecipe(String recipeId) async {
     try {
-      await _supabase.from('recipes').delete().eq('id', recipeId);
+      await _firestore.collection('recipes').doc(recipeId).delete();
     } catch (e) {
       throw Exception('Failed to delete recipe: $e');
     }
@@ -174,17 +184,20 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<Recipe> toggleFavorite(String recipeId, bool isFavorite) async {
     try {
-      final response = await _supabase
-          .from('recipes')
+      await _firestore
+          .collection('recipes')
+          .doc(recipeId)
           .update({
             'is_favorite': isFavorite,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', recipeId)
-          .select()
-          .single();
+            'updated_at': FieldValue.serverTimestamp(),
+          });
 
-      return RecipeModel.fromJson(response).toEntity();
+      final recipe = await getRecipeById(recipeId);
+      if (recipe == null) {
+        throw Exception('Failed to retrieve updated recipe');
+      }
+
+      return recipe;
     } catch (e) {
       throw Exception('Failed to toggle favorite: $e');
     }
@@ -197,17 +210,20 @@ class RecipeRepositoryImpl implements RecipeRepository {
         throw Exception('Rating must be between 1 and 5');
       }
 
-      final response = await _supabase
-          .from('recipes')
+      await _firestore
+          .collection('recipes')
+          .doc(recipeId)
           .update({
             'rating': rating,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', recipeId)
-          .select()
-          .single();
+            'updated_at': FieldValue.serverTimestamp(),
+          });
 
-      return RecipeModel.fromJson(response).toEntity();
+      final recipe = await getRecipeById(recipeId);
+      if (recipe == null) {
+        throw Exception('Failed to retrieve updated recipe');
+      }
+
+      return recipe;
     } catch (e) {
       throw Exception('Failed to rate recipe: $e');
     }

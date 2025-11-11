@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../shared/providers/supabase_provider.dart';
+import '../../../../shared/providers/firebase_provider.dart';
 import '../../domain/entities/user_preferences.dart';
 import '../providers/user_preferences_provider.dart';
 import '../../../recipe_history/presentation/screens/home_screen.dart';
@@ -85,7 +85,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final userId = ref.read(supabaseProvider).auth.currentUser?.id;
+      final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
       if (userId == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

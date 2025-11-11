@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../shared/providers/supabase_provider.dart';
+import '../../../../shared/providers/firebase_provider.dart';
 import '../../../recipe_generation/domain/entities/recipe.dart';
 import '../../../recipe_generation/domain/repositories/recipe_repository.dart';
 import '../../../recipe_generation/data/repositories/recipe_repository_impl.dart';
@@ -9,14 +9,14 @@ part 'recipe_provider.g.dart';
 /// Provider for RecipeRepository
 @riverpod
 RecipeRepository recipeRepository(RecipeRepositoryRef ref) {
-  final supabase = ref.watch(supabaseProvider);
-  return RecipeRepositoryImpl(supabase);
+  final firestore = ref.watch(firestoreProvider);
+  return RecipeRepositoryImpl(firestore);
 }
 
 /// Provider for user's recipes
 @riverpod
 Future<List<Recipe>> userRecipes(UserRecipesRef ref) async {
-  final userId = ref.watch(supabaseProvider).auth.currentUser?.id;
+  final userId = ref.watch(firebaseAuthProvider).currentUser?.uid;
   if (userId == null) return [];
 
   final repository = ref.watch(recipeRepositoryProvider);
@@ -26,7 +26,7 @@ Future<List<Recipe>> userRecipes(UserRecipesRef ref) async {
 /// Provider for favorite recipes
 @riverpod
 Future<List<Recipe>> favoriteRecipes(FavoriteRecipesRef ref) async {
-  final userId = ref.watch(supabaseProvider).auth.currentUser?.id;
+  final userId = ref.watch(firebaseAuthProvider).currentUser?.uid;
   if (userId == null) return [];
 
   final repository = ref.watch(recipeRepositoryProvider);
@@ -38,7 +38,7 @@ Future<List<Recipe>> favoriteRecipes(FavoriteRecipesRef ref) async {
 class RecipeNotifier extends _$RecipeNotifier {
   @override
   FutureOr<List<Recipe>> build() async {
-    final userId = ref.watch(supabaseProvider).auth.currentUser?.id;
+    final userId = ref.watch(firebaseAuthProvider).currentUser?.uid;
     if (userId == null) return [];
 
     final repository = ref.watch(recipeRepositoryProvider);
@@ -110,7 +110,7 @@ class RecipeNotifier extends _$RecipeNotifier {
   Future<void> refreshRecipes() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      final userId = ref.read(supabaseProvider).auth.currentUser?.id;
+      final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
       if (userId == null) return [];
 
       final repository = ref.read(recipeRepositoryProvider);

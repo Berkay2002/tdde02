@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_ai/firebase_ai.dart';
@@ -19,14 +18,6 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  // Initialize Supabase with hardcoded values (from .env)
-  // Note: These are safe to expose as they are public API keys protected by RLS
-  await Supabase.initialize(
-    url: 'https://mqdflykfxutypueeffts.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZGZseWtmeHV0eXB1ZWVmZnRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MjU2NDMsImV4cCI6MjA3ODAwMTY0M30.mpyyTWbttUtGc0NXKEZcjrVc4ox7k---Htoci4ZguWk',
   );
 
   // Initialize Hive for local storage

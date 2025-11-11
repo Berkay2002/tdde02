@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../shared/providers/supabase_provider.dart';
+import '../../../../shared/providers/firebase_provider.dart';
 import '../../domain/entities/user_preferences.dart';
 import '../../domain/repositories/user_preferences_repository.dart';
 import '../../data/repositories/user_preferences_repository_impl.dart';
@@ -11,8 +11,8 @@ part 'user_preferences_provider.g.dart';
 UserPreferencesRepository userPreferencesRepository(
   UserPreferencesRepositoryRef ref,
 ) {
-  final supabase = ref.watch(supabaseProvider);
-  return UserPreferencesRepositoryImpl(supabase);
+  final firestore = ref.watch(firestoreProvider);
+  return UserPreferencesRepositoryImpl(firestore);
 }
 
 /// Provider for current user preferences
@@ -20,7 +20,7 @@ UserPreferencesRepository userPreferencesRepository(
 Future<UserPreferences?> currentUserPreferences(
   CurrentUserPreferencesRef ref,
 ) async {
-  final userId = ref.watch(supabaseProvider).auth.currentUser?.id;
+  final userId = ref.watch(firebaseAuthProvider).currentUser?.uid;
   if (userId == null) return null;
 
   final repository = ref.watch(userPreferencesRepositoryProvider);
@@ -32,7 +32,7 @@ Future<UserPreferences?> currentUserPreferences(
 class UserPreferencesNotifier extends _$UserPreferencesNotifier {
   @override
   FutureOr<UserPreferences?> build() async {
-    final userId = ref.watch(supabaseProvider).auth.currentUser?.id;
+    final userId = ref.watch(firebaseAuthProvider).currentUser?.uid;
     if (userId == null) return null;
 
     final repository = ref.watch(userPreferencesRepositoryProvider);

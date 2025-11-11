@@ -170,8 +170,24 @@ class GeminiAIService {
     try {
       final response = await _model!.generateContent(content);
 
+      // Check for safety/block reasons
+      if (response.candidates.isEmpty) {
+        print('GeminiAIService: No candidates returned');
+        throw InferenceException('No response candidates generated');
+      }
+
+      final candidate = response.candidates.first;
+      print('GeminiAIService: Finish reason: ${candidate.finishReason}');
+      
+      // Check if blocked by safety filters
+      if (candidate.finishReason == FinishReason.safety) {
+        print('GeminiAIService: Response blocked by safety filters');
+        throw InferenceException('Response blocked by safety filters');
+      }
+
       final text = response.text;
       if (text == null || text.isEmpty) {
+        print('GeminiAIService: Empty response text. Candidates: ${response.candidates.length}');
         throw InferenceException('Received empty response from model');
       }
 

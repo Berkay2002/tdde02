@@ -21,10 +21,13 @@ void main() async {
   );
 
   // Activate Firebase App Check
-  // Use Debug provider for local dev (register token in Console),
-  // switch to Play Integrity for production builds.
+  // Debug provider: will use a debug token for development
+  // For production, use: AndroidProvider.playIntegrity for Android
   await FirebaseAppCheck.instance.activate(
+    // Using deprecated parameters until new API is available in stable release
+    // ignore: deprecated_member_use
     androidProvider: AndroidProvider.debug,
+    // ignore: deprecated_member_use
     appleProvider: AppleProvider.debug,
   );
   await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);

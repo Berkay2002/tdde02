@@ -1,128 +1,72 @@
 # Development Guide - AI Recipe Generator
-**Team Guide for Setup, Development, and Troubleshooting**
+**Comprehensive Team Guide for Development and Advanced Topics**
 
 > Flutter + Firebase + Cloud AI (Gemini API)  
 > Target Platforms: iOS & Android
 
 ---
 
+## 🚀 New to the Project?
+
+**Start here first**: [QUICK_START.md](QUICK_START.md) - Get the app running in 10 minutes!
+
+This guide is for developers who want to:
+- Understand the project architecture in depth
+- Configure advanced Firebase features
+- Work with Gemini AI customization
+- Debug complex issues
+- Contribute to the codebase
+
+---
+
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
-2. [First-Time Setup](#first-time-setup)
-3. [Running the App](#running-the-app)
-4. [Firebase Configuration](#firebase-configuration)
-5. [Project Structure](#project-structure)
-6. [Common Issues & Troubleshooting](#common-issues--troubleshooting)
-7. [Development Workflow](#development-workflow)
-8. [Testing on Different Platforms](#testing-on-different-platforms)
-9. [Working with Gemini AI](#working-with-gemini-ai)
-10. [Git Handling](#git-handling)
+2. [Firebase Configuration](#firebase-configuration)
+3. [Project Structure](#project-structure)
+4. [Common Issues & Troubleshooting](#common-issues--troubleshooting)
+5. [Development Workflow](#development-workflow)
+6. [Testing on Different Platforms](#testing-on-different-platforms)
+7. [Working with Gemini AI](#working-with-gemini-ai)
+8. [Git Branching Strategy](#git-branching-strategy)
 
 ---
 
 ## Prerequisites
 
-### Required Software
+> **New to Flutter/Firebase?** See [QUICK_START.md](QUICK_START.md) for basic setup instructions.
 
-#### All Platforms
-- **Flutter SDK**: 3.24 or higher ([Install Guide](https://docs.flutter.dev/get-started/install))
-- **Git**: For version control
-- **VS Code** or **Android Studio**: Recommended IDEs
-  - VS Code Extensions: Flutter, Dart, Riverpod Snippets
-  - Android Studio: Flutter plugin
+This section covers advanced requirements for experienced developers.
 
-#### Windows Developers
-- **Android Studio**: For Android development
-- **PowerShell**: Already installed
-- **Visual Studio** (optional): For Windows desktop development
+### Advanced Tools (Optional)
 
-#### Mac Developers
-- **Xcode** (latest version): For iOS development
-  - Command Line Tools: `xcode-select --install`
-- **Android Studio**: For Android development
-- **CocoaPods**: `sudo gem install cocoapods`
+#### Firebase CLI
+For deploying security rules and managing Firebase from command line:
+```bash
+npm install -g firebase-tools
+firebase login
+```
 
-### Accounts Needed
-- ✅ **GitHub Account**: Access to repository
-- ✅ **Firebase Project Access**: Access to team project `eternal-water-477911-m6` (project owner will grant access)
-- ✅ **Google Account**: Required for Firebase authentication and testing
+#### Additional IDEs
+- **Android Studio**: Full Android development features
+- **VS Code**: Lightweight with Flutter extensions
+- **IntelliJ IDEA**: Alternative IDE with Flutter plugin
+
+### Team Access Requirements
+- ✅ **GitHub Account**: Repository access (owner will grant)
+- ✅ **Firebase Console Access**: Project `eternal-water-477911-m6`
+- ✅ **Google Account**: Firebase authentication
 
 ---
 
 ## First-Time Setup
 
-### 1. Clone the Repository
-```bash
-# Navigate to your projects folder
-cd ~/Projects  # Mac
-cd C:\Users\YourName\Projects  # Windows
+> **Quick setup**: See [QUICK_START.md](QUICK_START.md) for a streamlined 10-minute setup guide.
 
-# Clone the repository
-git clone https://github.com/Berkay2002/tdde02.git
-cd tdde02
-```
+This section covers advanced configuration options.
 
-### 2. Verify Flutter Installation
-```bash
-# Check Flutter is properly installed
-flutter doctor
+### Advanced Setup Steps
 
-# Expected output:
-# [✓] Flutter (Channel stable, 3.24.x)
-# [✓] Android toolchain
-# [✓] Xcode (Mac only)
-# [✓] VS Code / Android Studio
-# [!] Some warnings are okay (e.g., Chrome not needed for mobile)
-```
-
-**Fix Common `flutter doctor` Issues:**
-- ❌ Android licenses not accepted: `flutter doctor --android-licenses` (accept all)
-- ❌ Xcode not found (Mac): Install from App Store, then run `sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer`
-- ❌ CocoaPods not installed (Mac): `sudo gem install cocoapods`
-
-### 3. Install Project Dependencies
-```bash
-# This downloads all packages from pubspec.yaml
-flutter pub get
-
-# If you see errors, try cleaning first:
-flutter clean
-flutter pub get
-```
-
-**What This Does:**
-- Downloads packages: `firebase_core`, `firebase_auth`, `firebase_ai`, `camera`, `image`, `riverpod`, etc.
-- Note: Gemini AI runs in the cloud via Firebase AI - no local model downloads required!
-- Creates `.dart_tool` folder with package metadata
-
-### 4. Configure Firebase (Already Done!)
-
-**Firebase is already configured for the project!** The following files are already in the repository:
-- ✅ `firebase.json` - Firebase project configuration
-- ✅ `lib/firebase_options.dart` - Auto-generated Firebase options
-- ✅ `android/app/google-services.json` - Android Firebase config
-- ✅ `firestore.rules` - Firestore security rules
-- ✅ `storage.rules` - Firebase Storage security rules
-
-**No additional Firebase setup needed for development!** Just run `flutter pub get` and you're ready.
-
-**Optional - Firebase CLI (for advanced users):**
-If you want to deploy security rules or manage Firebase from command line:
-
-```bash
-# Install Firebase CLI globally
-npm install -g firebase-tools
-
-# Login to Firebase
-firebase login
-
-# View current project
-firebase projects:list
-```
-
-> ⚠️ **Note**: You don't need Firebase CLI for regular development. It's only needed if you're modifying Firestore rules or deploying hosting.
-
-### 5. Run Code Generation (for Riverpod)
+#### 1. Code Generation (Riverpod)
 ```bash
 # Generate provider code (needed for state management)
 dart run build_runner build --delete-conflicting-outputs
@@ -134,88 +78,34 @@ dart run build_runner build --delete-conflicting-outputs
 
 ## Running the App
 
-### Quick Start (Any Platform)
+> **Quick instructions**: See [QUICK_START.md](QUICK_START.md#run-the-app-3-minutes) for basic running instructions.
+
+### Advanced Run Configurations
+
+#### Custom Build Flavors
 ```bash
-# 1. Check available devices
-flutter devices
-
-# 2. Run on connected device/emulator
-flutter run
-
-# 3. Hot reload while running (press 'r' in terminal)
-# 4. Hot restart (press 'R' in terminal)
-# 5. Quit (press 'q' in terminal)
+# Run with specific flavor (dev/staging/prod)
+flutter run --flavor dev --dart-define=ENV=dev
+flutter run --flavor prod --dart-define=ENV=production
 ```
 
-### Running on Specific Platforms
-
-#### 🤖 Android Emulator
+#### Performance Profiling
 ```bash
-# List available emulators
-flutter emulators
+# Run with performance overlay
+flutter run --profile
 
-# Launch an emulator
-flutter emulators --launch <emulator_id>
-
-# Run app on emulator
-flutter run
+# Run with DevTools
+flutter run --observatory-port=8080
 ```
 
-**Create an Emulator (if none exist):**
-1. Open **Android Studio** → **Device Manager**
-2. Click **Create Device** → Choose **Pixel 9** or similar
-3. Download system image (API 36+ recommended)
-4. Finish setup and launch
-
-#### 📱 Android Physical Device
-1. **Enable Developer Options:**
-   - Go to **Settings** → **About Phone**
-   - Tap **Build Number** 7 times
-2. **Enable USB Debugging:**
-   - **Settings** → **Developer Options** → Enable **USB Debugging**
-3. **Connect via USB:**
-   ```bash
-   # Check device is detected
-   adb devices
-   
-   # Run app
-   flutter run
-   ```
-
-#### 🍎 iOS Simulator (Mac Only)
+#### Platform-Specific Options
 ```bash
-# List simulators
-xcrun simctl list devices
+# Android: Enable multidex for older devices
+flutter run --multidex
 
-# Open default simulator
-open -a Simulator
-
-# Run app
-flutter run
+# iOS: Run on specific device
+flutter run -d "iPhone 15 Pro"
 ```
-
-#### 📱 iOS Physical Device (Mac Only)
-1. **Open Xcode:**
-   ```bash
-   open ios/Runner.xcworkspace
-   ```
-2. **Sign the App:**
-   - Select **Runner** project → **Signing & Capabilities**
-   - Choose your **Team** (personal Apple ID is fine)
-3. **Connect iPhone via USB:**
-   - Trust computer on iPhone
-4. **Run:**
-   ```bash
-   flutter run
-   ```
-
-#### 🌐 Chrome (Web Testing - Limited Features)
-```bash
-# Run in Chrome browser (camera might not work properly)
-flutter run -d chrome
-```
-
-> ⚠️ **Note**: Camera features require physical device, but you can add images via google photos with emulator and it will work.
 
 ---
 
@@ -489,6 +379,10 @@ await _recipeRepository.createRecipe(recipe);
 
 ## Common Issues & Troubleshooting
 
+> **For basic troubleshooting**, see [QUICK_START.md](QUICK_START.md#troubleshooting)
+
+This section covers advanced and edge-case issues.
+
 ### Build Errors
 
 #### ❌ "Gradle build failed" (Android)
@@ -518,15 +412,18 @@ flutter run
 ```
 
 #### ❌ "Module 'firebase_ai' not found" or similar Firebase errors
-```bash
-flutter pub get
-flutter clean
-flutter run
+See [QUICK_START.md](QUICK_START.md#troubleshooting) for common module errors.
 
-# If on iOS, also do:
-cd ios
-pod install
+#### ❌ "Duplicate class" errors (Android)
+```bash
+# Clean build cache
+flutter clean
+cd android
+./gradlew clean  # Mac/Linux
+gradlew.bat clean  # Windows
+rm -rf ~/.gradle/caches  # Nuclear option (Mac/Linux)
 cd ..
+flutter pub get
 flutter run
 ```
 
@@ -812,6 +709,10 @@ When `dev` is stable and tested:
 
 ## Working with Gemini AI
 
+> **For Gemini API setup instructions**, see [GEMINI_API_SETUP.md](GEMINI_API_SETUP.md)
+
+This section covers advanced AI customization and integration details.
+
 ### Overview
 
 The app uses **Firebase AI with Google's Gemini API** for cloud-based generative AI. This means:
@@ -823,11 +724,11 @@ The app uses **Firebase AI with Google's Gemini API** for cloud-based generative
 
 ### Current Configuration
 
-**Model**: `gemini-2.0-flash-exp` (configured in `lib/core/constants/app_constants.dart`)
+**Model**: `gemini-2.5-flash` (configured in `lib/core/constants/app_constants.dart`)
 
 **Parameters** (in `AppConstants`):
 ```dart
-static const String geminiModel = 'gemini-2.0-flash-exp';
+static const String geminiModel = 'gemini-2.5-flash';
 static const double temperature = 0.7;  // Creativity level (0.0-1.0)
 static const int topK = 40;             // Diversity of responses
 static const int maxTokens = 4096;      // Max response length
@@ -910,19 +811,13 @@ Return a JSON object with this EXACT structure:
 
 ### API Quotas & Limits
 
-**Gemini Developer API (Free Tier)**:
+> **For detailed quota information and setup**, see [GEMINI_API_SETUP.md](GEMINI_API_SETUP.md#6-rate-limits--quotas)
+
+**Quick Reference - Gemini Developer API (Free Tier)**:
 - **15 requests per minute (RPM)**
 - **1,500 requests per day (RPD)**
-- **1 million input tokens per minute**
-- **32,000 output tokens per minute**
 
-**What This Means for Users:**
-- Each ingredient scan = 1 request
-- Each recipe generation = 1 request
-- User can scan ~7 times per minute, ~750 times per day
-- For a single user, this is more than enough!
-
-**Handling Quota Limits:**
+**Handling in Code:**
 ```dart
 // The app already implements:
 // 1. Recipe caching in Firestore (avoid duplicate API calls)
@@ -931,11 +826,6 @@ Return a JSON object with this EXACT structure:
 
 // Check GeminiAIService for implementation details
 ```
-
-**Checking Usage:**
-- Dashboard: https://console.firebase.google.com/project/eternal-water-477911-m6/ailogic
-- Monitor daily quota usage
-- Set up alerts if approaching limits
 
 ### Recipe Caching
 
@@ -1009,22 +899,9 @@ flutter run
 
 ### Troubleshooting Gemini AI
 
-**❌ "Gemini API not enabled"**
-- Go to Firebase Console → AI Logic
-- Enable Gemini Developer API
-- See [GEMINI_API_SETUP.md](GEMINI_API_SETUP.md) for detailed setup
+> **For setup and basic troubleshooting**, see [GEMINI_API_SETUP.md](GEMINI_API_SETUP.md#5-troubleshooting)
 
-**❌ "Quota exceeded"**
-- Wait for quota reset (resets every minute/day)
-- Check usage: https://console.firebase.google.com/project/eternal-water-477911-m6/usage
-- Implement more aggressive caching
-- Consider upgrading to paid plan if needed
-
-**❌ "Network error" or timeout**
-- Check internet connection
-- Verify Firebase project is active
-- Check if Firestore rules are blocking requests
-- Try again (temporary network issue)
+**Advanced Issues:**
 
 **❌ "Response blocked by safety filters"**
 - Gemini blocked the response due to safety concerns
@@ -1049,7 +926,7 @@ flutter run
 **Change Model:**
 ```dart
 // In lib/core/constants/app_constants.dart
-static const String geminiModel = 'gemini-2.0-flash-exp';
+static const String geminiModel = 'gemini-2.5-flash';
 // Or try: 'gemini-1.5-pro' for more advanced reasoning
 ```
 

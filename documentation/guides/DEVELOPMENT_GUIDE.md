@@ -1,7 +1,7 @@
 # Development Guide - AI Recipe Generator
 **Team Guide for Setup, Development, and Troubleshooting**
 
-> 📱 Flutter + Supabase + On-Device AI (Gemma 3n)  
+> 📱 Flutter + Firebase + Cloud AI (Gemini API)  
 > Target Platforms: iOS & Android
 
 ---
@@ -10,12 +10,12 @@
 1. [Prerequisites](#prerequisites)
 2. [First-Time Setup](#first-time-setup)
 3. [Running the App](#running-the-app)
-4. [Supabase Configuration](#supabase-configuration)
+4. [Firebase Configuration](#firebase-configuration)
 5. [Project Structure](#project-structure)
 6. [Common Issues & Troubleshooting](#common-issues--troubleshooting)
 7. [Development Workflow](#development-workflow)
 8. [Testing on Different Platforms](#testing-on-different-platforms)
-9. [Working with AI Model](#working-with-ai-model)
+9. [Working with Gemini AI](#working-with-gemini-ai)
 10. [Git Handling](#git-handling)
 
 ---
@@ -44,7 +44,8 @@
 
 ### Accounts Needed
 - ✅ **GitHub Account**: Access to repository (already have this)
-- ✅ **Supabase Account**: Access to team project (already have this)
+- ✅ **Firebase Project Access**: Access to team project `eternal-water-477911-m6` (project owner will grant access)
+- ✅ **Google Account**: Required for Firebase authentication and testing
 
 ---
 
@@ -90,35 +91,36 @@ flutter pub get
 ```
 
 **What This Does:**
-- Downloads packages: `supabase_flutter`, `camera`, `image`, `riverpod`, etc.
-- Note: MediaPipe LLM is configured in native Android code, not as a Dart package
+- Downloads packages: `firebase_core`, `firebase_auth`, `firebase_ai`, `camera`, `image`, `riverpod`, etc.
+- Note: Gemini AI runs in the cloud via Firebase AI - no local model downloads required!
 - Creates `.dart_tool` folder with package metadata
 
-### 4. Configure Environment Variables
+### 4. Configure Firebase (Already Done!)
 
-**Create `.env` file** (copy from `.env.example`):
+**Firebase is already configured for the project!** The following files are already in the repository:
+- ✅ `firebase.json` - Firebase project configuration
+- ✅ `lib/firebase_options.dart` - Auto-generated Firebase options
+- ✅ `android/app/google-services.json` - Android Firebase config
+- ✅ `firestore.rules` - Firestore security rules
+- ✅ `storage.rules` - Firebase Storage security rules
+
+**No additional Firebase setup needed for development!** Just run `flutter pub get` and you're ready.
+
+**Optional - Firebase CLI (for advanced users):**
+If you want to deploy security rules or manage Firebase from command line:
+
 ```bash
-# Windows PowerShell
-Copy-Item .env.example .env
+# Install Firebase CLI globally
+npm install -g firebase-tools
 
-# Mac/Linux
-cp .env.example .env
+# Login to Firebase
+firebase login
+
+# View current project
+firebase projects:list
 ```
 
-**Edit `.env` file** with your Supabase credentials:
-```dotenv
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_ANON_KEY=your-anon-key-here
-```
-
-**Where to Find Supabase Credentials:**
-1. Go to [supabase.com](https://supabase.com) → Your Project
-2. Click **Settings** (gear icon) → **API**
-3. Copy:
-   - **Project URL** → `SUPABASE_URL`
-   - **anon/public key** → `SUPABASE_ANON_KEY`
-
-> ⚠️ **Important**: Never commit `.env` to Git! It's already in `.gitignore`.
+> ⚠️ **Note**: You don't need Firebase CLI for regular development. It's only needed if you're modifying Firestore rules or deploying hosting.
 
 ### 5. Run Code Generation (for Riverpod)
 ```bash
@@ -217,27 +219,30 @@ flutter run -d chrome
 
 ---
 
-## Supabase Configuration
+## Firebase Configuration
 
-### Database Setup (First Time Only)
+### Database Setup (Already Configured!)
 
-**The database schema has already been applied!** The migrations have been run and your database structure is ready to use.
+**The Firestore database is already set up and ready to use!** The security rules have been deployed and your database structure is configured.
 
 **What Already Exists:**
-- ✅ `profiles` table (user profile data: display name, avatar, bio, preferences)
-- ✅ `user_preferences` table (cooking preferences: skill level, dietary restrictions, favorite cuisines, kitchen equipment)
-- ✅ `recipes` table (AI-generated recipes with ingredients, instructions, ratings)
-- ✅ Row Level Security (RLS) policies (users only see their own data)
-- ✅ Automatic profile creation trigger (creates profile + preferences on signup)
+- ✅ `profiles` collection (user profile data: display name, avatar, bio, preferences)
+- ✅ `user_preferences` collection (cooking preferences: skill level, dietary restrictions, favorite cuisines, kitchen equipment)
+- ✅ `recipes` collection (AI-generated recipes with ingredients, instructions, ratings)
+- ✅ `recipe_cache` collection (cached recipe generations for improved performance)
+- ✅ Row Level Security via Firestore Rules (users only see their own data)
+- ✅ Automatic profile creation on signup (Firebase Auth triggers)
 
-**Database Tables Explained:**
+**Firestore Collections Explained:**
 
 1. **`profiles`** - Extended user information:
+   - Document ID = User's Firebase Auth UID
    - Basic info: email, display_name, avatar_url, bio
    - Settings: language_preference, theme_preference, notifications
    - Automatically created when user signs up
 
 2. **`user_preferences`** - Cooking preferences:
+   - Document ID = User's Firebase Auth UID
    - skill_level: 'beginner', 'intermediate', 'advanced'
    - spice_tolerance: 'none', 'mild', 'medium', 'hot', 'very_hot'
    - cooking_time_preference: 'quick', 'moderate', 'long'
@@ -246,58 +251,117 @@ flutter run -d chrome
    - favorite_cuisines, favorite_proteins, kitchen_equipment: arrays
 
 3. **`recipes`** - AI-generated recipes:
+   - Document ID = Auto-generated by Firestore
+   - user_id: Owner's Firebase Auth UID
    - Basic info: recipe_name, description, prep_time, cook_time, servings
    - Categorization: cuisine_type, difficulty_level, meal_type
-   - Content: ingredients (JSONB), instructions (text array)
+   - Content: ingredients (array), instructions (text array)
    - Metadata: detected_ingredients, dietary_tags, allergens
    - User features: is_favorite, rating (1-5), notes
+   - Timestamps: created_at, updated_at
+
+4. **`recipe_cache`** - Cached AI-generated recipes:
+   - Document ID = `{userId}_{cacheKey}` (e.g., `abc123_chicken-tomatoes-onions`)
+   - user_id: Owner's Firebase Auth UID
+   - cache_key: Hash of ingredients + preferences
+   - cached_recipe: Full recipe object
+   - created_at: Timestamp for cache expiration
+   - Purpose: Avoid redundant Gemini API calls, save quota
+
+### Firestore Security Rules
+
+**Location**: `firestore.rules`
+
+**Current Rules:**
+```firerules
+// User can only access their own profile
+match /profiles/{userId} {
+  allow read, write: if request.auth.uid == userId;
+}
+
+// User can only access their own preferences
+match /user_preferences/{userId} {
+  allow read, write: if request.auth.uid == userId;
+}
+
+// User can only access their own recipes
+match /recipes/{recipeId} {
+  allow create: if request.auth != null && request.resource.data.user_id == request.auth.uid;
+  allow read, update, delete: if request.auth != null && resource.data.user_id == request.auth.uid;
+}
+
+// User can only access their own recipe cache
+match /recipe_cache/{cacheId} {
+  allow read, write: if request.auth != null && resource.data.user_id == request.auth.uid;
+  allow create: if request.auth != null && request.resource.data.user_id == request.auth.uid;
+}
+```
+
+**What This Means:**
+- ✅ Users can only see/edit their own data
+- ✅ No user can access another user's recipes or preferences
+- ✅ Authentication is required for all operations
+- ✅ Data is automatically scoped to authenticated user
 
 ### Verify Setup
 
-**Check Database Tables:**
-1. Go to **Supabase Dashboard** → Your Project → **Table Editor**
-2. You should see tables: `profiles`, `user_preferences`, `recipes`
-3. Click on each table to see the column structure
+**Check Firestore Collections:**
+1. Go to **Firebase Console**: https://console.firebase.google.com/project/eternal-water-477911-m6
+2. Navigate to **Firestore Database** in left sidebar
+3. You should see collections: `profiles`, `user_preferences`, `recipes`, `recipe_cache`
+4. Click on each collection to see the document structure
 
 **Test Authentication:**
-1. Run the app and sign up with a test email: `test@example.com`
-2. Check **Supabase Dashboard** → **Authentication** → Users
-3. Check **Table Editor** → `profiles` - you should see auto-created profile
-4. Check **Table Editor** → `user_preferences` - you should see auto-created preferences
+1. Run the app and sign up with a test email or Google Sign-In
+2. Check **Firebase Console** → **Authentication** → Users
+3. Check **Firestore Database** → `profiles` - you should see auto-created profile
+4. Check **Firestore Database** → `user_preferences` - you should see auto-created preferences
 
 **Test Recipe Creation:**
-1. Create a recipe in the app (when AI feature is implemented)
-2. Check **Supabase Dashboard** → **Table Editor** → `recipes`
-3. You should see your saved recipe with all fields
+1. Use camera to scan ingredients in the app
+2. Generate a recipe
+3. Save the recipe
+4. Check **Firebase Console** → **Firestore Database** → `recipes`
+5. You should see your saved recipe with all fields
 
-### Supabase Troubleshooting
+**Test Recipe Caching:**
+1. Generate a recipe with specific ingredients
+2. Go back and generate again with same ingredients
+3. Check **Firestore Database** → `recipe_cache` - should see cached entry
+4. Second generation should be instant (loaded from cache)
 
-**❌ Error: "Invalid API key"**
-- Double-check `.env` file has correct `SUPABASE_URL` and `SUPABASE_ANON_KEY`
-- Restart app after editing `.env`
-- Make sure you copied the **anon/public key**, not the service_role key
+### Firebase Troubleshooting
 
-**❌ Error: "Row Level Security Policy Violation"**
+**❌ Error: "Permission denied" on Firestore**
 - Make sure you're logged in (authenticated) before trying to save/read data
-- RLS policies require `auth.uid()` to match the user_id in the table
-- Test: Check if you can see your user in **Supabase Dashboard** → **Authentication**
+- Firestore rules require `request.auth.uid` to match the user_id in the document
+- Test: Check if you can see your user in **Firebase Console** → **Authentication**
 
-**❌ Error: "Table does not exist"**
-- The migrations have already been applied, but if you see this:
-- Go to **Supabase Dashboard** → **SQL Editor**
-- Run: `SELECT * FROM profiles LIMIT 1;` to test
-- If it fails, contact berkay (database may need re-initialization)
+**❌ Error: "Firebase not initialized"**
+- Ensure `Firebase.initializeApp()` is called in `main.dart` before any Firebase operations
+- Check `lib/firebase_options.dart` exists and is up to date
+- Verify `google-services.json` (Android) or `GoogleService-Info.plist` (iOS) are in correct locations
 
-**❌ Error: "Column does not exist"**
+**❌ Error: "Collection does not exist"**
+- Firestore creates collections automatically when you write the first document
+- Try creating a document first: Sign up → Save a recipe
+- If it still fails, check Firestore rules in Firebase Console
+
+**❌ Error: "Field does not exist"**
 - Make sure you pulled the latest code: `git pull origin main`
-- Check if the column exists in **Supabase Dashboard** → **Table Editor**
-- Column names in code must match snake_case in database (e.g., `display_name` not `displayName`)
+- Check if the field exists in **Firebase Console** → **Firestore Database**
+- Field names in Dart code must match snake_case in Firestore (e.g., `user_id` not `userId`)
 
 **❌ Profile/Preferences Not Auto-Created on Signup**
-- Check **Supabase Dashboard** → **Database** → **Functions**
-- Look for `handle_new_user()` function
-- Check **Database** → **Triggers** for `on_auth_user_created` trigger
-- If missing, notify team lead to reapply migration
+- Check **Firebase Console** → **Authentication** to see if user was created
+- Check **Firestore Database** → `profiles` and `user_preferences` for documents with matching UID
+- Auto-creation is handled in `AuthRepositoryImpl.signUp()` - check for errors in logs
+- Try signing out and signing up again with a new account
+
+**❌ Error: "Quota exceeded" (Firestore)**
+- Free tier: 50,000 reads/day, 20,000 writes/day
+- Check **Firebase Console** → **Usage** to see current quota
+- Wait for quota reset (daily) or optimize queries to use fewer reads/writes
 
 ---
 
@@ -306,19 +370,32 @@ flutter run -d chrome
 ### Overview
 ```
 lib/
-├── main.dart                    # App entry point
+├── main.dart                    # App entry point (Firebase initialization)
+├── firebase_options.dart        # Auto-generated Firebase config
 ├── core/
 │   ├── constants/
-│   │   └── app_constants.dart  # App-wide settings
+│   │   ├── app_constants.dart  # App-wide settings, Gemini config
+│   │   └── prompt_templates.dart # Gemini AI prompts
+│   ├── errors/
+│   │   └── ai_exceptions.dart  # Custom AI error classes
+│   ├── services/
+│   │   ├── gemini_ai_service.dart    # Firebase AI with Gemini API
+│   │   └── permission_service.dart   # Camera/storage permissions
 │   ├── theme/
-│   │   └── app_theme.dart      # Colors, fonts
+│   │   └── app_theme.dart      # Colors, fonts, dark/light themes
 │   └── utils/                   # Helper functions
 ├── features/
-│   ├── auth/                    # Login, signup screens
+│   ├── auth/                    # Login, signup, Google Sign-In
 │   ├── camera/                  # Camera capture logic
-│   ├── ingredient_detection/    # AI ingredient detection
-│   ├── recipe_generation/       # AI recipe generation
-│   └── recipe_history/          # Saved recipes, home screen
+│   ├── ingredient_detection/    # AI ingredient detection from photos
+│   ├── recipe_generation/       # AI recipe generation with Gemini
+│   ├── recipe_history/          # Saved recipes list
+│   ├── recipe_detail/           # Individual recipe view
+│   ├── recipe_results/          # Generated recipe results
+│   ├── favorites/               # Favorite recipes
+│   ├── pantry/                  # Pantry management (manual ingredients)
+│   ├── profile/                 # User profile, preferences
+│   └── home/                    # Home screen, navigation
 └── shared/
     ├── providers/               # Global Riverpod providers
     └── widgets/                 # Reusable UI components
@@ -328,14 +405,20 @@ lib/
 
 | File | Purpose |
 |------|---------|
-| `lib/main.dart` | App initialization, runs first |
-| `lib/features/recipe_history/presentation/screens/home_screen.dart` | Main home screen |
-| `lib/features/auth/domain/entities/profile.dart` | User profile model |
-| `lib/features/auth/domain/entities/user_preferences.dart` | Cooking preferences model |
-| `lib/features/recipe_generation/domain/entities/recipe.dart` | Recipe model |
-| `supabase/migrations/001_initial_schema.sql` | Original database structure |
+| `lib/main.dart` | App initialization, Firebase setup, runs first |
+| `lib/firebase_options.dart` | Auto-generated Firebase configuration |
+| `lib/core/services/gemini_ai_service.dart` | Firebase AI with Gemini API service |
+| `lib/core/constants/prompt_templates.dart` | Gemini AI prompts for ingredients & recipes |
+| `lib/features/home/presentation/screens/home_screen.dart` | Main home screen with navigation |
+| `lib/features/auth/domain/entities/profile.dart` | User profile entity |
+| `lib/features/auth/domain/entities/user_preferences.dart` | Cooking preferences entity |
+| `lib/features/recipe_generation/domain/entities/recipe.dart` | Recipe entity |
+| `lib/features/auth/data/repositories/auth_repository_impl.dart` | Firebase Auth implementation |
+| `lib/features/recipe_generation/data/repositories/recipe_repository_impl.dart` | Firestore recipe operations |
+| `firestore.rules` | Firestore security rules |
+| `firebase.json` | Firebase project configuration |
 | `pubspec.yaml` | Dependencies list |
-| `.env` | Supabase credentials (YOU create this) |
+| `android/app/google-services.json` | Android Firebase config |
 
 ### Where to Add New Features
 
@@ -343,11 +426,14 @@ lib/
 |------|----------|
 | Add new screen | `lib/features/<feature>/presentation/screens/` |
 | Add new widget | `lib/features/<feature>/presentation/widgets/` or `lib/shared/widgets/` |
-| Add new Supabase API call | `lib/features/<feature>/data/repositories/` |
-| Add new data model (for Supabase) | `lib/features/<feature>/data/models/` |
+| Add new Firebase API call | `lib/features/<feature>/data/repositories/` |
+| Add new data model (for Firestore) | `lib/features/<feature>/data/models/` |
 | Add new domain entity | `lib/features/<feature>/domain/entities/` |
 | Add new Riverpod provider | `lib/features/<feature>/presentation/providers/` |
 | Add new constant | `lib/core/constants/app_constants.dart` |
+| Modify Gemini AI prompts | `lib/core/constants/prompt_templates.dart` |
+| Update Firestore rules | `firestore.rules` (deploy with Firebase CLI) |
+| Add custom AI logic | `lib/core/services/gemini_ai_service.dart` |
 
 ### Understanding the Data Flow
 
@@ -356,10 +442,10 @@ lib/
 1. **User Action** → (e.g., user saves a recipe)
 2. **Presentation Layer** (`screens/`, `widgets/`) → Uses Riverpod provider
 3. **Provider** (`providers/`) → Calls repository
-4. **Repository** (`data/repositories/`) → Converts entity to model, calls Supabase
-5. **Supabase** → Saves to database
+4. **Repository** (`data/repositories/`) → Converts entity to model, calls Firebase/Firestore
+5. **Firebase/Firestore** → Saves to cloud database
 6. **Response** → Comes back through repository
-7. **Repository** → Converts model back to entity
+7. **Repository** → Converts Firestore model back to entity
 8. **Provider** → Updates state
 9. **UI** → Rebuilds with new data
 
@@ -370,13 +456,33 @@ lib/
 ref.read(recipeProvider.notifier).saveRecipe(recipe);
 
 // 3. Provider calls repository
-await _recipeRepository.saveRecipe(recipe);
+await _recipeRepository.createRecipe(recipe);
 
-// 4. Repository converts to model and saves to Supabase
+// 4. Repository converts to model and saves to Firestore
 final model = RecipeModel.fromEntity(recipe);
-await supabase.from('recipes').insert(model.toJson());
+await _firestore.collection('recipes').add(model.toJson());
 
-// 5. Data saved! ✅
+// 5. Data saved to Firestore! ✅
+```
+
+**Example: AI Recipe Generation**
+```dart
+// 1. User scans ingredients with camera
+// 2. GeminiAIService detects ingredients
+final ingredients = await _geminiService.detectIngredients(imageBytes);
+
+// 3. User taps "Generate Recipe"
+// 4. GeminiAIService generates recipe (cloud-based)
+final recipeData = await _geminiService.generateRecipe(
+  ingredients: ingredients,
+  dietaryRestrictions: userPrefs.dietaryRestrictions,
+  skillLevel: userPrefs.skillLevel,
+);
+
+// 5. Repository saves to Firestore
+await _recipeRepository.createRecipe(recipe);
+
+// 6. UI updates with new recipe! ✅
 ```
 
 ---
@@ -411,10 +517,16 @@ cd ..
 flutter run
 ```
 
-#### ❌ "Module 'tflite_flutter' not found"
+#### ❌ "Module 'firebase_ai' not found" or similar Firebase errors
 ```bash
 flutter pub get
 flutter clean
+flutter run
+
+# If on iOS, also do:
+cd ios
+pod install
+cd ..
 flutter run
 ```
 
@@ -434,34 +546,52 @@ flutter run
   <string>We need camera access to scan your fridge</string>
   ```
 
-#### ❌ "Supabase connection error"
-```dart
-// Check your .env file is loaded properly
-// Verify in lib/main.dart or where Supabase is initialized:
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-// If using flutter_dotenv, initialize:
-await dotenv.load(fileName: ".env");
-```
-
-**Alternative**: Hardcode temporarily for testing (DON'T commit!):
-```dart
-const supabaseUrl = 'https://your-project.supabase.co';
-const supabaseAnonKey = 'your-key-here';
-```
-
-#### ❌ "AI Model not loading"
-**Problem**: TFLite model file missing or incorrect path.
+#### ❌ "Firebase connection error" or "Permission denied"
+**Problem**: Firebase not initialized or authentication issue.
 
 **Solution:**
-1. Check `assets/models/gemma-3n-e4b-it-int4.tflite` exists
-2. Verify `pubspec.yaml` includes:
-   ```yaml
-   flutter:
-     assets:
-       - assets/models/
+```dart
+// Check Firebase is initialized in lib/main.dart
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Make sure user is signed in before accessing Firestore
+final user = FirebaseAuth.instance.currentUser;
+if (user == null) {
+  // Redirect to login
+}
+```
+
+**Check Firebase Console:**
+- Verify project exists: https://console.firebase.google.com/project/eternal-water-477911-m6
+- Check Authentication is enabled
+- Verify Firestore is set up
+- Review Firestore rules in `firestore.rules`
+
+#### ❌ "AI Model not loading" or "Gemini API error"
+**Problem**: Firebase AI not initialized or API quota exceeded.
+
+**Solution:**
+1. Check Firebase AI is initialized:
+   ```dart
+   // GeminiAIService initializes automatically on first use
+   // Check logs for: "GeminiAIService: Initialization successful"
    ```
-3. Run `flutter pub get` and rebuild
+
+2. Verify Gemini API is enabled:
+   - Go to: https://console.firebase.google.com/project/eternal-water-477911-m6/ailogic
+   - Check if Gemini API is enabled
+   - See [GEMINI_API_SETUP.md](GEMINI_API_SETUP.md) for setup instructions
+
+3. Check API quota:
+   - Free tier: 15 requests/minute, 1500 requests/day
+   - Check usage: https://console.firebase.google.com/project/eternal-water-477911-m6/usage
+   - Wait for quota reset or optimize number of API calls
+
+4. Check internet connection (Gemini runs in the cloud!)
+
+5. Review error logs for specific error messages
 
 ### Hot Reload Issues
 
@@ -659,10 +789,10 @@ When `dev` is stable and tested:
 
 | Platform | Expected Performance | Notes |
 |----------|---------------------|-------|
-| Android (Mid-range) | AI: 5-10s, UI: 60fps | Test on Pixel 5 equivalent |
-| Android (Low-end) | AI: 10-20s, UI: 30-60fps | May lag during inference |
-| iOS (iPhone 12+) | AI: 3-7s, UI: 60fps | Generally faster than Android |
-| Emulator/Simulator | AI: 15-30s, UI: 30fps | Much slower than physical device |
+| Android (Mid-range) | AI: 2-5s, UI: 60fps | Cloud-based AI, depends on internet speed |
+| Android (Low-end) | AI: 3-7s, UI: 30-60fps | Slower internet may cause delays |
+| iOS (iPhone 12+) | AI: 2-4s, UI: 60fps | Generally fast with good internet |
+| Emulator/Simulator | AI: 2-7s, UI: 30fps | Depends on host machine & internet |
 
 ### Camera Testing
 
@@ -680,53 +810,306 @@ When `dev` is stable and tested:
 
 ---
 
-## Working with AI Model
+## Working with Gemini AI
 
-### Model Status
+### Overview
 
-> 🚧 **Currently**: The AI model (`gemma-3n-e4b-it-int4.tflite`) is **not included** in the repo due to size (~2-3GB).
+The app uses **Firebase AI with Google's Gemini API** for cloud-based generative AI. This means:
+- ✅ **No local model downloads** - everything runs in the cloud
+- ✅ **Always up-to-date** - Google maintains and improves the model
+- ✅ **Multimodal** - Can process both images and text
+- ✅ **Fast inference** - Optimized cloud infrastructure
+- ❌ **Requires internet** - Won't work offline
 
-### Getting the Model
+### Current Configuration
 
-**Option 1: Team Member Has It**
-Ask a teammate who already downloaded it to share via Google Drive/Dropbox.
+**Model**: `gemini-2.0-flash-exp` (configured in `lib/core/constants/app_constants.dart`)
 
-**Option 2: Download from Hugging Face**
-1. Visit: [google/gemma-3n-e4b-it](https://huggingface.co/google/gemma-3n-e4b-it)
-2. Follow conversion instructions to TFLite format
-3. Place in `assets/models/gemma-3n-e4b-it-int4.tflite`
-
-**Option 3: Mock for Development**
+**Parameters** (in `AppConstants`):
 ```dart
-// Temporarily bypass AI for UI development
-// In lib/features/ingredient_detection/data/services/gemma_inference_service.dart
+static const String geminiModel = 'gemini-2.0-flash-exp';
+static const double temperature = 0.7;  // Creativity level (0.0-1.0)
+static const int topK = 40;             // Diversity of responses
+static const int maxTokens = 4096;      // Max response length
+```
 
-Future<String> detectIngredients(Uint8List imageBytes) async {
-  // Mock response
-  await Future.delayed(Duration(seconds: 2));
-  return "chicken, tomatoes, onions, garlic, olive oil";
+**Timeouts**:
+- Ingredient detection: 30 seconds
+- Recipe generation: 45 seconds
+
+### How It Works
+
+**1. Ingredient Detection** (Image → Text):
+```dart
+// User takes photo of fridge/pantry
+final imageBytes = await camera.takePicture();
+
+// Gemini analyzes image and detects ingredients
+final ingredients = await geminiService.detectIngredients(imageBytes);
+// Result: ["chicken", "tomatoes", "onions", "garlic", ...]
+```
+
+**2. Recipe Generation** (Text → JSON):
+```dart
+// Gemini generates a complete recipe based on ingredients + preferences
+final recipeData = await geminiService.generateRecipe(
+  ingredients: ["chicken", "tomatoes", "onions"],
+  dietaryRestrictions: "gluten-free",
+  skillLevel: "beginner",
+  cuisinePreference: "italian",
+);
+// Result: Structured recipe with name, ingredients, instructions, etc.
+```
+
+### Prompts Configuration
+
+**Location**: `lib/core/constants/prompt_templates.dart`
+
+**Ingredient Detection Prompt**:
+```dart
+static String getIngredientDetectionPrompt() {
+  return '''
+Analyze this image and list ALL visible food ingredients.
+Return ONLY a comma-separated list of ingredients, nothing else.
+Example: chicken, tomatoes, onions, garlic, olive oil
+''';
 }
 ```
 
-### Model Troubleshooting
-
-**❌ "Model file not found"**
+**Recipe Generation Prompt**:
 ```dart
-// Verify asset path in pubspec.yaml:
-flutter:
-  assets:
-    - assets/models/
+static String getRecipeGenerationPrompt({
+  required List<String> ingredients,
+  String? dietaryRestrictions,
+  String? skillLevel,
+  String? cuisinePreference,
+}) {
+  return '''
+Generate a recipe using these ingredients: ${ingredients.join(", ")}
+Dietary restrictions: ${dietaryRestrictions ?? "none"}
+Skill level: ${skillLevel ?? "any"}
+Cuisine: ${cuisinePreference ?? "any"}
 
-// Rebuild
-flutter clean
-flutter pub get
-flutter run
+Return a JSON object with this EXACT structure:
+{
+  "name": "Recipe Name",
+  "description": "Brief description",
+  "prepTime": 15,
+  "cookTime": 30,
+  ...
+}
+''';
+}
 ```
 
-**❌ "Out of memory during inference"**
-- Close other apps
-- Test on device with 4GB+ RAM
-- Reduce image size before inference
+**Customizing Prompts:**
+- Edit `lib/core/constants/prompt_templates.dart`
+- Modify prompt text to change AI behavior
+- Test with `flutter run` to see results
+- Fine-tune for better accuracy or different cuisines
+
+### API Quotas & Limits
+
+**Gemini Developer API (Free Tier)**:
+- **15 requests per minute (RPM)**
+- **1,500 requests per day (RPD)**
+- **1 million input tokens per minute**
+- **32,000 output tokens per minute**
+
+**What This Means for Users:**
+- Each ingredient scan = 1 request
+- Each recipe generation = 1 request
+- User can scan ~7 times per minute, ~750 times per day
+- For a single user, this is more than enough!
+
+**Handling Quota Limits:**
+```dart
+// The app already implements:
+// 1. Recipe caching in Firestore (avoid duplicate API calls)
+// 2. Error handling for quota exceeded
+// 3. User-friendly error messages
+
+// Check GeminiAIService for implementation details
+```
+
+**Checking Usage:**
+- Dashboard: https://console.firebase.google.com/project/eternal-water-477911-m6/ailogic
+- Monitor daily quota usage
+- Set up alerts if approaching limits
+
+### Recipe Caching
+
+**Why Caching?**
+- Save Gemini API quota
+- Faster response for repeated ingredient combinations
+- Better user experience (instant results for cached recipes)
+
+**How It Works:**
+1. User scans ingredients: `["chicken", "tomatoes", "onions"]`
+2. App creates cache key: hash of ingredients + preferences
+3. Check Firestore `recipe_cache` collection for existing recipe
+4. **If cached**: Return instantly ✅
+5. **If not cached**: Call Gemini API → Save to cache → Return recipe
+
+**Cache Expiration:**
+- Cached recipes expire after 7 days (configurable)
+- Can be cleared manually in app settings
+- Automatically cleaned up by Firestore TTL (if configured)
+
+**Implementation:**
+```dart
+// Check cache before calling Gemini API
+final cachedRecipe = await _recipeCacheRepository.getCachedRecipe(cacheKey);
+if (cachedRecipe != null) {
+  return cachedRecipe; // Instant result!
+}
+
+// No cache, call Gemini API
+final recipe = await _geminiService.generateRecipe(...);
+
+// Save to cache for next time
+await _recipeCacheRepository.cacheRecipe(cacheKey, recipe);
+```
+
+### Testing Gemini AI
+
+**1. Test Ingredient Detection:**
+```bash
+# Run app
+flutter run
+
+# Steps:
+# 1. Navigate to camera screen
+# 2. Take photo of food items (or select from gallery)
+# 3. Wait for AI detection
+# 4. Check console for logs:
+#    "GeminiAIService: Starting ingredient detection"
+#    "GeminiAIService: Detected 5 ingredients"
+```
+
+**2. Test Recipe Generation:**
+```bash
+# Steps:
+# 1. Use detected ingredients or add manually
+# 2. Set preferences (optional)
+# 3. Tap "Generate Recipe"
+# 4. Wait for response (2-5 seconds)
+# 5. Verify recipe has all fields
+```
+
+**3. Test Caching:**
+```bash
+# Steps:
+# 1. Generate a recipe with specific ingredients
+# 2. Go back to home
+# 3. Generate again with SAME ingredients
+# 4. Second generation should be instant (loaded from cache)
+# 5. Check Firestore Console → recipe_cache collection
+```
+
+### Troubleshooting Gemini AI
+
+**❌ "Gemini API not enabled"**
+- Go to Firebase Console → AI Logic
+- Enable Gemini Developer API
+- See [GEMINI_API_SETUP.md](GEMINI_API_SETUP.md) for detailed setup
+
+**❌ "Quota exceeded"**
+- Wait for quota reset (resets every minute/day)
+- Check usage: https://console.firebase.google.com/project/eternal-water-477911-m6/usage
+- Implement more aggressive caching
+- Consider upgrading to paid plan if needed
+
+**❌ "Network error" or timeout**
+- Check internet connection
+- Verify Firebase project is active
+- Check if Firestore rules are blocking requests
+- Try again (temporary network issue)
+
+**❌ "Response blocked by safety filters"**
+- Gemini blocked the response due to safety concerns
+- Modify prompt to be less ambiguous
+- Check logs for `FinishReason.safety`
+- Retry with different ingredients or wording
+
+**❌ "Empty response" or parsing error**
+- Gemini returned unexpected format
+- Check `PromptTemplates.parseRecipeResponse()` for parsing logic
+- Verify prompt asks for correct JSON structure
+- Add fallback handling for malformed responses
+
+**❌ "AI generating weird/wrong recipes"**
+- Adjust temperature (lower = more conservative, higher = more creative)
+- Modify prompts in `prompt_templates.dart`
+- Add more specific instructions
+- Test with different ingredient combinations
+
+### Advanced: Customizing AI Behavior
+
+**Change Model:**
+```dart
+// In lib/core/constants/app_constants.dart
+static const String geminiModel = 'gemini-2.0-flash-exp';
+// Or try: 'gemini-1.5-pro' for more advanced reasoning
+```
+
+**Adjust Creativity:**
+```dart
+// Lower temperature = more predictable, safer recipes
+static const double temperature = 0.3; // Conservative
+
+// Higher temperature = more creative, experimental recipes
+static const double temperature = 1.0; // Very creative
+```
+
+**Change Response Length:**
+```dart
+// Shorter recipes
+static const int maxTokens = 2048;
+
+// Longer, more detailed recipes
+static const int maxTokens = 8192;
+```
+
+**Streaming Responses (Future Enhancement):**
+```dart
+// GeminiAIService already has streaming support!
+final stream = geminiService.generateResponseStream(
+  prompt: recipePrompt,
+  imageData: imageBytes,
+);
+
+await for (final chunk in stream) {
+  print('Received chunk: $chunk');
+  // Update UI progressively as response streams in
+}
+```
+
+### Cost Management
+
+**Free Tier:**
+- Perfect for development and small-scale testing
+- No billing required
+- Generous limits for most personal projects
+
+**Paid Plans (if needed):**
+- **Gemini 2.0 Flash**: ~$0.075 per 1M input tokens, ~$0.30 per 1M output tokens
+- Very cost-effective for most use cases
+- Example: 1000 recipe generations ≈ $0.50 - $2.00
+
+**Best Practices:**
+- ✅ Implement caching (already done!)
+- ✅ Optimize prompts to reduce token usage
+- ✅ Set reasonable timeouts
+- ✅ Handle errors gracefully
+- ✅ Monitor usage in Firebase Console
+
+### Resources
+
+- **Firebase AI Docs**: https://firebase.google.com/docs/ai-logic
+- **Gemini API Docs**: https://ai.google.dev/gemini-api/docs
+- **Gemini API Setup Guide**: [GEMINI_API_SETUP.md](GEMINI_API_SETUP.md)
+- **Prompt Engineering Guide**: https://ai.google.dev/gemini-api/docs/prompting-intro
 
 ---
 
@@ -747,11 +1130,12 @@ flutter run
 **DON'T:**
 - ❌ Push directly to `main` (it's protected anyway)
 - ❌ Push directly to `dev` (use PR instead)
-- ❌ Commit `.env` file (has secrets!)
+- ❌ Commit `google-services.json` with real keys (for private projects)
 - ❌ Commit generated files (`*.g.dart`, `*.freezed.dart`, `build/`)
 - ❌ Create PR with failing tests or build errors
 - ❌ Merge your own PR without review
 - ❌ Force push to shared branches (`git push -f`)
+- ❌ Commit large files (Firebase config files are OK, but no large assets)
 
 ### Merge Conflicts
 
@@ -785,13 +1169,14 @@ git push origin dev/your-name
 **Before creating Pull Request:**
 - [ ] Code builds without errors: `flutter build apk` (or `flutter build ios`)
 - [ ] Tested on at least one device/emulator
-- [ ] No hardcoded secrets (check for API keys, URLs in code)
-- [ ] No `.env` or generated files in commit
+- [ ] No hardcoded secrets (Firebase config files are auto-generated, that's OK)
+- [ ] No generated files in commit (`*.g.dart`, `build/`)
 - [ ] Formatted code: `dart format lib/`
 - [ ] No analyzer warnings: `flutter analyze`
 - [ ] Wrote clear commit messages
 - [ ] Updated documentation if needed
 - [ ] PR description explains what and why
+- [ ] Tested Firebase features if modified (auth, Firestore, AI)
 
 **When reviewing others' PRs:**
 - [ ] Read the code changes carefully
@@ -889,15 +1274,73 @@ git reset --hard <commit-hash>
 ### Resources
 - 📖 [Flutter Docs](https://docs.flutter.dev/)
 - 📖 [Riverpod Docs](https://riverpod.dev/)
-- 📖 [Supabase Flutter Docs](https://supabase.com/docs/reference/dart)
+- 📖 [Firebase Flutter Docs](https://firebase.flutter.dev/)
+- 📖 [Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started)
+- 📖 [Gemini API Docs](https://ai.google.dev/gemini-api/docs)
+- 📖 [Firebase AI Logic Docs](https://firebase.google.com/docs/ai-logic)
+- 📄 [Gemini API Setup Guide](GEMINI_API_SETUP.md) (in this repo)
 - 💬 Team chat/Discord
 
 ### Debugging Tips
 1. **Read error messages carefully** - they usually tell you what's wrong
-2. **Google the error** - add "flutter" to your search
+2. **Google the error** - add "flutter" and "firebase" to your search
 3. **Check `flutter doctor`** - fixes 80% of setup issues
 4. **Ask teammates** - they might have solved it already
 5. **Use `print()` statements** - simple but effective debugging
+6. **Check Firebase Console** - many issues are visible in the dashboard
+7. **Monitor Firestore rules** - permission errors often come from rules
+8. **Watch Gemini API quota** - check if you've hit rate limits
+
+### Firebase-Specific Debugging
+
+**Firebase Console Access:**
+- **Project**: https://console.firebase.google.com/project/eternal-water-477911-m6
+- **Authentication**: Check signed-in users
+- **Firestore**: View/edit database collections
+- **AI Logic**: Monitor Gemini API usage
+- **Usage & Billing**: Track quotas and costs
+
+**Common Firebase Issues:**
+
+**❌ "Firebase App Check failed"**
+- Check `FirebaseAppCheck.instance.activate()` is called in `main.dart`
+- For development, debug provider is enabled (see main.dart)
+- For production, configure Play Integrity (Android) / App Attest (iOS)
+- See: https://firebase.google.com/docs/app-check
+
+**❌ "Firestore permission denied"**
+- Ensure user is authenticated: `FirebaseAuth.instance.currentUser != null`
+- Check Firestore rules: `firestore.rules`
+- Verify `user_id` field matches authenticated user's UID
+- Test rules in Firebase Console → Firestore → Rules Playground
+
+**❌ "Firebase initialization failed"**
+- Check `google-services.json` (Android) exists in `android/app/`
+- Check `GoogleService-Info.plist` (iOS) exists in `ios/Runner/`
+- Verify `firebase_options.dart` is up to date
+- Re-run `flutterfire configure` if needed (contact team lead)
+
+**❌ "Google Sign-In not working"**
+- Ensure SHA-1/SHA-256 fingerprints are registered in Firebase Console
+- Get debug SHA-1: `cd android && ./gradlew signingReport`
+- Add to Firebase Console → Project Settings → Your App → SHA fingerprints
+- Re-download `google-services.json` after adding SHA keys
+
+**Debugging Firestore Queries:**
+```dart
+// Enable Firestore debug logging
+FirebaseFirestore.instance.settings = const Settings(
+  persistenceEnabled: true,
+  cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+);
+
+// Log queries
+final snapshot = await FirebaseFirestore.instance
+    .collection('recipes')
+    .where('user_id', isEqualTo: userId)
+    .get();
+print('Fetched ${snapshot.docs.length} recipes');
+```
 
 ---
 
@@ -911,8 +1354,10 @@ git reset --hard <commit-hash>
 
 **Learning Resources:**
 - [Flutter Basics (Official)](https://docs.flutter.dev/get-started/codelab)
-- [Riverpod Tutorial](https://codewithandrea.com/articles/flutter-state-management-riverpod/)
-- [Supabase Quickstart](https://supabase.com/docs/guides/getting-started/quickstarts/flutter)
+- [Riverpod Tutorial](https://codewitandrea.com/articles/flutter-state-management-riverpod/)
+- [Firebase Flutter Docs](https://firebase.flutter.dev/)
+- [Gemini API Setup Guide](GEMINI_API_SETUP.md)
+- [Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started)
 
 ---
 

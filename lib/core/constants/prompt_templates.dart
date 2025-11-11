@@ -2,20 +2,22 @@
 class PromptTemplates {
   /// System prompt for ingredient detection from fridge images
   static const String ingredientDetectionSystem = '''
-You are an intelligent kitchen assistant. Analyze the provided image of a refrigerator or food storage area.
+Analyze the image and identify all visible food items and ingredients.
 
-Task:
-1. Identify all visible food items and ingredients
-2. List them in a structured format
-3. Be specific (e.g., "red bell pepper" not just "vegetable")
+Rules:
+- Be specific (e.g., "red bell pepper" not "vegetable")
+- Only list actual ingredients suitable for cooking
+- Ignore containers, utensils, or non-food items
+- Output ONLY the ingredient names, one per line
+- Do NOT include explanatory text, headers, or conclusions
+- Do NOT start with phrases like "Here are" or "I can see"
+- Each line should be a single ingredient name
 
-Output Format:
-- Ingredient 1
-- Ingredient 2
-- Ingredient 3
-...
-
-Focus on ingredients suitable for cooking. Ignore containers, utensils, or non-food items.
+Example output:
+Chicken breast
+Red bell pepper
+Onion
+Garlic
 ''';
 
   /// Generate ingredient detection prompt with image context
@@ -145,13 +147,26 @@ Make the recipe practical and achievable for home cooks. Use simple language.
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
 
+      // Skip common preamble/conclusion phrases
+      final lowerLine = trimmed.toLowerCase();
+      if (lowerLine.contains('here are') ||
+          lowerLine.contains('visible food') ||
+          lowerLine.contains('i can see') ||
+          lowerLine.contains('i found') ||
+          lowerLine.contains('ingredients:') ||
+          lowerLine.contains('items:') ||
+          lowerLine.endsWith(':')) {
+        continue;
+      }
+
       // Remove bullet points and numbering
       var ingredient = trimmed
           .replaceFirst(RegExp(r'^[-*•]\s*'), '')
           .replaceFirst(RegExp(r'^\d+\.\s*'), '')
           .trim();
 
-      if (ingredient.isNotEmpty) {
+      // Only add if it looks like an actual ingredient (not too long, not empty)
+      if (ingredient.isNotEmpty && ingredient.length < 100) {
         ingredients.add(ingredient);
       }
     }

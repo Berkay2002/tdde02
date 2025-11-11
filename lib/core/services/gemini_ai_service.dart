@@ -40,6 +40,7 @@ class GeminiAIService {
           temperature: AppConstants.temperature,
           topK: AppConstants.topK,
           maxOutputTokens: AppConstants.maxTokens,
+          responseMimeType: 'text/plain', // Plain text for cleaner parsing
         ),
       );
 

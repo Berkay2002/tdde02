@@ -54,82 +54,84 @@ class HomeScreen extends ConsumerWidget {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              Text(
-                'What do you want to cook?',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Scan ingredients or enter them manually for quick recipe suggestions',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-
-              // Camera Scan Button
-              _ActionCard(
-                icon: Icons.camera_alt,
-                title: 'Scan Ingredients',
-                description: 'Take a photo of your ingredients',
-                color: theme.colorScheme.primary,
-                onTap: () => _handleCameraScan(context, ref),
-              ),
-              const SizedBox(height: 16),
-
-              // Manual Entry Button
-              _ActionCard(
-                icon: Icons.edit_note,
-                title: 'Enter Manually',
-                description: 'Type your ingredients',
-                color: theme.colorScheme.secondary,
-                onTap: () => _handleManualEntry(context),
-              ),
-
-              const Spacer(),
-
-              // Current Session Ingredients (if any)
-              if (sessionIngredients.isNotEmpty) ...[
-                const Divider(),
-                const SizedBox(height: 16),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
                 Text(
-                  'Current Search',
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  'What do you want to cook?',
+                  style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: sessionIngredients.map((ingredient) {
-                    return Chip(
-                      label: Text(ingredient),
-                      deleteIcon: const Icon(Icons.close, size: 18),
-                      onDeleted: () {
-                        ref.read(sessionIngredientsProvider.notifier).removeIngredient(ingredient);
-                      },
-                    );
-                  }).toList(),
+                Text(
+                  'Scan ingredients or enter them manually for quick recipe suggestions',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+
+                // Camera Scan Button
+                _ActionCard(
+                  icon: Icons.camera_alt,
+                  title: 'Scan Ingredients',
+                  description: 'Take a photo of your ingredients',
+                  color: theme.colorScheme.primary,
+                  onTap: () => _handleCameraScan(context, ref),
                 ),
                 const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: () => switchToRecipeTab(context),
-                  icon: const Icon(Icons.restaurant_menu),
-                  label: const Text('View Recipes'),
+
+                // Manual Entry Button
+                _ActionCard(
+                  icon: Icons.edit_note,
+                  title: 'Enter Manually',
+                  description: 'Type your ingredients',
+                  color: theme.colorScheme.secondary,
+                  onTap: () => _handleManualEntry(context),
                 ),
+
+                const SizedBox(height: 48),
+
+                // Current Session Ingredients (if any)
+                if (sessionIngredients.isNotEmpty) ...[
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Current Search',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: sessionIngredients.map((ingredient) {
+                      return Chip(
+                        label: Text(ingredient),
+                        deleteIcon: const Icon(Icons.close, size: 18),
+                        onDeleted: () {
+                          ref.read(sessionIngredientsProvider.notifier).removeIngredient(ingredient);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () => switchToRecipeTab(context),
+                    icon: const Icon(Icons.restaurant_menu),
+                    label: const Text('View Recipes'),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

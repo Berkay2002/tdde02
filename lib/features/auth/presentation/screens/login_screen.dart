@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../providers/auth_provider.dart';
+import '../providers/user_preferences_provider.dart';
 import 'signup_screen.dart';
+import 'onboarding_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -40,13 +42,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final authState = ref.read(authNotifierProvider);
 
       authState.when(
-        data: (user) {
+        data: (user) async {
           if (user != null) {
-            // Navigate directly to home
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/home',
-              (route) => false,
+            // Check if user has completed onboarding (has preferences)
+            final prefsState = await ref.read(
+              currentUserPreferencesProvider.future,
             );
+
+            if (!mounted) return;
+
+            if (prefsState == null) {
+              // User exists but hasn't completed onboarding - go to onboarding
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const OnboardingScreen(),
+                ),
+              );
+            } else {
+              // User has preferences - go to home
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/home', (route) => false);
+            }
           }
         },
         loading: () {},
@@ -79,13 +96,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final authState = ref.read(authNotifierProvider);
 
       authState.when(
-        data: (user) {
+        data: (user) async {
           if (user != null) {
-            // Success - navigate directly to home
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/home',
-              (route) => false,
+            // Check if user has completed onboarding (has preferences)
+            final prefsState = await ref.read(
+              currentUserPreferencesProvider.future,
             );
+
+            if (!mounted) return;
+
+            if (prefsState == null) {
+              // New user - go to onboarding
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const OnboardingScreen(),
+                ),
+              );
+            } else {
+              // Existing user with preferences - go to home
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/home', (route) => false);
+            }
           }
         },
         loading: () {

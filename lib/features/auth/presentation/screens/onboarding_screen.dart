@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/providers/firebase_provider.dart';
+import '../../../../shared/widgets/app_shell.dart';
 import '../../domain/entities/user_preferences.dart';
 import '../providers/user_preferences_provider.dart';
-import '../../../recipe_history/presentation/screens/home_screen.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -119,7 +119,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (!mounted) return;
 
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => AppShell(key: appShellKey)),
       );
     } catch (e) {
       if (mounted) {

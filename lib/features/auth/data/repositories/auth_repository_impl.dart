@@ -21,8 +21,8 @@ class AuthRepositoryImpl implements AuthRepository {
     this._googleSignIn, {
     Box? recipeBox,
     Box? prefsBox,
-  })  : _recipeBox = recipeBox,
-        _prefsBox = prefsBox;
+  }) : _recipeBox = recipeBox,
+       _prefsBox = prefsBox;
 
   @override
   Future<Profile> signUp({
@@ -48,6 +48,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       // Create profile document in Firestore
+      final now = DateTime.now();
       final profileData = {
         'id': user.uid,
         'email': email,
@@ -56,32 +57,34 @@ class AuthRepositoryImpl implements AuthRepository {
         'updated_at': FieldValue.serverTimestamp(),
       };
 
-      await _firestore.collection('profiles').doc(user.uid).set(profileData);
-
-      // Create default user preferences
-      final preferencesData = {
-        'user_id': user.uid,
-        'dietary_restrictions': <String>[],
-        'allergies': <String>[],
-        'cuisine_preferences': <String>[],
-        'created_at': FieldValue.serverTimestamp(),
-        'updated_at': FieldValue.serverTimestamp(),
-      };
-
-      await _firestore
-          .collection('user_preferences')
-          .doc(user.uid)
-          .set(preferencesData);
-
-      final profile = await getCurrentProfile();
-      if (profile == null) {
-        throw Exception('Failed to create profile');
+      try {
+        await _firestore.collection('profiles').doc(user.uid).set(profileData);
+      } catch (e) {
+        // If profile creation fails, delete the auth user to maintain consistency
+        await user.delete();
+        throw Exception('Failed to create profile in database: $e');
       }
 
-      // Initialize empty Firestore collections for new user
-      await _initializeFirestoreCollections(user.uid);
+      // DON'T create default user preferences here - let onboarding handle it
+      // This way we can check if preferences exist to determine if onboarding is complete
 
-      return profile;
+      // Initialize empty Firestore collections for new user
+      try {
+        await _initializeFirestoreCollections(user.uid);
+      } catch (e) {
+        print('Warning: Failed to initialize collections: $e');
+        // Non-critical, collections can be created later
+      }
+
+      // Return profile directly instead of reading it back
+      // (avoids timing issues with serverTimestamp)
+      return Profile(
+        id: user.uid,
+        email: email,
+        displayName: displayName ?? email.split('@')[0],
+        createdAt: now,
+        updatedAt: now,
+      );
     } on FirebaseAuthException catch (e) {
       throw Exception('Sign up failed: ${e.message}');
     } catch (e) {
@@ -162,6 +165,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       // Create new profile for first-time Google sign-in
+      final now = DateTime.now();
       final profileData = {
         'id': user.uid,
         'email': user.email ?? '',
@@ -174,28 +178,13 @@ class AuthRepositoryImpl implements AuthRepository {
       try {
         await _firestore.collection('profiles').doc(user.uid).set(profileData);
       } catch (e) {
+        // If profile creation fails, sign out to maintain consistency
+        await _auth.signOut();
         throw Exception('Failed to create user profile in Firestore: $e');
       }
 
-      // Create default user preferences
-      final preferencesData = {
-        'user_id': user.uid,
-        'dietary_restrictions': <String>[],
-        'allergies': <String>[],
-        'cuisine_preferences': <String>[],
-        'created_at': FieldValue.serverTimestamp(),
-        'updated_at': FieldValue.serverTimestamp(),
-      };
-
-      try {
-        await _firestore
-            .collection('user_preferences')
-            .doc(user.uid)
-            .set(preferencesData);
-      } catch (e) {
-        // Profile exists but preferences failed - still return the profile
-        print('Warning: Failed to create user preferences: $e');
-      }
+      // DON'T create default user preferences here - let onboarding handle it
+      // This way we can check if preferences exist to determine if onboarding is complete
 
       // Initialize empty Firestore collections for new user
       try {
@@ -205,21 +194,15 @@ class AuthRepositoryImpl implements AuthRepository {
         // Non-critical, collections can be created on first write
       }
 
-      final profile = await getCurrentProfile();
-      if (profile == null) {
-        // Auth succeeded but profile retrieval failed
-        // This is OK - return a minimal profile
-        return Profile(
-          id: user.uid,
-          email: user.email ?? '',
-          displayName: user.displayName ?? user.email?.split('@')[0] ?? 'User',
-          avatarUrl: user.photoURL,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-      }
-
-      return profile;
+      // Return profile directly instead of reading it back
+      return Profile(
+        id: user.uid,
+        email: user.email ?? '',
+        displayName: user.displayName ?? user.email?.split('@')[0] ?? 'User',
+        avatarUrl: user.photoURL,
+        createdAt: now,
+        updatedAt: now,
+      );
     } on FirebaseAuthException catch (e) {
       throw Exception('Google sign in failed: ${e.message}');
     } catch (e) {
@@ -231,7 +214,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signOut() async {
     try {
       final userId = _auth.currentUser?.uid;
-      
+
       // Sync local changes to Firestore before signing out
       if (userId != null) {
         try {
@@ -241,18 +224,15 @@ class AuthRepositoryImpl implements AuthRepository {
           // Continue with logout anyway
         }
       }
-      
+
       // Sign out from Firebase and Google
       await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
-      
+
       // Clear all local Hive storage
       final recipeBox = _recipeBox ?? Hive.box('recipe_box');
       final prefsBox = _prefsBox ?? Hive.box('preferences_box');
-      
-      await Future.wait([
-        recipeBox.clear(),
-        prefsBox.clear(),
-      ]);
+
+      await Future.wait([recipeBox.clear(), prefsBox.clear()]);
     } catch (e) {
       throw Exception('Sign out failed: $e');
     }
@@ -341,16 +321,20 @@ class AuthRepositoryImpl implements AuthRepository {
       recipeBox.put('favoriteRecipes', favorites);
 
       // Sync preferences
-      final prefsDoc =
-          await _firestore.collection('user_preferences').doc(userId).get();
+      final prefsDoc = await _firestore
+          .collection('user_preferences')
+          .doc(userId)
+          .get();
 
       if (prefsDoc.exists && prefsDoc.data() != null) {
         final data = prefsDoc.data()!;
         prefsBox.put('dietaryRestrictions', data['dietary_restrictions'] ?? []);
         prefsBox.put('skillLevels', data['skill_levels'] ?? []);
         prefsBox.put('cuisinePreferences', data['cuisine_preferences'] ?? []);
-        prefsBox
-            .put('measurementSystem', data['measurement_system'] ?? 'metric');
+        prefsBox.put(
+          'measurementSystem',
+          data['measurement_system'] ?? 'metric',
+        );
       }
     } catch (e) {
       print('Error syncing from Firestore: $e');
@@ -365,17 +349,19 @@ class AuthRepositoryImpl implements AuthRepository {
       final prefsBox = _prefsBox ?? Hive.box(AppConstants.hivePreferencesBox);
 
       // Sync pantry
-      final pantryItems =
-          prefsBox.get('pantryIngredients', defaultValue: <dynamic>[]);
+      final pantryItems = prefsBox.get(
+        'pantryIngredients',
+        defaultValue: <dynamic>[],
+      );
       await _firestore
           .collection('user_data')
           .doc(userId)
           .collection('pantry')
           .doc('items')
           .set({
-        'items': pantryItems,
-        'updated_at': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+            'items': pantryItems,
+            'updated_at': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
 
       // Sync favorites
       final favorites =
@@ -384,28 +370,31 @@ class AuthRepositoryImpl implements AuthRepository {
         if (recipe is Map) {
           final recipeId = recipe['id'] as String?;
           if (recipeId != null) {
-            await _firestore.collection('recipes').doc(recipeId).set(
-              {
-                ...Map<String, dynamic>.from(recipe),
-                'user_id': userId,
-                'is_favorite': true,
-                'updated_at': FieldValue.serverTimestamp(),
-              },
-              SetOptions(merge: true),
-            );
+            await _firestore.collection('recipes').doc(recipeId).set({
+              ...Map<String, dynamic>.from(recipe),
+              'user_id': userId,
+              'is_favorite': true,
+              'updated_at': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
           }
         }
       }
 
       // Sync preferences
       await _firestore.collection('user_preferences').doc(userId).set({
-        'dietary_restrictions':
-            prefsBox.get('dietaryRestrictions', defaultValue: []),
+        'dietary_restrictions': prefsBox.get(
+          'dietaryRestrictions',
+          defaultValue: [],
+        ),
         'skill_levels': prefsBox.get('skillLevels', defaultValue: []),
-        'cuisine_preferences':
-            prefsBox.get('cuisinePreferences', defaultValue: []),
-        'measurement_system':
-            prefsBox.get('measurementSystem', defaultValue: 'metric'),
+        'cuisine_preferences': prefsBox.get(
+          'cuisinePreferences',
+          defaultValue: [],
+        ),
+        'measurement_system': prefsBox.get(
+          'measurementSystem',
+          defaultValue: 'metric',
+        ),
         'updated_at': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (e) {
@@ -424,10 +413,10 @@ class AuthRepositoryImpl implements AuthRepository {
           .collection('pantry')
           .doc('items')
           .set({
-        'items': [],
-        'created_at': FieldValue.serverTimestamp(),
-        'updated_at': FieldValue.serverTimestamp(),
-      });
+            'items': [],
+            'created_at': FieldValue.serverTimestamp(),
+            'updated_at': FieldValue.serverTimestamp(),
+          });
     } catch (e) {
       print('Error initializing Firestore collections: $e');
       // Non-critical, can be created later

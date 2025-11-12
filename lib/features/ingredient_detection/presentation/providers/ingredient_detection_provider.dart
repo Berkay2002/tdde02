@@ -1,25 +1,14 @@
 import 'dart:typed_data';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import '../../../../core/services/gemini_ai_service.dart';
 import '../../../../core/utils/image_processor.dart';
 import '../../../../core/errors/ai_exceptions.dart';
+import '../../../../core/errors/rate_limit_exceptions.dart';
+import '../../../../shared/providers/services_provider.dart';
+import '../../../../shared/providers/firebase_provider.dart';
 import '../../domain/entities/detected_ingredients.dart';
 
 part 'ingredient_detection_provider.g.dart';
-
-/// Provider for the GeminiAIService singleton (kept alive for app lifetime)
-@Riverpod(keepAlive: true)
-GeminiAIService geminiAIService(Ref ref) {
-  final service = GeminiAIService();
-
-  // Dispose when provider is destroyed
-  ref.onDispose(() {
-    service.dispose();
-  });
-
-  return service;
-}
 
 /// State for ingredient detection
 class IngredientDetectionState {
@@ -67,6 +56,13 @@ class IngredientDetection extends _$IngredientDetection {
     state = state.copyWith(isLoading: true, errorMessage: '');
 
     try {
+      // Get current user ID for rate limiting
+      final auth = ref.read(firebaseAuthProvider);
+      final user = auth.currentUser;
+      if (user == null) {
+        throw Exception('User must be logged in to detect ingredients');
+      }
+
       // Step 1: Preprocess the image
       print('IngredientDetection: Preprocessing image...');
       final processedImage = await ImageProcessor.preprocessForInference(
@@ -75,7 +71,7 @@ class IngredientDetection extends _$IngredientDetection {
 
       state = state.copyWith(processedImage: processedImage);
 
-      // Step 2: Run inference
+      // Step 2: Run inference with rate limiting
       print('IngredientDetection: Running inference...');
       final inferenceService = ref.read(geminiAIServiceProvider);
 
@@ -85,6 +81,7 @@ class IngredientDetection extends _$IngredientDetection {
 
       final ingredients = await inferenceService.detectIngredients(
         processedImage,
+        user.uid, // Pass userId for rate limiting
       );
 
       // Step 3: Create DetectedIngredients entity
@@ -100,6 +97,10 @@ class IngredientDetection extends _$IngredientDetection {
       print(
         'IngredientDetection: Successfully detected ${ingredients.length} ingredients',
       );
+    } on RateLimitException catch (e) {
+      // Handle rate limit errors with user-friendly message
+      print('IngredientDetection: Rate limit exceeded: $e');
+      state = state.copyWith(isLoading: false, errorMessage: e.userMessage);
     } on AIException catch (e) {
       print('IngredientDetection: AI error: $e');
       state = state.copyWith(isLoading: false, errorMessage: e.message);

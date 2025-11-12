@@ -5,14 +5,21 @@ import 'package:firebase_core/firebase_core.dart';
 import '../constants/app_constants.dart';
 import '../constants/prompt_templates.dart';
 import '../errors/ai_exceptions.dart';
+import '../errors/rate_limit_exceptions.dart';
+import 'rate_limiter_service.dart';
 
 /// Service for running AI inference using Firebase AI Logic with Gemini API
 ///
 /// This service uses Google's Gemini models via Firebase AI for cloud-based
 /// multimodal AI inference. No local model downloads required.
+/// 
+/// **Rate Limiting**: Enforces per-user limits to prevent API quota abuse.
 class GeminiAIService {
+  final RateLimiterService _rateLimiter;
   GenerativeModel? _model;
   bool _isInitialized = false;
+
+  GeminiAIService(this._rateLimiter);
 
   bool get isInitialized => _isInitialized;
 
@@ -53,10 +60,17 @@ class GeminiAIService {
   }
 
   /// Detect ingredients from preprocessed image data using multimodal prompting
-  Future<List<String>> detectIngredients(Uint8List imageData) async {
+  /// 
+  /// **Rate Limiting**: Enforces hourly and daily limits per user.
+  /// Throws [IngredientDetectionHourlyLimitException] or [IngredientDetectionDailyLimitException]
+  /// if user has exceeded their quota.
+  Future<List<String>> detectIngredients(Uint8List imageData, String userId) async {
     if (!_isInitialized || _model == null) {
       throw ModelNotInitializedException('Model has not been initialized');
     }
+
+    // Check rate limit BEFORE making API call
+    await _rateLimiter.checkIngredientDetectionLimit(userId);
 
     try {
       print('GeminiAIService: Starting ingredient detection');
@@ -80,16 +94,28 @@ class GeminiAIService {
       final ingredients = PromptTemplates.parseIngredientResponse(response);
 
       print('GeminiAIService: Detected ${ingredients.length} ingredients');
+
+      // Increment counter after successful API call
+      await _rateLimiter.incrementIngredientDetection(userId);
+
       return ingredients;
     } catch (e) {
+      if (e is RateLimitException) {
+        rethrow; // Don't wrap rate limit exceptions
+      }
       print('GeminiAIService: Ingredient detection failed: $e');
       throw InferenceException('Failed to detect ingredients: $e');
     }
   }
 
   /// Generate recipe from ingredients and preferences using text prompting
+  /// 
+  /// **Rate Limiting**: Enforces hourly and daily limits per user.
+  /// Throws [RecipeGenerationHourlyLimitException] or [RecipeGenerationDailyLimitException]
+  /// if user has exceeded their quota.
   Future<Map<String, dynamic>> generateRecipe({
     required List<String> ingredients,
+    required String userId,
     String? dietaryRestrictions,
     String? skillLevel,
     String? cuisinePreference,
@@ -97,6 +123,9 @@ class GeminiAIService {
     if (!_isInitialized || _model == null) {
       throw ModelNotInitializedException('Model has not been initialized');
     }
+
+    // Check rate limit BEFORE making API call
+    await _rateLimiter.checkRecipeGenerationLimit(userId);
 
     try {
       print('GeminiAIService: Starting recipe generation');
@@ -121,8 +150,15 @@ class GeminiAIService {
       final recipe = PromptTemplates.parseRecipeResponse(response);
 
       print('GeminiAIService: Generated recipe: ${recipe['name']}');
+
+      // Increment counter after successful API call
+      await _rateLimiter.incrementRecipeGeneration(userId);
+
       return recipe;
     } catch (e) {
+      if (e is RateLimitException) {
+        rethrow; // Don't wrap rate limit exceptions
+      }
       print('GeminiAIService: Recipe generation failed: $e');
       throw InferenceException('Failed to generate recipe: $e');
     }

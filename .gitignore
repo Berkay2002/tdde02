@@ -33,6 +33,7 @@ migrate_working_dir/
 /build/
 /coverage/
 /models/
+/documentation/guides/beta
 
 # Generated files (build_runner, freezed, riverpod)
 *.g.dart

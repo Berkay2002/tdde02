@@ -50,6 +50,20 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
     }
 
+    // User usage tracking: rate limiting counters (document ID = user UID)
+    match /user_usage/{userId} {
+      // Users can read their own usage stats
+      allow read: if isOwner(userId);
+      
+      // Users can write their own usage data (service manages this)
+      // Validate that user_id field matches the document ID and auth UID
+      allow create, update: if isOwner(userId) && 
+                               request.resource.data.user_id == request.auth.uid;
+      
+      // No deletion allowed (usage history should persist)
+      allow delete: if false;
+    }
+
     // Deny all other access by default
     match /{document=**} {
       allow read, write: if false;

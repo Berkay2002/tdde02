@@ -37,6 +37,18 @@ class AppConstants {
   static const int maxCachedRecipes = 50;
   static const String hiveRecipeBox = 'recipes_box';
   static const String hivePreferencesBox = 'preferences_box';
+  static const int cacheTtlDays = 7; // Recipe cache time-to-live
+
+  // Rate Limiting (Beta - Generous limits for select testers)
+  // These limits prevent abuse while allowing genuine exploration
+  static const int maxRecipeGenerationsPerHour = 20; // ~1 every 3 minutes
+  static const int maxRecipeGenerationsPerDay = 100; // ~4 per hour sustained
+  static const int maxIngredientDetectionsPerHour = 30; // Higher for camera retries
+  static const int maxIngredientDetectionsPerDay = 150;
+  // Gemini API free tier: 15 RPM, 1,500 RPD
+  // With ~50 beta users: 100 recipes/day/user = 5,000 potential (over limit)
+  // Caching reduces actual API calls by ~30%, so 3,500 calls
+  // This is manageable with staggered usage patterns
 
   // Dietary Restrictions
   static const List<String> dietaryRestrictions = [
@@ -56,6 +68,13 @@ class AppConstants {
     'Intermediate',
     'Advanced',
   ];
+
+  // Firestore Collections
+  static const String profilesCollection = 'profiles';
+  static const String userPreferencesCollection = 'user_preferences';
+  static const String recipesCollection = 'recipes';
+  static const String recipeCacheCollection = 'recipe_cache';
+  static const String userUsageCollection = 'user_usage'; // Rate limiting tracking
 
   // Cuisine Types
   static const List<String> cuisineTypes = [

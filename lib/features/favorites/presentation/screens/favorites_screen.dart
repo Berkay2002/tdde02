@@ -1,26 +1,78 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/providers/app_state_provider.dart';
+import '../../../../core/constants/recipe_categories.dart';
 import '../../../recipe_detail/presentation/screens/recipe_detail_screen.dart';
+import '../../../recipe_results/presentation/widgets/recipe_card.dart';
+import '../widgets/favorites_search_bar.dart';
+import '../widgets/favorites_filter_chips.dart';
+import '../widgets/empty_favorites_widget.dart';
+import '../widgets/favorites_stats_card.dart';
 
 /// FavoritesScreen - Tab 4
 ///
-/// Displays all saved favorite recipes.
-/// Users can view, remove, or navigate to recipe details.
-class FavoritesScreen extends ConsumerWidget {
+/// Displays all saved favorite recipes with search, filter, and sort functionality.
+/// Users can view, remove, organize, and navigate to recipe details.
+class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FavoritesScreen> createState() => _FavoritesScreenState();
+}
+
+enum FavoritesSortOption {
+  recentlyAdded,
+  alphabeticalAZ,
+  alphabeticalZA,
+  quickestFirst,
+  easiestFirst,
+}
+
+class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
+  String _searchQuery = '';
+  Set<String> _selectedFilters = {};
+  FavoritesSortOption _currentSort = FavoritesSortOption.recentlyAdded;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final favoriteRecipes = ref.watch(favoriteRecipesProvider);
+    final allFavorites = ref.watch(favoriteRecipesProvider);
+    final filteredRecipes = _applyFiltersAndSort(allFavorites);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Favorites'),
         centerTitle: true,
         actions: [
-          if (favoriteRecipes.isNotEmpty)
+          if (allFavorites.isNotEmpty)
+            PopupMenuButton<FavoritesSortOption>(
+              icon: const Icon(Icons.sort),
+              tooltip: 'Sort',
+              onSelected: (option) => setState(() => _currentSort = option),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: FavoritesSortOption.recentlyAdded,
+                  child: Text('Recently Added'),
+                ),
+                const PopupMenuItem(
+                  value: FavoritesSortOption.alphabeticalAZ,
+                  child: Text('Alphabetical (A-Z)'),
+                ),
+                const PopupMenuItem(
+                  value: FavoritesSortOption.alphabeticalZA,
+                  child: Text('Alphabetical (Z-A)'),
+                ),
+                const PopupMenuItem(
+                  value: FavoritesSortOption.quickestFirst,
+                  child: Text('Quickest First'),
+                ),
+                const PopupMenuItem(
+                  value: FavoritesSortOption.easiestFirst,
+                  child: Text('Easiest First'),
+                ),
+              ],
+            ),
+          if (allFavorites.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep),
               tooltip: 'Clear all favorites',
@@ -28,158 +80,219 @@ class FavoritesScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: favoriteRecipes.isEmpty
-          ? _buildEmptyState(theme)
-          : _buildFavoritesList(context, ref, favoriteRecipes, theme),
+      body: allFavorites.isEmpty
+          ? EmptyFavoritesWidget(
+              onBrowseRecipes: () => _navigateToTab(2),
+              onGenerateRecipes: () => _navigateToTab(0),
+            )
+          : Column(
+              children: [
+                // Search bar
+                FavoritesSearchBar(
+                  query: _searchQuery,
+                  onQueryChanged: (query) =>
+                      setState(() => _searchQuery = query),
+                  onClear: () => setState(() => _searchQuery = ''),
+                ),
+
+                // Filter chips
+                if (allFavorites.isNotEmpty)
+                  FavoritesFilterChips(
+                    selectedFilters: _selectedFilters,
+                    onFiltersChanged: (filters) =>
+                        setState(() => _selectedFilters = filters),
+                  ),
+
+                // Stats card
+                if (allFavorites.isNotEmpty && _searchQuery.isEmpty && _selectedFilters.isEmpty)
+                  FavoritesStatsCard(recipes: allFavorites),
+
+                // Recipe list
+                Expanded(
+                  child: filteredRecipes.isEmpty
+                      ? _buildEmptyFilterState(theme)
+                      : _buildFavoritesList(filteredRecipes),
+                ),
+              ],
+            ),
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.favorite_outline,
-            size: 80,
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-          ),
-          const SizedBox(height: 16),
-          Text('No favorites yet', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(
-            'Save recipes you love to find them here',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+  void _navigateToTab(int tabIndex) {
+    // Find the AppShell ancestor and switch tabs
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          tabIndex == 0
+              ? 'Navigate to Home to generate recipes'
+              : 'Navigate to Recipes to browse',
+        ),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
 
-  Widget _buildFavoritesList(
-    BuildContext context,
-    WidgetRef ref,
-    List<Recipe> recipes,
-    ThemeData theme,
-  ) {
+  List<Recipe> _applyFiltersAndSort(List<Recipe> recipes) {
+    var filtered = recipes;
+
+    // Apply search
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((recipe) {
+        return recipe.name.toLowerCase().contains(query) ||
+            recipe.description.toLowerCase().contains(query) ||
+            recipe.ingredients.any((i) => i.toLowerCase().contains(query)) ||
+            recipe.tags.any((t) => t.toLowerCase().contains(query));
+      }).toList();
+    }
+
+    // Apply filters
+    if (_selectedFilters.isNotEmpty) {
+      filtered = filtered.where((recipe) {
+        // Cuisine filters
+        final selectedCuisines = _selectedFilters.where((f) => [
+              'italian',
+              'asian',
+              'mexican',
+              'mediterranean',
+              'american'
+            ].contains(f));
+
+        if (selectedCuisines.isNotEmpty) {
+          final cuisine = RecipeCategoryHelper.detectCuisine(
+            recipe.name,
+            recipe.tags,
+          );
+          final cuisineName =
+              RecipeCategoryHelper.getCuisineName(cuisine).toLowerCase();
+          if (!selectedCuisines.contains(cuisineName)) return false;
+        }
+
+        // Difficulty filter
+        if (_selectedFilters.contains('easy')) {
+          final difficulty =
+              RecipeCategoryHelper.parseDifficulty(recipe.difficulty);
+          if (difficulty != RecipeDifficulty.easy) return false;
+        }
+
+        // Time filter
+        if (_selectedFilters.contains('< 30 min')) {
+          final totalTime = recipe.prepTime + recipe.cookTime;
+          if (totalTime >= 30) return false;
+        }
+
+        return true;
+      }).toList();
+    }
+
+    // Apply sort
+    return _sortRecipes(filtered);
+  }
+
+  List<Recipe> _sortRecipes(List<Recipe> recipes) {
+    final sorted = List<Recipe>.from(recipes);
+
+    switch (_currentSort) {
+      case FavoritesSortOption.recentlyAdded:
+        // Keep original order (most recent first)
+        break;
+      case FavoritesSortOption.alphabeticalAZ:
+        sorted.sort((a, b) => a.name.compareTo(b.name));
+      case FavoritesSortOption.alphabeticalZA:
+        sorted.sort((a, b) => b.name.compareTo(a.name));
+      case FavoritesSortOption.quickestFirst:
+        sorted.sort((a, b) =>
+            (a.prepTime + a.cookTime).compareTo(b.prepTime + b.cookTime));
+      case FavoritesSortOption.easiestFirst:
+        sorted.sort((a, b) {
+          final diffA = RecipeCategoryHelper.parseDifficulty(a.difficulty);
+          final diffB = RecipeCategoryHelper.parseDifficulty(b.difficulty);
+          return diffA.index.compareTo(diffB.index);
+        });
+    }
+
+    return sorted;
+  }
+
+  Widget _buildEmptyFilterState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 80,
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No recipes found',
+              style: theme.textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _searchQuery.isNotEmpty
+                  ? 'Try different search terms'
+                  : 'Try adjusting your filters',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _searchQuery = '';
+                  _selectedFilters.clear();
+                });
+              },
+              icon: const Icon(Icons.clear_all),
+              label: const Text('Clear Filters'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFavoritesList(List<Recipe> recipes) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: recipes.length,
       itemBuilder: (context, index) {
         final recipe = recipes[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RecipeDetailScreen(recipe: recipe),
-                ),
-              );
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Recipe header
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              recipe.name,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (recipe.description.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                recipe.description,
-                                style: theme.textTheme.bodyMedium,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.favorite, color: Colors.red),
-                        onPressed: () {
-                          ref
-                              .read(favoriteRecipesProvider.notifier)
-                              .removeRecipe(recipe.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${recipe.name} removed from favorites',
-                              ),
-                              action: SnackBarAction(
-                                label: 'Undo',
-                                onPressed: () {
-                                  ref
-                                      .read(favoriteRecipesProvider.notifier)
-                                      .addRecipe(recipe);
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                        tooltip: 'Remove from favorites',
-                      ),
-                    ],
-                  ),
-                ),
 
-                // Recipe meta info
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildMetaChip(
-                        Icons.schedule,
-                        '${recipe.prepTime + recipe.cookTime} min',
-                      ),
-                      _buildMetaChip(
-                        Icons.signal_cellular_alt,
-                        recipe.difficulty,
-                      ),
-                      _buildMetaChip(
-                        Icons.restaurant,
-                        '${recipe.ingredients.length} ingredients',
-                      ),
-                      if (recipe.tags.isNotEmpty)
-                        ...recipe.tags
-                            .take(2)
-                            .map((tag) => _buildMetaChip(Icons.label, tag)),
-                    ],
-                  ),
+        return RecipeCard(
+          recipe: recipe,
+          isFavorite: true, // Always true in favorites screen
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RecipeDetailScreen(recipe: recipe),
+              ),
+            );
+          },
+          onFavorite: () {
+            ref.read(favoriteRecipesProvider.notifier).removeRecipe(recipe.id);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${recipe.name} removed from favorites'),
+                action: SnackBarAction(
+                  label: 'Undo',
+                  onPressed: () {
+                    ref.read(favoriteRecipesProvider.notifier).addRecipe(recipe);
+                  },
                 ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
-    );
-  }
-
-  Widget _buildMetaChip(IconData icon, String label) {
-    return Chip(
-      avatar: Icon(icon, size: 16),
-      label: Text(label),
-      visualDensity: VisualDensity.compact,
     );
   }
 

@@ -13,11 +13,20 @@ service cloud.firestore {
 
     // User profile: one document per user, id == uid
     match /profiles/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update, delete: if isOwner(userId);
     }
 
     // User preferences: one document per user, id == uid
     match /user_preferences/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update, delete: if isOwner(userId);
+    }
+
+    // User data: pantry, shopping lists, etc.
+    match /user_data/{userId}/{document=**} {
       allow read, write: if isOwner(userId);
     }
 

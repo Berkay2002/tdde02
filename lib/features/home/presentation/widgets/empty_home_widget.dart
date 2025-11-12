@@ -18,31 +18,14 @@ class EmptyHomeWidget extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Large friendly icon
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withOpacity(0.5),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.restaurant_menu,
-                size: 64,
-                color: theme.colorScheme.primary,
-              ),
+            // Friendly illustration
+            Image.asset(
+              'assets/images/illustrations/empty_home_cooking.png',
+              height: 280,
+              fit: BoxFit.contain,
             ),
 
             const SizedBox(height: 24),
-
-            // Welcome message
-            Text(
-              'Welcome to Your\nAI Recipe Generator!',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
 
             const SizedBox(height: 16),
 

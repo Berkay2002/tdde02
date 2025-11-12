@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../providers/auth_provider.dart';
-import 'onboarding_screen.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -58,9 +57,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     authState.when(
       data: (user) {
         if (user != null) {
-          // Navigate to onboarding to collect preferences
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          // Navigate directly to home
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/home',
+            (route) => false,
           );
         }
       },
@@ -77,31 +77,42 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    await ref.read(authNotifierProvider.notifier).signInWithGoogle();
+    try {
+      await ref.read(authNotifierProvider.notifier).signInWithGoogle();
 
-    final authState = ref.read(authNotifierProvider);
+      if (!mounted) return;
 
-    if (!mounted) return;
+      final authState = ref.read(authNotifierProvider);
 
-    authState.when(
-      data: (user) {
-        if (user != null) {
-          // Navigate to onboarding to collect preferences
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+      authState.when(
+        data: (user) {
+          if (user != null) {
+            // Navigate to home/welcome screen which will auto-navigate to app
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/welcome',
+              (route) => false,
+            );
+          }
+        },
+        loading: () {},
+        error: (error, stack) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Google sign in failed: ${error.toString()}'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
           );
-        }
-      },
-      loading: () {},
-      error: (error, stack) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google sign in failed: ${error.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      },
-    );
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sign in error: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   @override

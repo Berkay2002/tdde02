@@ -248,10 +248,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         children: [
           const SizedBox(height: AppConstants.defaultPadding),
           Center(
-            child: Icon(
-              Icons.restaurant_menu,
-              size: 60,
-              color: Theme.of(context).colorScheme.primary,
+            child: Image.asset(
+              'assets/images/illustrations/onboarding_skill_level.png',
+              height: 200,
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(height: AppConstants.largePadding),

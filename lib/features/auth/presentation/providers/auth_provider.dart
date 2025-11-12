@@ -1,5 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hive/hive.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/providers/firebase_provider.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -19,7 +21,17 @@ AuthRepository authRepository(AuthRepositoryRef ref) {
   final auth = ref.watch(firebaseAuthProvider);
   final firestore = ref.watch(firestoreProvider);
   final googleSignIn = ref.watch(googleSignInProvider);
-  return AuthRepositoryImpl(auth, firestore, googleSignIn);
+  
+  final recipeBox = Hive.box(AppConstants.hiveRecipeBox);
+  final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
+  
+  return AuthRepositoryImpl(
+    auth,
+    firestore,
+    googleSignIn,
+    recipeBox: recipeBox,
+    prefsBox: prefsBox,
+  );
 }
 
 /// Provider for current user profile

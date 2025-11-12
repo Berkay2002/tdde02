@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../shared/providers/firebase_provider.dart';
 
 /// Account information card showing user details and account actions
 class AccountInfoCard extends ConsumerWidget {
@@ -120,12 +121,23 @@ class AccountInfoCard extends ConsumerWidget {
 
     if (confirmed == true && context.mounted) {
       try {
+        // Sign out and invalidate auth providers to trigger reactivity
         await ref.read(authNotifierProvider.notifier).signOut();
+        
+        // Invalidate providers to ensure reactive updates
+        ref.invalidate(authStateChangesProvider);
+        ref.invalidate(currentUserProvider);
+        ref.invalidate(authNotifierProvider);
+        
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Signed out successfully')),
           );
-          // Navigation to login handled by auth state listener
+          // Navigate to welcome screen and clear navigation stack
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/welcome',
+            (route) => false,
+          );
         }
       } catch (e) {
         if (context.mounted) {

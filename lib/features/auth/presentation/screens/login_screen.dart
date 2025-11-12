@@ -42,8 +42,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       authState.when(
         data: (user) {
           if (user != null) {
-            // Pop back to WelcomeScreen, which will auto-navigate to AppShell
-            Navigator.of(context).pop();
+            // Navigate directly to home
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/home',
+              (route) => false,
+            );
           }
         },
         loading: () {},
@@ -78,12 +81,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       authState.when(
         data: (user) {
           if (user != null) {
-            // Pop back to WelcomeScreen, which will auto-navigate to AppShell
-            Navigator.of(context).pop();
+            // Success - navigate directly to home
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/home',
+              (route) => false,
+            );
           }
         },
-        loading: () {},
+        loading: () {
+          // Still loading - wait for completion
+        },
         error: (error, stack) {
+          print('Google sign in error: $error');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Google sign in failed: ${error.toString()}'),
@@ -94,9 +103,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      print('Google sign in exception: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Google sign in failed: ${e.toString()}'),
+          content: Text('Sign in error: ${e.toString()}'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

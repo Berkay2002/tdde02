@@ -79,7 +79,7 @@ class PantryFilterChips extends StatelessWidget {
                     ),
                   );
                 })
-                .toList(),
+                ,
           ],
         ),
       ),

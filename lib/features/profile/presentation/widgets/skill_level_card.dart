@@ -154,7 +154,7 @@ class SkillLevelCard extends StatelessWidget {
                     ),
                   ),
                 );
-              }).toList()
+              })
             else
               Container(
                 width: double.infinity,

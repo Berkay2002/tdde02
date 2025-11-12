@@ -204,7 +204,7 @@ class _FavoritesStatsCardState extends State<FavoritesStatsCard> {
     final hardPct = ((hardCount / recipes.length) * 100).round();
 
     final difficultyBreakdown =
-        '${easyPct}% easy, ${mediumPct}% medium, ${hardPct}% hard';
+        '$easyPct% easy, $mediumPct% medium, $hardPct% hard';
 
     // Calculate total unique ingredients
     final allIngredients = <String>{};

@@ -25,10 +25,7 @@ class FavoritesSearchBar extends StatelessWidget {
           hintText: 'Search favorites...',
           prefixIcon: const Icon(Icons.search),
           suffixIcon: query.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: onClear,
-                )
+              ? IconButton(icon: const Icon(Icons.clear), onPressed: onClear)
               : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -40,10 +37,7 @@ class FavoritesSearchBar extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: theme.colorScheme.primary,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
           ),
           filled: true,
           fillColor: theme.colorScheme.surfaceContainerHighest,

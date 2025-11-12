@@ -15,8 +15,8 @@ class CookingStatsCard extends ConsumerWidget {
 
     // Calculate stats
     final recipesThisWeek = _countRecentRecipes(favorites, days: 7);
-    final mostLovedCuisine = profile.cuisinePreferences.isNotEmpty 
-        ? profile.cuisinePreferences.join(', ') 
+    final mostLovedCuisine = profile.cuisinePreferences.isNotEmpty
+        ? profile.cuisinePreferences.join(', ')
         : 'All Cuisines';
 
     return Card(
@@ -91,21 +91,13 @@ class _StatRow extends StatelessWidget {
   final String text;
   final ThemeData theme;
 
-  const _StatRow({
-    required this.icon,
-    required this.text,
-    required this.theme,
-  });
+  const _StatRow({required this.icon, required this.text, required this.theme});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: theme.colorScheme.primary,
-        ),
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
         const SizedBox(width: 12),
         Expanded(
           child: Text(

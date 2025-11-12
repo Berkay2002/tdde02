@@ -8,6 +8,7 @@ import '../widgets/dietary_restrictions_card.dart';
 import '../widgets/skill_level_card.dart';
 import '../widgets/cuisine_preference_card.dart';
 import '../widgets/account_info_card.dart';
+import '../widgets/measurement_system_card.dart';
 
 /// ProfileScreen - Tab 5
 ///
@@ -62,7 +63,9 @@ class ProfileScreen extends ConsumerWidget {
           SkillLevelCard(
             selectedLevels: profile.skillLevels,
             onChanged: (levels) {
-              ref.read(dietaryProfileProvider.notifier).updateSkillLevels(levels);
+              ref
+                  .read(dietaryProfileProvider.notifier)
+                  .updateSkillLevels(levels);
             },
           ),
           const SizedBox(height: 16),
@@ -74,6 +77,17 @@ class ProfileScreen extends ConsumerWidget {
               ref
                   .read(dietaryProfileProvider.notifier)
                   .updateCuisinePreferences(cuisines);
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Measurement System
+          MeasurementSystemCard(
+            selectedSystem: profile.measurementSystem,
+            onChanged: (system) {
+              ref
+                  .read(dietaryProfileProvider.notifier)
+                  .updateMeasurementSystem(system);
             },
           ),
           const SizedBox(height: 24),

@@ -16,8 +16,8 @@ class AppConstants {
   static const int imageQuality = 85; // JPEG quality
 
   // Inference Timeouts
-  static const Duration ingredientDetectionTimeout = Duration(seconds: 15);
-  static const Duration recipeGenerationTimeout = Duration(seconds: 30);
+  static const Duration ingredientDetectionTimeout = Duration(seconds: 30);
+  static const Duration recipeGenerationTimeout = Duration(seconds: 45);
 
   // Retry Configuration
   static const int maxRetries = 2;

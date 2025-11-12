@@ -49,7 +49,10 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
         _lastProfile == null ||
         !_listEquals(_lastProfile!.restrictions, profile.restrictions) ||
         !_listEquals(_lastProfile!.skillLevels, profile.skillLevels) ||
-        !_listEquals(_lastProfile!.cuisinePreferences, profile.cuisinePreferences);
+        !_listEquals(
+          _lastProfile!.cuisinePreferences,
+          profile.cuisinePreferences,
+        );
 
     // Skip regeneration if nothing changed and we have existing recipes
     if (!ingredientsChanged &&
@@ -73,7 +76,9 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
         ingredients,
         profile.restrictions.join(', '),
         profile.skillLevels.isNotEmpty ? profile.skillLevels.first : 'beginner',
-        profile.cuisinePreferences.isNotEmpty ? profile.cuisinePreferences.first : null,
+        profile.cuisinePreferences.isNotEmpty
+            ? profile.cuisinePreferences.first
+            : null,
       );
 
       if (cachedRecipes != null && cachedRecipes.isNotEmpty) {
@@ -122,8 +127,13 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
             ingredients: ingredients,
             userId: userId,
             dietaryRestrictions: profile.restrictions.join(', '),
-            skillLevel: profile.skillLevels.isNotEmpty ? profile.skillLevels.first : 'beginner',
-            cuisinePreference: profile.cuisinePreferences.isNotEmpty ? profile.cuisinePreferences.first : null,
+            skillLevel: profile.skillLevels.isNotEmpty
+                ? profile.skillLevels.first
+                : 'beginner',
+            cuisinePreference: profile.cuisinePreferences.isNotEmpty
+                ? profile.cuisinePreferences.first
+                : null,
+            measurementSystem: profile.measurementSystem,
           );
 
           final recipe = Recipe(
@@ -179,8 +189,12 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
           ingredients,
           recipesData,
           profile.restrictions.join(', '),
-          profile.skillLevels.isNotEmpty ? profile.skillLevels.first : 'beginner',
-          profile.cuisinePreferences.isNotEmpty ? profile.cuisinePreferences.first : null,
+          profile.skillLevels.isNotEmpty
+              ? profile.skillLevels.first
+              : 'beginner',
+          profile.cuisinePreferences.isNotEmpty
+              ? profile.cuisinePreferences.first
+              : null,
         );
       }
 

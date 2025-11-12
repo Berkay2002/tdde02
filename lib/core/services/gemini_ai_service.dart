@@ -47,7 +47,7 @@ class GeminiAIService {
           temperature: AppConstants.temperature,
           topK: AppConstants.topK,
           maxOutputTokens: AppConstants.maxTokens,
-          responseMimeType: 'text/plain', // Plain text for cleaner parsing
+          responseMimeType: 'application/json', // JSON for structured output
         ),
       );
 
@@ -62,6 +62,70 @@ class GeminiAIService {
   }
 
   /// Detect ingredients from preprocessed image data using multimodal prompting
+  /// Returns structured ingredient data with metadata
+  ///
+  /// **Rate Limiting**: Enforces hourly and daily limits per user.
+  Future<List<Map<String, dynamic>>> detectIngredientsStructured(
+    Uint8List imageData,
+    String userId,
+  ) async {
+    if (!_isInitialized || _model == null) {
+      throw ModelNotInitializedException('Model has not been initialized');
+    }
+
+    // Check rate limit BEFORE making API call
+    await _rateLimiter.checkIngredientDetectionLimit(userId);
+
+    try {
+      print('GeminiAIService: Starting structured ingredient detection');
+
+      final prompt = PromptTemplates.getIngredientDetectionPrompt();
+
+      // Create multimodal content with image and text
+      final content = [
+        Content.multi([
+          TextPart(prompt),
+          InlineDataPart('image/jpeg', imageData),
+        ]),
+      ];
+
+      // Generate response with timeout
+      final response = await _generateWithTimeout(
+        content: content,
+        timeout: AppConstants.ingredientDetectionTimeout,
+      );
+
+      // Parse structured response
+      final structuredIngredients =
+          PromptTemplates.parseIngredientResponseStructured(response);
+
+      print(
+        'GeminiAIService: Detected ${structuredIngredients.length} ingredients with metadata',
+      );
+
+      // Log confidence distribution
+      final confidenceCounts = <String, int>{};
+      for (final item in structuredIngredients) {
+        final conf = item['quantityConfidence']?.toString() ?? 'none';
+        confidenceCounts[conf] = (confidenceCounts[conf] ?? 0) + 1;
+      }
+      print('Confidence distribution: $confidenceCounts');
+
+      // Increment counter after successful API call
+      await _rateLimiter.incrementIngredientDetection(userId);
+
+      return structuredIngredients;
+    } catch (e) {
+      if (e is RateLimitException) {
+        rethrow;
+      }
+      print('GeminiAIService: Structured ingredient detection failed: $e');
+      throw InferenceException('Failed to detect ingredients: $e');
+    }
+  }
+
+  /// Detect ingredients from preprocessed image data using multimodal prompting
+  /// Returns simple list of ingredient names (legacy)
   ///
   /// **Rate Limiting**: Enforces hourly and daily limits per user.
   /// Throws [IngredientDetectionHourlyLimitException] or [IngredientDetectionDailyLimitException]
@@ -96,7 +160,25 @@ class GeminiAIService {
         timeout: AppConstants.ingredientDetectionTimeout,
       );
 
-      final ingredients = PromptTemplates.parseIngredientResponse(response);
+      // Try structured parsing first, fallback to simple list
+      final structuredIngredients =
+          PromptTemplates.parseIngredientResponseStructured(response);
+
+      List<String> ingredients;
+      if (structuredIngredients.isNotEmpty) {
+        // Extract just the names for now (full objects stored separately)
+        ingredients = structuredIngredients
+            .map((item) => item['name'] as String? ?? '')
+            .where((name) => name.isNotEmpty)
+            .toList();
+        print(
+          'Using structured ingredient data: ${structuredIngredients.length} items',
+        );
+      } else {
+        // Fallback to simple text parsing
+        ingredients = PromptTemplates.parseIngredientResponse(response);
+        print('Using legacy ingredient parsing: ${ingredients.length} items');
+      }
 
       print('GeminiAIService: Detected ${ingredients.length} ingredients');
 
@@ -124,6 +206,7 @@ class GeminiAIService {
     String? dietaryRestrictions,
     String? skillLevel,
     String? cuisinePreference,
+    String measurementSystem = 'metric',
   }) async {
     if (!_isInitialized || _model == null) {
       throw ModelNotInitializedException('Model has not been initialized');
@@ -140,6 +223,7 @@ class GeminiAIService {
         dietaryRestrictions: dietaryRestrictions,
         skillLevel: skillLevel,
         cuisinePreference: cuisinePreference,
+        measurementSystem: measurementSystem,
       );
 
       // Create text-only content
@@ -152,7 +236,15 @@ class GeminiAIService {
         maxRetries: AppConstants.maxRetries,
       );
 
-      final recipe = PromptTemplates.parseRecipeResponse(response);
+      // Try structured JSON parsing first, fallback to legacy
+      Map<String, dynamic> recipe;
+      try {
+        recipe = PromptTemplates.parseRecipeResponseStructured(response);
+        print('Using structured recipe data');
+      } catch (e) {
+        print('Structured parsing failed, using legacy parser: $e');
+        recipe = PromptTemplates.parseRecipeResponse(response);
+      }
 
       print('GeminiAIService: Generated recipe: ${recipe['name']}');
 

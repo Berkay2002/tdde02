@@ -37,9 +37,10 @@ class _CuisinePreferenceCardState extends State<CuisinePreferenceCard> {
     final filteredCuisines = _searchQuery.isEmpty
         ? _cuisinesWithIcons.entries.toList()
         : _cuisinesWithIcons.entries
-            .where((e) =>
-                e.key.toLowerCase().contains(_searchQuery.toLowerCase()))
-            .toList();
+              .where(
+                (e) => e.key.toLowerCase().contains(_searchQuery.toLowerCase()),
+              )
+              .toList();
 
     return Card(
       child: Padding(
@@ -109,7 +110,9 @@ class _CuisinePreferenceCardState extends State<CuisinePreferenceCard> {
                 spacing: 8,
                 runSpacing: 8,
                 children: filteredCuisines.map((entry) {
-                  final isSelected = widget.selectedCuisines.contains(entry.key);
+                  final isSelected = widget.selectedCuisines.contains(
+                    entry.key,
+                  );
                   return FilterChip(
                     avatar: Text(
                       entry.value,
@@ -118,7 +121,9 @@ class _CuisinePreferenceCardState extends State<CuisinePreferenceCard> {
                     label: Text(entry.key),
                     selected: isSelected,
                     onSelected: (_) {
-                      final newSelection = List<String>.from(widget.selectedCuisines);
+                      final newSelection = List<String>.from(
+                        widget.selectedCuisines,
+                      );
                       if (isSelected) {
                         newSelection.remove(entry.key);
                       } else {

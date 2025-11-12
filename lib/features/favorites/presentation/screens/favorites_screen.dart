@@ -104,7 +104,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                   ),
 
                 // Stats card
-                if (allFavorites.isNotEmpty && _searchQuery.isEmpty && _selectedFilters.isEmpty)
+                if (allFavorites.isNotEmpty &&
+                    _searchQuery.isEmpty &&
+                    _selectedFilters.isEmpty)
                   FavoritesStatsCard(recipes: allFavorites),
 
                 // Recipe list
@@ -151,28 +153,32 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     if (_selectedFilters.isNotEmpty) {
       filtered = filtered.where((recipe) {
         // Cuisine filters
-        final selectedCuisines = _selectedFilters.where((f) => [
-              'italian',
-              'asian',
-              'mexican',
-              'mediterranean',
-              'american'
-            ].contains(f));
+        final selectedCuisines = _selectedFilters.where(
+          (f) => [
+            'italian',
+            'asian',
+            'mexican',
+            'mediterranean',
+            'american',
+          ].contains(f),
+        );
 
         if (selectedCuisines.isNotEmpty) {
           final cuisine = RecipeCategoryHelper.detectCuisine(
             recipe.name,
             recipe.tags,
           );
-          final cuisineName =
-              RecipeCategoryHelper.getCuisineName(cuisine).toLowerCase();
+          final cuisineName = RecipeCategoryHelper.getCuisineName(
+            cuisine,
+          ).toLowerCase();
           if (!selectedCuisines.contains(cuisineName)) return false;
         }
 
         // Difficulty filter
         if (_selectedFilters.contains('easy')) {
-          final difficulty =
-              RecipeCategoryHelper.parseDifficulty(recipe.difficulty);
+          final difficulty = RecipeCategoryHelper.parseDifficulty(
+            recipe.difficulty,
+          );
           if (difficulty != RecipeDifficulty.easy) return false;
         }
 
@@ -202,8 +208,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       case FavoritesSortOption.alphabeticalZA:
         sorted.sort((a, b) => b.name.compareTo(a.name));
       case FavoritesSortOption.quickestFirst:
-        sorted.sort((a, b) =>
-            (a.prepTime + a.cookTime).compareTo(b.prepTime + b.cookTime));
+        sorted.sort(
+          (a, b) =>
+              (a.prepTime + a.cookTime).compareTo(b.prepTime + b.cookTime),
+        );
       case FavoritesSortOption.easiestFirst:
         sorted.sort((a, b) {
           final diffA = RecipeCategoryHelper.parseDifficulty(a.difficulty);
@@ -228,10 +236,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
               color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
             ),
             const SizedBox(height: 16),
-            Text(
-              'No recipes found',
-              style: theme.textTheme.titleLarge,
-            ),
+            Text('No recipes found', style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
               _searchQuery.isNotEmpty
@@ -285,7 +290,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                 action: SnackBarAction(
                   label: 'Undo',
                   onPressed: () {
-                    ref.read(favoriteRecipesProvider.notifier).addRecipe(recipe);
+                    ref
+                        .read(favoriteRecipesProvider.notifier)
+                        .addRecipe(recipe);
                   },
                 ),
               ),

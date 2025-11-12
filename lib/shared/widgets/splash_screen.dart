@@ -93,7 +93,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -132,7 +132,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   Widget _buildLogo(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       width: 120,
       height: 120,
@@ -194,10 +194,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         const SizedBox(height: 8),
         Text(
           'This may take a few moments',
-          style: TextStyle(
-            color: textColor.withOpacity(0.7),
-            fontSize: 14,
-          ),
+          style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 14),
         ),
       ],
     );
@@ -207,7 +204,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final textColor = Theme.of(context).brightness == Brightness.dark
         ? Theme.of(context).colorScheme.onSurface
         : Theme.of(context).colorScheme.onPrimary;
-        
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
@@ -225,10 +222,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           const SizedBox(height: 12),
           Text(
             _errorMessage ?? 'Unknown error occurred',
-            style: TextStyle(
-              color: textColor.withOpacity(0.8),
-              fontSize: 14,
-            ),
+            style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 14),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),

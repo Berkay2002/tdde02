@@ -16,21 +16,13 @@ class FavoritesFilterChips extends StatelessWidget {
     final theme = Theme.of(context);
 
     final filters = [
-      _FilterOption(
-        label: 'All',
-        value: 'all',
-        icon: Icons.grid_view,
-      ),
+      _FilterOption(label: 'All', value: 'all', icon: Icons.grid_view),
       _FilterOption(
         label: 'Italian',
         value: 'italian',
         icon: Icons.local_pizza,
       ),
-      _FilterOption(
-        label: 'Asian',
-        value: 'asian',
-        icon: Icons.ramen_dining,
-      ),
+      _FilterOption(label: 'Asian', value: 'asian', icon: Icons.ramen_dining),
       _FilterOption(
         label: 'Mexican',
         value: 'mexican',
@@ -41,21 +33,13 @@ class FavoritesFilterChips extends StatelessWidget {
         value: 'mediterranean',
         icon: Icons.water_drop,
       ),
-      _FilterOption(
-        label: 'American',
-        value: 'american',
-        icon: Icons.fastfood,
-      ),
+      _FilterOption(label: 'American', value: 'american', icon: Icons.fastfood),
       _FilterOption(
         label: 'Easy',
         value: 'easy',
         icon: Icons.sentiment_satisfied,
       ),
-      _FilterOption(
-        label: '< 30 min',
-        value: '< 30 min',
-        icon: Icons.timer,
-      ),
+      _FilterOption(label: '< 30 min', value: '< 30 min', icon: Icons.timer),
     ];
 
     return SizedBox(

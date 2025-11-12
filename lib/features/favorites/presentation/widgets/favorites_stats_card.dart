@@ -6,10 +6,7 @@ import '../../../../core/constants/recipe_categories.dart';
 class FavoritesStatsCard extends StatefulWidget {
   final List<Recipe> recipes;
 
-  const FavoritesStatsCard({
-    super.key,
-    required this.recipes,
-  });
+  const FavoritesStatsCard({super.key, required this.recipes});
 
   @override
   State<FavoritesStatsCard> createState() => _FavoritesStatsCardState();
@@ -34,58 +31,52 @@ class _FavoritesStatsCardState extends State<FavoritesStatsCard> {
           childrenPadding: EdgeInsets.zero,
           shape: const Border(),
           collapsedShape: const Border(),
-          leading: Icon(
-              Icons.bar_chart,
-              color: theme.colorScheme.primary,
+          leading: Icon(Icons.bar_chart, color: theme.colorScheme.primary),
+          title: Text(
+            '${widget.recipes.length} Favorite ${widget.recipes.length == 1 ? 'Recipe' : 'Recipes'}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
-            title: Text(
-              '${widget.recipes.length} Favorite ${widget.recipes.length == 1 ? 'Recipe' : 'Recipes'}',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            trailing: Icon(
-              _isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            onExpansionChanged: (expanded) {
-              setState(() => _isExpanded = expanded);
-            },
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Column(
-                  children: [
-                    _buildStatRow(
-                      context,
-                      icon: Icons.public,
-                      label: 'Most loved cuisine',
-                      value: stats.topCuisine,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStatRow(
-                      context,
-                      icon: Icons.schedule,
-                      label: 'Average cooking time',
-                      value: '${stats.avgTime} min',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDifficultyRow(
-                      context,
-                      stats: stats,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStatRow(
-                      context,
-                      icon: Icons.restaurant,
-                      label: 'Total ingredients',
-                      value: '${stats.totalIngredients} unique',
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
+          trailing: Icon(
+            _isExpanded ? Icons.expand_less : Icons.expand_more,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          onExpansionChanged: (expanded) {
+            setState(() => _isExpanded = expanded);
+          },
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Column(
+                children: [
+                  _buildStatRow(
+                    context,
+                    icon: Icons.public,
+                    label: 'Most loved cuisine',
+                    value: stats.topCuisine,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildStatRow(
+                    context,
+                    icon: Icons.schedule,
+                    label: 'Average cooking time',
+                    value: '${stats.avgTime} min',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDifficultyRow(context, stats: stats),
+                  const SizedBox(height: 12),
+                  _buildStatRow(
+                    context,
+                    icon: Icons.restaurant,
+                    label: 'Total ingredients',
+                    value: '${stats.totalIngredients} unique',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -100,11 +91,7 @@ class _FavoritesStatsCardState extends State<FavoritesStatsCard> {
 
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: theme.colorScheme.primary,
-        ),
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
@@ -202,7 +189,9 @@ class _FavoritesStatsCardState extends State<FavoritesStatsCard> {
     // Calculate difficulty breakdown
     final difficultyCounts = <RecipeDifficulty, int>{};
     for (final recipe in recipes) {
-      final difficulty = RecipeCategoryHelper.parseDifficulty(recipe.difficulty);
+      final difficulty = RecipeCategoryHelper.parseDifficulty(
+        recipe.difficulty,
+      );
       difficultyCounts[difficulty] = (difficultyCounts[difficulty] ?? 0) + 1;
     }
 

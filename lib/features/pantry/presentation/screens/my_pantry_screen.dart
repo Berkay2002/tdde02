@@ -12,6 +12,8 @@ import '../widgets/pantry_sort_sheet.dart';
 import '../widgets/grouped_pantry_view.dart';
 import '../widgets/pantry_quick_actions.dart';
 import '../../../camera/presentation/screens/camera_screen.dart';
+import '../../../ingredient_detection/presentation/providers/ingredient_detection_provider.dart';
+import '../../../ingredient_detection/presentation/screens/ingredient_detection_screen.dart';
 
 enum PantryViewMode { list, grouped }
 
@@ -42,24 +44,58 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
 
   Future<void> _handleCameraScan() async {
     // Launch camera modal for pantry add
-    final ingredients = await Navigator.push<List<String>>(
+    final cameraResult = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
         builder: (context) => const CameraScreen(mode: CameraMode.pantryAdd),
       ),
     );
 
-    if (ingredients != null && ingredients.isNotEmpty && mounted) {
-      // Add to pantryIngredients
-      ref.read(pantryIngredientsProvider.notifier).addIngredients(ingredients);
-
-      // Show confirmation
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${ingredients.length} ingredient(s) added to pantry!'),
-          backgroundColor: Colors.green,
+    // If camera detected ingredients, navigate to detection screen for review
+    if (cameraResult == true && mounted) {
+      final confirmed = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const IngredientDetectionScreen(
+            isPantryMode: true,
+          ),
         ),
       );
+
+      // If user confirmed, add ingredients to pantry
+      if (confirmed == true && mounted) {
+        final detectionState =
+            ref.read(ingredientDetectionProvider).detectedIngredients;
+
+        if (detectionState != null && detectionState.detectedItems.isNotEmpty) {
+          // Convert DetectedIngredientItems to pantry format with confirmed quantities
+          final pantryData = detectionState.detectedItems.map((item) {
+            return {
+              'name': item.name,
+              'quantity': item.finalQuantity,
+              'unit': item.finalUnit,
+              'category': item.category,
+              'freshness': item.freshness,
+            };
+          }).toList();
+
+          ref
+              .read(pantryIngredientsProvider.notifier)
+              .addIngredientsStructured(pantryData);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${pantryData.length} ingredient(s) added to pantry!',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Clear the detection state
+          ref.read(ingredientDetectionProvider.notifier).clearIngredients();
+        }
+      }
     }
   }
 

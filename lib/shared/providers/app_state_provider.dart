@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../core/constants/app_constants.dart';
 import '../../features/pantry/domain/entities/pantry_item.dart';
+import '../../features/pantry/domain/entities/ingredient_category.dart';
 
 /// Model for dietary profile/preferences
 class DietaryProfile {
@@ -9,22 +10,26 @@ class DietaryProfile {
   final List<String> skillLevels; // e.g., ['beginner', 'intermediate']
   final List<String>
   cuisinePreferences; // e.g., ['italian', 'asian', 'mexican']
+  final String measurementSystem; // 'metric' or 'imperial'
 
   const DietaryProfile({
     this.restrictions = const [],
     this.skillLevels = const ['beginner'],
     this.cuisinePreferences = const [],
+    this.measurementSystem = 'metric',
   });
 
   DietaryProfile copyWith({
     List<String>? restrictions,
     List<String>? skillLevels,
     List<String>? cuisinePreferences,
+    String? measurementSystem,
   }) {
     return DietaryProfile(
       restrictions: restrictions ?? this.restrictions,
       skillLevels: skillLevels ?? this.skillLevels,
       cuisinePreferences: cuisinePreferences ?? this.cuisinePreferences,
+      measurementSystem: measurementSystem ?? this.measurementSystem,
     );
   }
 
@@ -32,6 +37,7 @@ class DietaryProfile {
     'restrictions': restrictions,
     'skillLevels': skillLevels,
     'cuisinePreferences': cuisinePreferences,
+    'measurementSystem': measurementSystem,
   };
 
   factory DietaryProfile.fromJson(Map<String, dynamic> json) {
@@ -49,6 +55,7 @@ class DietaryProfile {
           (json['cuisinePreference'] != null
               ? [json['cuisinePreference'] as String]
               : []),
+      measurementSystem: json['measurementSystem'] as String? ?? 'metric',
     );
   }
 }
@@ -195,6 +202,64 @@ class PantryIngredientsNotifier extends StateNotifier<List<PantryItem>> {
     _saveToStorage();
   }
 
+  void addIngredientsStructured(List<Map<String, dynamic>> ingredients) {
+    final newState = [...state];
+    for (final ingredientData in ingredients) {
+      final name = ingredientData['name'] as String? ?? '';
+      if (name.isEmpty) continue;
+
+      // Skip duplicates
+      if (newState.any((e) => e.name.toLowerCase() == name.toLowerCase())) {
+        continue;
+      }
+
+      // Map LLM category string to IngredientCategory enum
+      final categoryStr = ingredientData['category'] as String? ?? 'other';
+      final category = _mapStringToCategory(categoryStr);
+
+      // Create PantryItem with structured data
+      final item = PantryItem(
+        id: '${DateTime.now().millisecondsSinceEpoch}_$name',
+        name: name,
+        category: category,
+        quantity: ingredientData['quantity'] as String?,
+        unit: ingredientData['unit'] as String?,
+        dateAdded: DateTime.now(),
+        expirationDate: null, // Can be set later by user
+      );
+
+      newState.add(item);
+    }
+    state = newState;
+    _saveToStorage();
+  }
+
+  /// Map LLM category string to IngredientCategory enum
+  IngredientCategory _mapStringToCategory(String categoryStr) {
+    final lower = categoryStr.toLowerCase();
+    switch (lower) {
+      case 'vegetables':
+        return IngredientCategory.vegetables;
+      case 'fruits':
+        return IngredientCategory.fruits;
+      case 'proteins':
+        return IngredientCategory.proteins;
+      case 'dairy':
+        return IngredientCategory.dairy;
+      case 'grains':
+        return IngredientCategory.grains;
+      case 'spices':
+      case 'herbs':
+        return IngredientCategory.herbs;
+      case 'condiments':
+        return IngredientCategory.condiments;
+      case 'canned':
+        return IngredientCategory.canned;
+      default:
+        return IngredientCategory.unknown;
+    }
+  }
+
   void addIngredient(String ingredient) {
     if (!state.any((e) => e.name.toLowerCase() == ingredient.toLowerCase())) {
       state = [...state, PantryItem.fromLegacy(ingredient)];
@@ -309,6 +374,11 @@ class DietaryProfileNotifier extends StateNotifier<DietaryProfile> {
 
   void updateCuisinePreferences(List<String> preferences) {
     state = state.copyWith(cuisinePreferences: preferences);
+    _saveToStorage();
+  }
+
+  void updateMeasurementSystem(String system) {
+    state = state.copyWith(measurementSystem: system);
     _saveToStorage();
   }
 

@@ -60,19 +60,20 @@ class EmptyRecipesWidget extends StatelessWidget {
     Color? iconColor,
   }) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 96,
+              size: 80,
               color:
                   iconColor ??
                   theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
               title,
               style: theme.textTheme.titleLarge?.copyWith(
@@ -80,7 +81,7 @@ class EmptyRecipesWidget extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               subtitle,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -89,7 +90,7 @@ class EmptyRecipesWidget extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               FilledButton.icon(
                 onPressed: onAction,
                 icon: Icon(actionIcon ?? Icons.arrow_forward),

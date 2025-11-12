@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/services/permission_service.dart';
 import '../../../../shared/providers/services_provider.dart';
 import '../../../../core/utils/image_processor.dart';
+import '../../../ingredient_detection/presentation/providers/ingredient_detection_provider.dart';
 import '../providers/camera_provider.dart';
 import '../widgets/camera_controls_widget.dart';
 import 'image_preview_screen.dart';
@@ -196,25 +197,61 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       }
 
       // Detect ingredients
-      final ingredients = await aiService.detectIngredients(
-        processedBytes,
-        user.uid,
-      );
+      if (widget.mode == CameraMode.pantryAdd) {
+        // Use detection provider for pantry mode - it will handle structured detection
+        print('Camera: Starting ingredient detection...');
+        
+        // Call the detection method and get success status
+        final success = await ref.read(ingredientDetectionProvider.notifier).detectIngredients(
+          processedBytes,
+          DateTime.now().millisecondsSinceEpoch.toString(),
+        );
+        
+        print('Camera: Detection complete - success: $success');
 
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
+          
+          if (success) {
+            // Pop camera screen and signal success
+            print('Camera: Detection successful, navigating back with true');
+            Navigator.pop(context, true);
+          } else {
+            // Read the error message from state
+            final detectionState = ref.read(ingredientDetectionProvider);
+            final errorMessage = detectionState.errorMessage ?? 'No ingredients detected. Please try again.';
+            
+            print('Camera: Detection failed - $errorMessage');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: detectionState.errorMessage != null ? Colors.red : Colors.orange,
+              ),
+            );
+          }
+        }
+      } else {
+        // Use simple detection for quick scan mode
+        final ingredients = await aiService.detectIngredients(
+          processedBytes,
+          user.uid,
+        );
 
-        if (ingredients.isNotEmpty) {
-          // Return the ingredients list
-          Navigator.pop(context, ingredients);
-        } else {
-          // Show error if no ingredients detected
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No ingredients detected. Please try again.'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
+
+          if (ingredients.isNotEmpty) {
+            // Return the ingredients list
+            Navigator.pop(context, ingredients);
+          } else {
+            // Show error if no ingredients detected
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No ingredients detected. Please try again.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
         }
       }
     } catch (e) {

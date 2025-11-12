@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../core/services/gemini_ai_service.dart';
 import '../../../../core/utils/image_processor.dart';
 import '../../../../core/errors/ai_exceptions.dart';
 import '../../../../core/errors/rate_limit_exceptions.dart';
 import '../../../../shared/providers/services_provider.dart';
 import '../../../../shared/providers/firebase_provider.dart';
 import '../../domain/entities/detected_ingredients.dart';
+import '../../domain/entities/detected_ingredient_item.dart';
 
 part 'ingredient_detection_provider.g.dart';
 
@@ -44,7 +44,7 @@ class IngredientDetectionState {
 }
 
 /// Provider for ingredient detection logic
-@riverpod
+@Riverpod(keepAlive: true)
 class IngredientDetection extends _$IngredientDetection {
   @override
   IngredientDetectionState build() {
@@ -52,7 +52,8 @@ class IngredientDetection extends _$IngredientDetection {
   }
 
   /// Detect ingredients from image bytes
-  Future<void> detectIngredients(Uint8List imageBytes, String imageId) async {
+  /// Returns true if detection was successful, false otherwise
+  Future<bool> detectIngredients(Uint8List imageBytes, String imageId) async {
     state = state.copyWith(isLoading: true, errorMessage: '');
 
     try {
@@ -79,14 +80,33 @@ class IngredientDetection extends _$IngredientDetection {
         throw ModelNotInitializedException('AI model not initialized');
       }
 
-      final ingredients = await inferenceService.detectIngredients(
-        processedImage,
-        user.uid, // Pass userId for rate limiting
-      );
+      // Use structured detection with confidence scoring
+      final structuredIngredients = await inferenceService
+          .detectIngredientsStructured(processedImage, user.uid);
+
+      print('IngredientDetection: Received ${structuredIngredients.length} structured ingredients');
+
+      // Parse into DetectedIngredientItem objects
+      final detectedItems = <DetectedIngredientItem>[];
+      for (var json in structuredIngredients) {
+        try {
+          final item = DetectedIngredientItem.fromJson(json);
+          detectedItems.add(item);
+          print('IngredientDetection: Parsed item: ${item.name}');
+        } catch (e) {
+          print('IngredientDetection: Failed to parse item: $json, error: $e');
+        }
+      }
+
+      // Extract names for legacy support
+      final ingredients = detectedItems.map((item) => item.name).toList();
+
+      print('IngredientDetection: Parsed ${detectedItems.length} items into entities');
 
       // Step 3: Create DetectedIngredients entity
       final detected = DetectedIngredients(
         ingredients: ingredients,
+        detectedItems: detectedItems,
         imageId: imageId,
         detectionTime: DateTime.now(),
         isManuallyEdited: false,
@@ -97,19 +117,33 @@ class IngredientDetection extends _$IngredientDetection {
       print(
         'IngredientDetection: Successfully detected ${ingredients.length} ingredients',
       );
+      print('IngredientDetection: State updated with ${state.detectedIngredients?.detectedItems.length ?? 0} items');
+
+      // Log items needing clarification
+      final needsClarification = detected.itemsNeedingClarification;
+      if (needsClarification.isNotEmpty) {
+        print(
+          'IngredientDetection: ${needsClarification.length} items need user clarification',
+        );
+      }
+      
+      return true; // Success
     } on RateLimitException catch (e) {
       // Handle rate limit errors with user-friendly message
       print('IngredientDetection: Rate limit exceeded: $e');
       state = state.copyWith(isLoading: false, errorMessage: e.userMessage);
+      return false;
     } on AIException catch (e) {
       print('IngredientDetection: AI error: $e');
       state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
     } catch (e) {
       print('IngredientDetection: Unexpected error: $e');
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to detect ingredients: $e',
       );
+      return false;
     }
   }
 
@@ -170,6 +204,8 @@ class IngredientDetection extends _$IngredientDetection {
 
   /// Clear all detected ingredients
   void clearIngredients() {
+    print('IngredientDetection: clearIngredients() called from:');
+    print(StackTrace.current);
     state = const IngredientDetectionState();
     print('IngredientDetection: Cleared all ingredients');
   }
@@ -187,5 +223,53 @@ class IngredientDetection extends _$IngredientDetection {
         DateTime.now().millisecondsSinceEpoch.toString();
 
     await detectIngredients(processedImage, imageId);
+  }
+
+  /// Confirm quantity for an ingredient (user provided value)
+  void confirmIngredientQuantity(
+    int index,
+    String confirmedQuantity,
+    String? confirmedUnit,
+  ) {
+    final current = state.detectedIngredients;
+    if (current == null || index < 0 || index >= current.detectedItems.length) {
+      return;
+    }
+
+    final item = current.detectedItems[index];
+    final updatedItem = item.confirmWith(confirmedQuantity, confirmedUnit);
+
+    final updatedDetection = current.updateItem(index, updatedItem);
+    state = state.copyWith(detectedIngredients: updatedDetection);
+
+    print(
+      'IngredientDetection: Confirmed quantity for ${item.name}: $confirmedQuantity $confirmedUnit',
+    );
+  }
+
+  /// Skip quantity clarification (user will fix later)
+  void skipIngredientClarification(int index) {
+    final current = state.detectedIngredients;
+    if (current == null || index < 0 || index >= current.detectedItems.length) {
+      return;
+    }
+
+    final item = current.detectedItems[index];
+    final updatedItem = item.markAsSkipped();
+
+    final updatedDetection = current.updateItem(index, updatedItem);
+    state = state.copyWith(detectedIngredients: updatedDetection);
+
+    print('IngredientDetection: Skipped clarification for ${item.name}');
+  }
+
+  /// Get items that still need user clarification
+  List<DetectedIngredientItem> getItemsNeedingClarification() {
+    return state.detectedIngredients?.itemsNeedingClarification ?? [];
+  }
+
+  /// Check if all clarifications are resolved
+  bool areAllClarificationsResolved() {
+    return state.detectedIngredients?.allItemsResolved ?? true;
   }
 }

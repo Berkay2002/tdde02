@@ -3,39 +3,78 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/ingredient_detection_provider.dart';
 import '../widgets/ingredient_list_widget.dart';
 import '../widgets/detection_loading_widget.dart';
+import '../widgets/clarification_prompt_banner.dart';
+import '../widgets/ingredient_item_card.dart';
 
 /// Screen for reviewing and editing detected ingredients
 class IngredientDetectionScreen extends ConsumerWidget {
   final String? imageId;
+  final bool isPantryMode;
 
-  const IngredientDetectionScreen({super.key, this.imageId});
+  const IngredientDetectionScreen({
+    super.key,
+    this.imageId,
+    this.isPantryMode = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detectionState = ref.watch(ingredientDetectionProvider);
+    
+    // Debug logging
+    print('IngredientDetectionScreen: Building with state:');
+    print('  - Items: ${detectionState.detectedIngredients?.detectedItems.length ?? 0}');
+    print('  - Ingredients list: ${detectionState.detectedIngredients?.ingredients.length ?? 0}');
+    print('  - Error: ${detectionState.errorMessage}');
+    print('  - Is loading: ${detectionState.isLoading}');
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detected Ingredients'),
-        actions: [
-          if (detectionState.detectedIngredients != null &&
-              detectionState.detectedIngredients!.ingredients.isNotEmpty)
-            TextButton.icon(
-              onPressed: () => _generateRecipe(context, ref),
-              icon: Icon(
-                Icons.restaurant_menu,
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-              label: Text(
-                'Generate Recipe',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
+    return WillPopScope(
+      onWillPop: () async {
+        // Return true if pantry mode to signal confirmation
+        if (isPantryMode) {
+          Navigator.of(context).pop(true);
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(isPantryMode ? 'Review Ingredients' : 'Detected Ingredients'),
+          actions: [
+            if (detectionState.detectedIngredients != null &&
+                detectionState.detectedIngredients!.ingredients.isNotEmpty)
+              if (isPantryMode)
+                TextButton.icon(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  icon: Icon(
+                    Icons.check,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  label: Text(
+                    'Add to Pantry',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                )
+              else
+                TextButton.icon(
+                  onPressed: () => _generateRecipe(context, ref),
+                  icon: Icon(
+                    Icons.restaurant_menu,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  label: Text(
+                    'Generate Recipe',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-        ],
+          ],
+        ),
+        body: _buildBody(context, ref, detectionState),
       ),
-      body: _buildBody(context, ref, detectionState),
     );
   }
 
@@ -59,7 +98,13 @@ class IngredientDetectionScreen extends ConsumerWidget {
         children: [
           if (state.detectedIngredients?.isManuallyEdited == true)
             _buildEditedBanner(context),
-          const IngredientListWidget(),
+
+          // Show clarification prompt if there are unresolved items
+          const ClarificationPromptBanner(),
+
+          // Show enhanced ingredient list with confidence indicators
+          _buildEnhancedIngredientList(context, ref, state),
+
           const SizedBox(height: 24),
           _buildActionButtons(context, ref, state),
         ],
@@ -154,6 +199,61 @@ class IngredientDetectionScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildEnhancedIngredientList(
+    BuildContext context,
+    WidgetRef ref,
+    IngredientDetectionState state,
+  ) {
+    final detected = state.detectedIngredients;
+    if (detected == null || detected.detectedItems.isEmpty) {
+      // Fallback to legacy list widget if no structured items
+      return const IngredientListWidget();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Detected Ingredients',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                detected.detectedItems.length.toString(),
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: detected.detectedItems.length,
+          itemBuilder: (context, index) {
+            return IngredientItemCard(
+              item: detected.detectedItems[index],
+              index: index,
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildActionButtons(
     BuildContext context,
     WidgetRef ref,
@@ -186,7 +286,11 @@ class IngredientDetectionScreen extends ConsumerWidget {
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () {
-              ref.read(ingredientDetectionProvider.notifier).clearIngredients();
+              // Only clear ingredients if not in pantry mode
+              // In pantry mode, user will add to pantry then clear
+              if (!isPantryMode) {
+                ref.read(ingredientDetectionProvider.notifier).clearIngredients();
+              }
               Navigator.pop(context);
             },
             icon: const Icon(Icons.camera_alt),

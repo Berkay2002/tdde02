@@ -192,11 +192,7 @@ class _StatColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 24,
-          color: theme.colorScheme.primary,
-        ),
+        Icon(icon, size: 24, color: theme.colorScheme.primary),
         const SizedBox(height: 4),
         Text(
           '$count',

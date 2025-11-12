@@ -47,9 +47,9 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
     final ingredientsChanged = !_listEquals(_lastIngredients, ingredients);
     final profileChanged =
         _lastProfile == null ||
-        _lastProfile!.restrictions != profile.restrictions ||
-        _lastProfile!.skillLevel != profile.skillLevel ||
-        _lastProfile!.cuisinePreference != profile.cuisinePreference;
+        !_listEquals(_lastProfile!.restrictions, profile.restrictions) ||
+        !_listEquals(_lastProfile!.skillLevels, profile.skillLevels) ||
+        !_listEquals(_lastProfile!.cuisinePreferences, profile.cuisinePreferences);
 
     // Skip regeneration if nothing changed and we have existing recipes
     if (!ingredientsChanged &&
@@ -72,8 +72,8 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
         userId,
         ingredients,
         profile.restrictions.join(', '),
-        profile.skillLevel,
-        profile.cuisinePreference,
+        profile.skillLevels.isNotEmpty ? profile.skillLevels.first : 'beginner',
+        profile.cuisinePreferences.isNotEmpty ? profile.cuisinePreferences.first : null,
       );
 
       if (cachedRecipes != null && cachedRecipes.isNotEmpty) {
@@ -122,8 +122,8 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
             ingredients: ingredients,
             userId: userId,
             dietaryRestrictions: profile.restrictions.join(', '),
-            skillLevel: profile.skillLevel,
-            cuisinePreference: profile.cuisinePreference,
+            skillLevel: profile.skillLevels.isNotEmpty ? profile.skillLevels.first : 'beginner',
+            cuisinePreference: profile.cuisinePreferences.isNotEmpty ? profile.cuisinePreferences.first : null,
           );
 
           final recipe = Recipe(
@@ -179,8 +179,8 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
           ingredients,
           recipesData,
           profile.restrictions.join(', '),
-          profile.skillLevel,
-          profile.cuisinePreference,
+          profile.skillLevels.isNotEmpty ? profile.skillLevels.first : 'beginner',
+          profile.cuisinePreferences.isNotEmpty ? profile.cuisinePreferences.first : null,
         );
       }
 

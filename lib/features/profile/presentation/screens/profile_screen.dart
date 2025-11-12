@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/providers/app_state_provider.dart';
 import '../../../../shared/providers/theme_provider.dart';
+import '../widgets/profile_header_card.dart';
+import '../widgets/cooking_stats_card.dart';
+import '../widgets/dietary_restrictions_card.dart';
+import '../widgets/skill_level_card.dart';
+import '../widgets/cuisine_preference_card.dart';
+import '../widgets/account_info_card.dart';
 
 /// ProfileScreen - Tab 5
 ///
@@ -21,51 +27,28 @@ class ProfileScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // User info section
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    child: Icon(
-                      Icons.person,
-                      size: 32,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome!',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Customize your cooking preferences',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Profile header with stats
+          const ProfileHeaderCard(),
+          const SizedBox(height: 16),
+
+          // Cooking stats
+          const CookingStatsCard(),
           const SizedBox(height: 24),
 
+          // Section: Account
+          _buildSectionHeader('Account', Icons.account_circle, theme),
+          const SizedBox(height: 12),
+
+          // Account information
+          const AccountInfoCard(),
+          const SizedBox(height: 24),
+
+          // Section: Preferences
+          _buildSectionHeader('Preferences', Icons.tune, theme),
+          const SizedBox(height: 12),
+
           // Dietary Restrictions
-          _buildSectionTitle('Dietary Restrictions', theme),
-          const SizedBox(height: 8),
-          _DietaryRestrictionsSelector(
+          DietaryRestrictionsCard(
             selectedRestrictions: profile.restrictions,
             onChanged: (restrictions) {
               ref
@@ -73,35 +56,33 @@ class ProfileScreen extends ConsumerWidget {
                   .updateRestrictions(restrictions);
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Skill Level
-          _buildSectionTitle('Cooking Skill Level', theme),
-          const SizedBox(height: 8),
-          _SkillLevelSelector(
-            selectedLevel: profile.skillLevel,
-            onChanged: (level) {
-              ref.read(dietaryProfileProvider.notifier).updateSkillLevel(level);
+          SkillLevelCard(
+            selectedLevels: profile.skillLevels,
+            onChanged: (levels) {
+              ref.read(dietaryProfileProvider.notifier).updateSkillLevels(levels);
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Cuisine Preference
-          _buildSectionTitle('Preferred Cuisine', theme),
-          const SizedBox(height: 8),
-          _CuisinePreferenceSelector(
-            selectedCuisine: profile.cuisinePreference,
-            onChanged: (cuisine) {
+          CuisinePreferenceCard(
+            selectedCuisines: profile.cuisinePreferences,
+            onChanged: (cuisines) {
               ref
                   .read(dietaryProfileProvider.notifier)
-                  .updateCuisinePreference(cuisine);
+                  .updateCuisinePreferences(cuisines);
             },
           ),
           const SizedBox(height: 24),
 
+          // Section: Appearance
+          _buildSectionHeader('Appearance', Icons.palette, theme),
+          const SizedBox(height: 12),
+
           // Theme Mode
-          _buildSectionTitle('Appearance', theme),
-          const SizedBox(height: 8),
           Card(
             child: ListTile(
               leading: Icon(
@@ -110,6 +91,9 @@ class ProfileScreen extends ConsumerWidget {
                     : Icons.light_mode,
               ),
               title: const Text('Theme'),
+              subtitle: Text(
+                themeMode == ThemeMode.dark ? 'Dark mode' : 'Light mode',
+              ),
               trailing: SegmentedButton<ThemeMode>(
                 segments: const [
                   ButtonSegment(
@@ -132,21 +116,49 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
+          // Section: Actions
+          _buildSectionHeader('Actions', Icons.settings, theme),
+          const SizedBox(height: 12),
+
           // Reset button
-          OutlinedButton.icon(
-            onPressed: () => _resetProfile(context, ref),
-            icon: const Icon(Icons.refresh),
-            label: const Text('Reset to Defaults'),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.refresh),
+              title: const Text('Reset to Defaults'),
+              subtitle: const Text('Reset all preferences to default values'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _resetProfile(context, ref),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title, ThemeData theme) {
-    return Text(
-      title,
-      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+  Widget _buildSectionHeader(String title, IconData icon, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            title.toUpperCase(),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Divider(
+              color: theme.colorScheme.outlineVariant,
+              thickness: 1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -173,155 +185,6 @@ class ProfileScreen extends ConsumerWidget {
             },
             child: const Text('Reset'),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// Dietary Restrictions Selector
-class _DietaryRestrictionsSelector extends StatelessWidget {
-  final List<String> selectedRestrictions;
-  final ValueChanged<List<String>> onChanged;
-
-  const _DietaryRestrictionsSelector({
-    required this.selectedRestrictions,
-    required this.onChanged,
-  });
-
-  static const _restrictions = [
-    'Vegetarian',
-    'Vegan',
-    'Gluten-Free',
-    'Dairy-Free',
-    'Nut-Free',
-    'Halal',
-    'Kosher',
-    'Low-Carb',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _restrictions.map((restriction) {
-            final isSelected = selectedRestrictions.contains(restriction);
-            return FilterChip(
-              label: Text(restriction),
-              selected: isSelected,
-              onSelected: (selected) {
-                final newRestrictions = List<String>.from(selectedRestrictions);
-                if (selected) {
-                  newRestrictions.add(restriction);
-                } else {
-                  newRestrictions.remove(restriction);
-                }
-                onChanged(newRestrictions);
-              },
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-}
-
-// Skill Level Selector
-class _SkillLevelSelector extends StatelessWidget {
-  final String selectedLevel;
-  final ValueChanged<String> onChanged;
-
-  const _SkillLevelSelector({
-    required this.selectedLevel,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: [
-          RadioListTile<String>(
-            title: const Text('Beginner'),
-            subtitle: const Text('Simple recipes with basic techniques'),
-            value: 'beginner',
-            groupValue: selectedLevel,
-            onChanged: (value) => onChanged(value!),
-          ),
-          const Divider(height: 1),
-          RadioListTile<String>(
-            title: const Text('Intermediate'),
-            subtitle: const Text('Moderate complexity and cooking time'),
-            value: 'intermediate',
-            groupValue: selectedLevel,
-            onChanged: (value) => onChanged(value!),
-          ),
-          const Divider(height: 1),
-          RadioListTile<String>(
-            title: const Text('Advanced'),
-            subtitle: const Text('Complex recipes and techniques'),
-            value: 'advanced',
-            groupValue: selectedLevel,
-            onChanged: (value) => onChanged(value!),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Cuisine Preference Selector
-class _CuisinePreferenceSelector extends StatelessWidget {
-  final String? selectedCuisine;
-  final ValueChanged<String?> onChanged;
-
-  const _CuisinePreferenceSelector({
-    required this.selectedCuisine,
-    required this.onChanged,
-  });
-
-  static const _cuisines = [
-    'Italian',
-    'Asian',
-    'Mexican',
-    'Mediterranean',
-    'American',
-    'Indian',
-    'French',
-    'Thai',
-    'Japanese',
-    'Middle Eastern',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: [
-          ListTile(
-            title: const Text('No Preference'),
-            trailing: Radio<String?>(
-              value: null,
-              groupValue: selectedCuisine,
-              onChanged: onChanged,
-            ),
-            onTap: () => onChanged(null),
-          ),
-          ..._cuisines.map((cuisine) {
-            return ListTile(
-              title: Text(cuisine),
-              trailing: Radio<String?>(
-                value: cuisine,
-                groupValue: selectedCuisine,
-                onChanged: onChanged,
-              ),
-              onTap: () => onChanged(cuisine),
-            );
-          }),
         ],
       ),
     );

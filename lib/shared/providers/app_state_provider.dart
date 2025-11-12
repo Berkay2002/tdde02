@@ -6,38 +6,42 @@ import '../../features/pantry/domain/entities/pantry_item.dart';
 /// Model for dietary profile/preferences
 class DietaryProfile {
   final List<String> restrictions; // e.g., ['vegetarian', 'gluten-free']
-  final String skillLevel; // 'beginner', 'intermediate', 'advanced'
-  final String? cuisinePreference; // e.g., 'italian', 'asian', 'mexican'
+  final List<String> skillLevels; // e.g., ['beginner', 'intermediate']
+  final List<String> cuisinePreferences; // e.g., ['italian', 'asian', 'mexican']
 
   const DietaryProfile({
     this.restrictions = const [],
-    this.skillLevel = 'beginner',
-    this.cuisinePreference,
+    this.skillLevels = const ['beginner'],
+    this.cuisinePreferences = const [],
   });
 
   DietaryProfile copyWith({
     List<String>? restrictions,
-    String? skillLevel,
-    String? cuisinePreference,
+    List<String>? skillLevels,
+    List<String>? cuisinePreferences,
   }) {
     return DietaryProfile(
       restrictions: restrictions ?? this.restrictions,
-      skillLevel: skillLevel ?? this.skillLevel,
-      cuisinePreference: cuisinePreference ?? this.cuisinePreference,
+      skillLevels: skillLevels ?? this.skillLevels,
+      cuisinePreferences: cuisinePreferences ?? this.cuisinePreferences,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'restrictions': restrictions,
-    'skillLevel': skillLevel,
-    'cuisinePreference': cuisinePreference,
+    'skillLevels': skillLevels,
+    'cuisinePreferences': cuisinePreferences,
   };
 
   factory DietaryProfile.fromJson(Map<String, dynamic> json) {
     return DietaryProfile(
       restrictions: (json['restrictions'] as List?)?.cast<String>() ?? [],
-      skillLevel: json['skillLevel'] as String? ?? 'beginner',
-      cuisinePreference: json['cuisinePreference'] as String?,
+      skillLevels: (json['skillLevels'] as List?)?.cast<String>() ??
+          // Migration: convert old single value to list
+          (json['skillLevel'] != null ? [json['skillLevel'] as String] : ['beginner']),
+      cuisinePreferences: (json['cuisinePreferences'] as List?)?.cast<String>() ??
+          // Migration: convert old single value to list
+          (json['cuisinePreference'] != null ? [json['cuisinePreference'] as String] : []),
     );
   }
 }
@@ -281,13 +285,13 @@ class DietaryProfileNotifier extends StateNotifier<DietaryProfile> {
     _saveToStorage();
   }
 
-  void updateSkillLevel(String skillLevel) {
-    state = state.copyWith(skillLevel: skillLevel);
+  void updateSkillLevels(List<String> skillLevels) {
+    state = state.copyWith(skillLevels: skillLevels);
     _saveToStorage();
   }
 
-  void updateCuisinePreference(String? preference) {
-    state = state.copyWith(cuisinePreference: preference);
+  void updateCuisinePreferences(List<String> preferences) {
+    state = state.copyWith(cuisinePreferences: preferences);
     _saveToStorage();
   }
 

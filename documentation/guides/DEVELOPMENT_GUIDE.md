@@ -8,7 +8,7 @@
 
 ## 🚀 New to the Project?
 
-**Start here first**: [QUICK_START.md](QUICK_START.md) - Get the app running in 10 minutes!
+**Start here first**: [QUICK_START.md](QUICK_START.md)!
 
 This guide is for developers who want to:
 - Understand the project architecture in depth
@@ -60,7 +60,7 @@ firebase login
 
 ## First-Time Setup
 
-> **Quick setup**: See [QUICK_START.md](QUICK_START.md) for a streamlined 10-minute setup guide.
+> **Quick setup**: See [QUICK_START.md](QUICK_START.md) for a streamlined setup guide.
 
 This section covers advanced configuration options.
 

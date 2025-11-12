@@ -242,9 +242,15 @@ cd tdde02
 ```bash
 # Downloads all required packages
 flutter pub get
+
+# Generate required Riverpod provider code (IMPORTANT)
+dart run build_runner build --delete-conflicting-outputs
 ```
 
-This downloads 50+ packages including Firebase, camera, AI, and other dependencies.
+**What these commands do:**
+- `flutter pub get`: Downloads 50+ packages including Firebase, camera, AI, and other dependencies
+- `dart run build_runner build`: Generates code for Riverpod providers, freezed models, and JSON serialization
+- **You must run the build_runner command** - the app won't compile without the generated `.g.dart` files
 
 ---
 
@@ -340,7 +346,13 @@ You'll do this **after running the app once**.
 ```bash
 flutter clean
 flutter pub get
+dart run build_runner build --delete-conflicting-outputs
 ```
+
+**Why the build_runner command?**
+- Generates Riverpod provider code (`*.g.dart` files)
+- Required after `flutter pub get` or when pulling new code
+- Fixes "part of 'xxx.g.dart' not found" errors
 
 ### 2. Check Your Device is Connected
 ```bash
@@ -457,6 +469,7 @@ On the first run, the app will fail with an App Check error. This is expected!
 ```bash
 flutter clean
 flutter pub get
+dart run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 
@@ -479,6 +492,7 @@ flutter run
 ```bash
 git pull origin dev
 flutter pub get
+dart run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 
@@ -529,6 +543,7 @@ cd android
 .\gradlew clean  # Windows
 cd ..
 flutter pub get
+dart run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 
@@ -544,14 +559,22 @@ flutter run
 ### "Module not found" / "Package not found"
 ```bash
 flutter pub get
+dart run build_runner build --delete-conflicting-outputs
 flutter clean
 flutter run
+```
+
+### "Part of 'xxx.g.dart' not found" errors
+```bash
+# Missing generated provider files
+dart run build_runner build --delete-conflicting-outputs
 ```
 
 ### Nuclear option (when all else fails)
 ```bash
 flutter clean
 flutter pub get
+dart run build_runner build --delete-conflicting-outputs
 cd android
 ./gradlew clean  # or .\gradlew clean on Windows
 cd ..

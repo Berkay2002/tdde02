@@ -14,17 +14,14 @@ import 'image_preview_screen.dart';
 
 /// Camera mode determines the context and behavior
 enum CameraMode {
-  quickScan,  // From HomeScreen - for quick recipe search
-  pantryAdd,  // From MyPantryScreen - for adding to pantry
+  quickScan, // From HomeScreen - for quick recipe search
+  pantryAdd, // From MyPantryScreen - for adding to pantry
 }
 
 class CameraScreen extends ConsumerStatefulWidget {
   final CameraMode mode;
-  
-  const CameraScreen({
-    super.key,
-    this.mode = CameraMode.quickScan,
-  });
+
+  const CameraScreen({super.key, this.mode = CameraMode.quickScan});
 
   @override
   ConsumerState<CameraScreen> createState() => _CameraScreenState();
@@ -149,7 +146,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           onRetake: () => Navigator.pop(context),
           onConfirm: () async {
             Navigator.pop(context); // Close preview
-            
+
             // Process the image and return ingredients
             await _processAndReturnIngredients(imagePath);
           },
@@ -199,11 +196,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       }
 
       // Detect ingredients
-      final ingredients = await aiService.detectIngredients(processedBytes, user.uid);
+      final ingredients = await aiService.detectIngredients(
+        processedBytes,
+        user.uid,
+      );
 
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
-        
+
         if (ingredients.isNotEmpty) {
           // Return the ingredients list
           Navigator.pop(context, ingredients);
@@ -220,7 +220,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error detecting ingredients: $e'),
@@ -234,10 +234,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   @override
   Widget build(BuildContext context) {
     final cameraState = ref.watch(cameraNotifierProvider);
-    
+
     // Change title based on mode
-    final title = widget.mode == CameraMode.quickScan 
-        ? 'Scan Ingredients' 
+    final title = widget.mode == CameraMode.quickScan
+        ? 'Scan Ingredients'
         : 'Add to Pantry';
 
     return Scaffold(

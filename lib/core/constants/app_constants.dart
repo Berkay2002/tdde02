@@ -8,7 +8,8 @@ class AppConstants {
   static const String geminiModel = 'gemini-2.5-flash'; // Multimodal model
   static const int maxTokens = 8196; // Increased to prevent truncation
   static const int topK = 40;
-  static const double temperature = 0.7; // Slightly lower for more consistent results
+  static const double temperature =
+      0.7; // Slightly lower for more consistent results
 
   // Image Processing
   static const int imageSize = 512; // 512x512 resolution for Gemma 3n
@@ -17,7 +18,7 @@ class AppConstants {
   // Inference Timeouts
   static const Duration ingredientDetectionTimeout = Duration(seconds: 15);
   static const Duration recipeGenerationTimeout = Duration(seconds: 30);
-  
+
   // Retry Configuration
   static const int maxRetries = 2;
   static const Duration initialRetryDelay = Duration(seconds: 2);
@@ -43,7 +44,8 @@ class AppConstants {
   // These limits prevent abuse while allowing genuine exploration
   static const int maxRecipeGenerationsPerHour = 20; // ~1 every 3 minutes
   static const int maxRecipeGenerationsPerDay = 100; // ~4 per hour sustained
-  static const int maxIngredientDetectionsPerHour = 30; // Higher for camera retries
+  static const int maxIngredientDetectionsPerHour =
+      30; // Higher for camera retries
   static const int maxIngredientDetectionsPerDay = 150;
   // Gemini API free tier: 15 RPM, 1,500 RPD
   // With ~50 beta users: 100 recipes/day/user = 5,000 potential (over limit)
@@ -74,7 +76,8 @@ class AppConstants {
   static const String userPreferencesCollection = 'user_preferences';
   static const String recipesCollection = 'recipes';
   static const String recipeCacheCollection = 'recipe_cache';
-  static const String userUsageCollection = 'user_usage'; // Rate limiting tracking
+  static const String userUsageCollection =
+      'user_usage'; // Rate limiting tracking
 
   // Cuisine Types
   static const List<String> cuisineTypes = [

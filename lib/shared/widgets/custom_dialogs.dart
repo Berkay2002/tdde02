@@ -23,16 +23,16 @@ class CustomDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveIconBgColor = iconColor?.withOpacity(0.1) ?? 
+    final effectiveIconBgColor =
+        iconColor?.withOpacity(0.1) ??
         (isDark
             ? Theme.of(context).colorScheme.surfaceContainerHighest
             : Theme.of(context).colorScheme.surfaceContainerHighest);
-    final effectiveIconColor = iconColor ?? Theme.of(context).colorScheme.onSurface;
-    
+    final effectiveIconColor =
+        iconColor ?? Theme.of(context).colorScheme.onSurface;
+
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.largePadding),
         child: Column(
@@ -45,11 +45,7 @@ class CustomDialog extends StatelessWidget {
                   color: effectiveIconBgColor,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: effectiveIconColor,
-                ),
+                child: Icon(icon, size: 40, color: effectiveIconColor),
               ),
               const SizedBox(height: AppConstants.defaultPadding),
             ],
@@ -66,8 +62,9 @@ class CustomDialog extends StatelessWidget {
               Text(
                 subtitle!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -76,10 +73,7 @@ class CustomDialog extends StatelessWidget {
             content,
             if (actions != null && actions!.isNotEmpty) ...[
               const SizedBox(height: AppConstants.largePadding),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: actions!,
-              ),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: actions!),
             ],
           ],
         ),
@@ -128,11 +122,9 @@ class _OptionSelectionDialogState<T> extends State<OptionSelectionDialog<T>> {
         ? Theme.of(context).colorScheme.surfaceContainerHighest
         : Theme.of(context).colorScheme.surfaceContainerHighest;
     final iconColor = Theme.of(context).colorScheme.onSurface;
-    
+
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.largePadding),
         child: Column(
@@ -145,11 +137,7 @@ class _OptionSelectionDialogState<T> extends State<OptionSelectionDialog<T>> {
                   color: iconBgColor,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  widget.icon,
-                  size: 40,
-                  color: iconColor,
-                ),
+                child: Icon(widget.icon, size: 40, color: iconColor),
               ),
               const SizedBox(height: AppConstants.defaultPadding),
             ],
@@ -166,8 +154,9 @@ class _OptionSelectionDialogState<T> extends State<OptionSelectionDialog<T>> {
               Text(
                 widget.subtitle!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -190,13 +179,11 @@ class _OptionSelectionDialogState<T> extends State<OptionSelectionDialog<T>> {
                     padding: const EdgeInsets.all(AppConstants.defaultPadding),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? Theme.of(context)
-                              .colorScheme
-                              .primaryContainer
+                          ? Theme.of(context).colorScheme.primaryContainer
                           : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest
-                              .withOpacity(0.3),
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withOpacity(0.3),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
@@ -212,10 +199,9 @@ class _OptionSelectionDialogState<T> extends State<OptionSelectionDialog<T>> {
                             option.icon,
                             color: isSelected
                                 ? Theme.of(context).colorScheme.onPrimary
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.6),
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.6),
                             size: 24,
                           ),
                           const SizedBox(width: AppConstants.defaultPadding),
@@ -226,34 +212,32 @@ class _OptionSelectionDialogState<T> extends State<OptionSelectionDialog<T>> {
                             children: [
                               Text(
                                 option.title,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected
-                                      ? Theme.of(context).colorScheme.onPrimary
-                                      : null,
-                                ),
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary
+                                          : null,
+                                    ),
                               ),
                               if (option.subtitle != null) ...[
                                 const SizedBox(height: 4),
                                 Text(
                                   option.subtitle!,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                    color: isSelected
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary
-                                            .withOpacity(0.9)
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.6),
-                                  ),
+                                        color: isSelected
+                                            ? Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary
+                                                  .withOpacity(0.9)
+                                            : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withOpacity(0.6),
+                                      ),
                                 ),
                               ],
                             ],
@@ -335,15 +319,14 @@ class ConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveIconColor = iconColor ??
+    final effectiveIconColor =
+        iconColor ??
         (isDangerous
             ? Theme.of(context).colorScheme.error
             : Theme.of(context).colorScheme.primary);
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.largePadding),
         child: Column(
@@ -356,27 +339,22 @@ class ConfirmationDialog extends StatelessWidget {
                   color: effectiveIconColor.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: effectiveIconColor,
-                ),
+                child: Icon(icon, size: 40, color: effectiveIconColor),
               ),
               const SizedBox(height: AppConstants.defaultPadding),
             ],
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.defaultPadding),
             Text(
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color:
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -396,10 +374,11 @@ class ConfirmationDialog extends StatelessWidget {
                   },
                   style: isDangerous
                       ? FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                    foregroundColor:
-                        Theme.of(context).colorScheme.onError,
-                  )
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onError,
+                        )
                       : null,
                   child: Text(confirmText),
                 ),

@@ -6,7 +6,12 @@ class PantryItemCard extends StatelessWidget {
   final PantryItem item;
   final VoidCallback? onDelete;
   final VoidCallback? onTap;
-  const PantryItemCard({super.key, required this.item, this.onDelete, this.onTap});
+  const PantryItemCard({
+    super.key,
+    required this.item,
+    this.onDelete,
+    this.onTap,
+  });
 
   Color _freshnessColor(FreshnessStatus status, ThemeData theme) {
     switch (status) {
@@ -45,14 +50,20 @@ class PantryItemCard extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       backgroundColor: categoryColor.withOpacity(0.15),
                       foregroundColor: categoryColor,
                       radius: 24,
-                      child: Icon(IngredientCategoryHelper.getIcon(item.category), size: 24),
+                      child: Icon(
+                        IngredientCategoryHelper.getIcon(item.category),
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -61,12 +72,18 @@ class PantryItemCard extends StatelessWidget {
                         children: [
                           Text(
                             item.name,
-                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          if (item.quantity != null && item.quantity!.isNotEmpty)
+                          if (item.quantity != null &&
+                              item.quantity!.isNotEmpty)
                             Text(
-                              item.quantity! + (item.unit != null ? ' ${item.unit}' : ''),
-                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              item.quantity! +
+                                  (item.unit != null ? ' ${item.unit}' : ''),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
                         ],
                       ),

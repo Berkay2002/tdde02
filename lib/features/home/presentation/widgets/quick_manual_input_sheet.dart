@@ -4,7 +4,7 @@ import '../../../../shared/providers/app_state_provider.dart';
 import '../../../../shared/widgets/app_shell.dart';
 
 /// QuickManualInputSheet - Modal bottom sheet for manual ingredient entry
-/// 
+///
 /// This modal has dual functionality:
 /// 1. "Save to Pantry" - Adds ingredients to the persistent pantryIngredients list
 /// 2. "Find Recipes" - Adds ingredients to sessionIngredients and switches to Recipes tab
@@ -12,7 +12,8 @@ class QuickManualInputSheet extends ConsumerStatefulWidget {
   const QuickManualInputSheet({super.key});
 
   @override
-  ConsumerState<QuickManualInputSheet> createState() => _QuickManualInputSheetState();
+  ConsumerState<QuickManualInputSheet> createState() =>
+      _QuickManualInputSheetState();
 }
 
 class _QuickManualInputSheetState extends ConsumerState<QuickManualInputSheet> {
@@ -45,12 +46,16 @@ class _QuickManualInputSheetState extends ConsumerState<QuickManualInputSheet> {
     if (_tempIngredients.isEmpty) return;
 
     // Send to Brain's pantryIngredients
-    ref.read(pantryIngredientsProvider.notifier).addIngredients(_tempIngredients);
+    ref
+        .read(pantryIngredientsProvider.notifier)
+        .addIngredients(_tempIngredients);
 
     // Show confirmation
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${_tempIngredients.length} ingredient(s) saved to pantry!'),
+        content: Text(
+          '${_tempIngredients.length} ingredient(s) saved to pantry!',
+        ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),
@@ -66,7 +71,9 @@ class _QuickManualInputSheetState extends ConsumerState<QuickManualInputSheet> {
     if (_tempIngredients.isEmpty) return;
 
     // Send to Brain's sessionIngredients
-    ref.read(sessionIngredientsProvider.notifier).setIngredients(_tempIngredients);
+    ref
+        .read(sessionIngredientsProvider.notifier)
+        .setIngredients(_tempIngredients);
 
     // Close modal
     Navigator.pop(context);
@@ -185,7 +192,9 @@ class _QuickManualInputSheetState extends ConsumerState<QuickManualInputSheet> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _tempIngredients.isEmpty ? null : _saveToPantry,
+                      onPressed: _tempIngredients.isEmpty
+                          ? null
+                          : _saveToPantry,
                       icon: const Icon(Icons.kitchen),
                       label: const Text('Save to Pantry'),
                     ),

@@ -16,9 +16,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Enable App Check for security
   // Development: Uses debug providers (requires debug token in Firebase Console)
@@ -46,7 +44,6 @@ void main() async {
   );
 }
 
-
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
@@ -67,10 +64,9 @@ class MyApp extends ConsumerWidget {
           builder: (context, constraints) {
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
-                textScaler: MediaQuery.of(context).textScaler.clamp(
-                  minScaleFactor: 0.8,
-                  maxScaleFactor: 1.3,
-                ),
+                textScaler: MediaQuery.of(
+                  context,
+                ).textScaler.clamp(minScaleFactor: 0.8, maxScaleFactor: 1.3),
               ),
               child: child!,
             );

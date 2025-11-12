@@ -4,7 +4,7 @@ import '../../../../shared/providers/app_state_provider.dart';
 import '../../../../shared/providers/theme_provider.dart';
 
 /// ProfileScreen - Tab 5
-/// 
+///
 /// Manages dietary profile and user preferences.
 /// Users can set dietary restrictions, skill level, and cuisine preferences.
 class ProfileScreen extends ConsumerWidget {
@@ -15,12 +15,9 @@ class ProfileScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final profile = ref.watch(dietaryProfileProvider);
     final themeMode = ref.watch(themeNotifierProvider);
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Profile'), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -71,7 +68,9 @@ class ProfileScreen extends ConsumerWidget {
           _DietaryRestrictionsSelector(
             selectedRestrictions: profile.restrictions,
             onChanged: (restrictions) {
-              ref.read(dietaryProfileProvider.notifier).updateRestrictions(restrictions);
+              ref
+                  .read(dietaryProfileProvider.notifier)
+                  .updateRestrictions(restrictions);
             },
           ),
           const SizedBox(height: 24),
@@ -93,7 +92,9 @@ class ProfileScreen extends ConsumerWidget {
           _CuisinePreferenceSelector(
             selectedCuisine: profile.cuisinePreference,
             onChanged: (cuisine) {
-              ref.read(dietaryProfileProvider.notifier).updateCuisinePreference(cuisine);
+              ref
+                  .read(dietaryProfileProvider.notifier)
+                  .updateCuisinePreference(cuisine);
             },
           ),
           const SizedBox(height: 24),
@@ -104,17 +105,27 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             child: ListTile(
               leading: Icon(
-                themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
+                themeMode == ThemeMode.dark
+                    ? Icons.dark_mode
+                    : Icons.light_mode,
               ),
               title: const Text('Theme'),
               trailing: SegmentedButton<ThemeMode>(
                 segments: const [
-                  ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode, size: 16)),
-                  ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode, size: 16)),
+                  ButtonSegment(
+                    value: ThemeMode.light,
+                    icon: Icon(Icons.light_mode, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.dark,
+                    icon: Icon(Icons.dark_mode, size: 16),
+                  ),
                 ],
                 selected: {themeMode},
                 onSelectionChanged: (selected) {
-                  ref.read(themeNotifierProvider.notifier).setThemeMode(selected.first);
+                  ref
+                      .read(themeNotifierProvider.notifier)
+                      .setThemeMode(selected.first);
                 },
               ),
             ),
@@ -135,9 +146,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildSectionTitle(String title, ThemeData theme) {
     return Text(
       title,
-      style: theme.textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-      ),
+      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
@@ -146,7 +155,9 @@ class ProfileScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Reset Profile?'),
-        content: const Text('This will reset all your preferences to defaults.'),
+        content: const Text(
+          'This will reset all your preferences to defaults.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

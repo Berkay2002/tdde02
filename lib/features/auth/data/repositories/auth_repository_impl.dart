@@ -57,7 +57,10 @@ class AuthRepositoryImpl implements AuthRepository {
         'updated_at': FieldValue.serverTimestamp(),
       };
 
-      await _firestore.collection('user_preferences').doc(user.uid).set(preferencesData);
+      await _firestore
+          .collection('user_preferences')
+          .doc(user.uid)
+          .set(preferencesData);
 
       final profile = await getCurrentProfile();
       if (profile == null) {
@@ -105,13 +108,14 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Trigger the Google Sign-In flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         throw Exception('Google sign in aborted');
       }
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
@@ -155,7 +159,10 @@ class AuthRepositoryImpl implements AuthRepository {
         'updated_at': FieldValue.serverTimestamp(),
       };
 
-      await _firestore.collection('user_preferences').doc(user.uid).set(preferencesData);
+      await _firestore
+          .collection('user_preferences')
+          .doc(user.uid)
+          .set(preferencesData);
 
       final profile = await getCurrentProfile();
       if (profile == null) {
@@ -173,10 +180,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signOut() async {
     try {
-      await Future.wait([
-        _auth.signOut(),
-        _googleSignIn.signOut(),
-      ]);
+      await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
     } catch (e) {
       throw Exception('Sign out failed: $e');
     }
@@ -189,7 +193,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (user == null) return null;
 
       final doc = await _firestore.collection('profiles').doc(user.uid).get();
-      
+
       if (!doc.exists) return null;
 
       final data = doc.data();

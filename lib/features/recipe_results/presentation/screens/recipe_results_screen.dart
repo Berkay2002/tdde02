@@ -6,23 +6,36 @@ import '../../../../shared/providers/app_state_provider.dart';
 import '../../../../shared/providers/services_provider.dart';
 import '../../../recipe_generation/data/repositories/recipe_repository_impl.dart';
 import '../../../recipe_detail/presentation/screens/recipe_detail_screen.dart';
+import '../../../../core/constants/recipe_categories.dart';
+import '../widgets/recipe_card.dart';
+import '../widgets/empty_recipes_widget.dart';
+import '../widgets/recipe_search_bar.dart';
+import '../widgets/recipe_filter_chips.dart';
 
 /// Provider for recipe generation state
-final recipeGenerationProvider = StateNotifierProvider<RecipeGenerationNotifier, AsyncValue<List<Recipe>>>((ref) {
-  return RecipeGenerationNotifier(ref);
-});
+final recipeGenerationProvider =
+    StateNotifierProvider<RecipeGenerationNotifier, AsyncValue<List<Recipe>>>((
+      ref,
+    ) {
+      return RecipeGenerationNotifier(ref);
+    });
 
 class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
   final Ref ref;
-  final RecipeRepositoryImpl _repository = RecipeRepositoryImpl(FirebaseFirestore.instance);
-  
+  final RecipeRepositoryImpl _repository = RecipeRepositoryImpl(
+    FirebaseFirestore.instance,
+  );
+
   // Track last ingredients used to avoid unnecessary regeneration
   List<String> _lastIngredients = [];
   DietaryProfile? _lastProfile;
 
   RecipeGenerationNotifier(this.ref) : super(const AsyncValue.data([]));
 
-  Future<void> generateRecipes(List<String> ingredients, DietaryProfile profile) async {
+  Future<void> generateRecipes(
+    List<String> ingredients,
+    DietaryProfile profile,
+  ) async {
     if (ingredients.isEmpty) {
       state = const AsyncValue.data([]);
       _lastIngredients = [];
@@ -32,13 +45,17 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
 
     // Check if ingredients or profile have changed
     final ingredientsChanged = !_listEquals(_lastIngredients, ingredients);
-    final profileChanged = _lastProfile == null || 
-                          _lastProfile!.restrictions != profile.restrictions ||
-                          _lastProfile!.skillLevel != profile.skillLevel ||
-                          _lastProfile!.cuisinePreference != profile.cuisinePreference;
+    final profileChanged =
+        _lastProfile == null ||
+        _lastProfile!.restrictions != profile.restrictions ||
+        _lastProfile!.skillLevel != profile.skillLevel ||
+        _lastProfile!.cuisinePreference != profile.cuisinePreference;
 
     // Skip regeneration if nothing changed and we have existing recipes
-    if (!ingredientsChanged && !profileChanged && state.hasValue && state.value!.isNotEmpty) {
+    if (!ingredientsChanged &&
+        !profileChanged &&
+        state.hasValue &&
+        state.value!.isNotEmpty) {
       return;
     }
 
@@ -63,11 +80,16 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
         // Use cached recipes
         final recipes = cachedRecipes.map((recipeData) {
           return Recipe(
-            id: recipeData['id'] as String? ?? DateTime.now().millisecondsSinceEpoch.toString(),
+            id:
+                recipeData['id'] as String? ??
+                DateTime.now().millisecondsSinceEpoch.toString(),
             name: recipeData['name'] as String? ?? 'Untitled Recipe',
             description: recipeData['description'] as String? ?? '',
-            ingredients: (recipeData['ingredients'] as List?)?.cast<String>() ?? ingredients,
-            instructions: (recipeData['instructions'] as List?)?.cast<String>() ?? [],
+            ingredients:
+                (recipeData['ingredients'] as List?)?.cast<String>() ??
+                ingredients,
+            instructions:
+                (recipeData['instructions'] as List?)?.cast<String>() ?? [],
             prepTime: recipeData['prepTime'] as int? ?? 15,
             cookTime: recipeData['cookTime'] as int? ?? 30,
             difficulty: recipeData['difficulty'] as String? ?? 'medium',
@@ -93,7 +115,7 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
       final recipesData = <Map<String, dynamic>>[];
       int successCount = 0;
       int failCount = 0;
-      
+
       for (int i = 0; i < 3; i++) {
         try {
           final recipeData = await aiService.generateRecipe(
@@ -108,8 +130,11 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
             id: '${DateTime.now().millisecondsSinceEpoch}_$i',
             name: recipeData['name'] as String? ?? 'Untitled Recipe',
             description: recipeData['description'] as String? ?? '',
-            ingredients: (recipeData['ingredients'] as List?)?.cast<String>() ?? ingredients,
-            instructions: (recipeData['instructions'] as List?)?.cast<String>() ?? [],
+            ingredients:
+                (recipeData['ingredients'] as List?)?.cast<String>() ??
+                ingredients,
+            instructions:
+                (recipeData['instructions'] as List?)?.cast<String>() ?? [],
             prepTime: recipeData['prepTime'] as int? ?? 15,
             cookTime: recipeData['cookTime'] as int? ?? 30,
             difficulty: recipeData['difficulty'] as String? ?? 'medium',
@@ -119,7 +144,7 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
 
           recipes.add(recipe);
           successCount++;
-          
+
           // Store recipe data for caching
           recipesData.add({
             'id': recipe.id,
@@ -135,11 +160,13 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
         } catch (e) {
           failCount++;
           print('Failed to generate recipe ${i + 1}/3: $e');
-          
+
           // Continue with other recipes - only fail if we get zero recipes
           if (successCount == 0 && i == 2) {
             // All attempts failed
-            throw Exception('Failed to generate any recipes. Please try again.');
+            throw Exception(
+              'Failed to generate any recipes. Please try again.',
+            );
           }
           // Otherwise continue to next recipe
         }
@@ -160,8 +187,10 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
       // Update tracking variables
       _lastIngredients = List.from(ingredients);
       _lastProfile = profile;
-      
-      print('Recipe generation complete: $successCount succeeded, $failCount failed');
+
+      print(
+        'Recipe generation complete: $successCount succeeded, $failCount failed',
+      );
 
       state = AsyncValue.data(recipes);
     } catch (e, stack) {
@@ -188,17 +217,21 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
 }
 
 /// RecipeResultsScreen - Tab 3
-/// 
+///
 /// Displays recipe results based on sessionIngredients (quick search)
 /// or pantryIngredients (full pantry search) if session is empty.
 class RecipeResultsScreen extends ConsumerStatefulWidget {
   const RecipeResultsScreen({super.key});
 
   @override
-  ConsumerState<RecipeResultsScreen> createState() => _RecipeResultsScreenState();
+  ConsumerState<RecipeResultsScreen> createState() =>
+      _RecipeResultsScreenState();
 }
 
 class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
+  String _searchQuery = '';
+  Set<String> _selectedFilters = {};
+
   @override
   void initState() {
     super.initState();
@@ -215,13 +248,74 @@ class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
 
     // Use sessionIngredients if available, otherwise use pantryIngredients
     final pantryNames = pantryItems.map((e) => e.name).toList();
-    final ingredients = sessionIngredients.isNotEmpty 
-      ? sessionIngredients 
-      : pantryNames;
+    final ingredients = sessionIngredients.isNotEmpty
+        ? sessionIngredients
+        : pantryNames;
 
     if (ingredients.isNotEmpty) {
-      ref.read(recipeGenerationProvider.notifier).generateRecipes(ingredients, profile);
+      ref
+          .read(recipeGenerationProvider.notifier)
+          .generateRecipes(ingredients, profile);
     }
+  }
+
+  List<Recipe> _filterRecipes(List<Recipe> recipes) {
+    var filtered = recipes;
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((recipe) {
+        return recipe.name.toLowerCase().contains(query) ||
+            recipe.description.toLowerCase().contains(query) ||
+            recipe.ingredients.any(
+              (ing) => ing.toLowerCase().contains(query),
+            ) ||
+            recipe.tags.any((tag) => tag.toLowerCase().contains(query));
+      }).toList();
+    }
+
+    // Apply category filters
+    if (_selectedFilters.isNotEmpty) {
+      filtered = filtered.where((recipe) {
+        // Check difficulty
+        if (_selectedFilters.contains('easy') &&
+            recipe.difficulty.toLowerCase() != 'easy') {
+          return false;
+        }
+
+        // Check time
+        if (_selectedFilters.contains('quick')) {
+          final totalTime = recipe.prepTime + recipe.cookTime;
+          if (totalTime >= 30) return false;
+        }
+
+        // Check cuisines using the helper's detection logic
+        final cuisines = ['italian', 'asian', 'mexican', 'american', 'french'];
+        final selectedCuisines = _selectedFilters.intersection(
+          cuisines.toSet(),
+        );
+        if (selectedCuisines.isNotEmpty) {
+          // Use RecipeCategoryHelper to detect the recipe's cuisine
+          final detectedCuisine = RecipeCategoryHelper.detectCuisine(
+            recipe.name,
+            recipe.tags,
+          );
+          final detectedCuisineName = RecipeCategoryHelper.getCuisineName(
+            detectedCuisine,
+          ).toLowerCase();
+
+          // Check if the detected cuisine matches any selected filter
+          if (!selectedCuisines.contains(detectedCuisineName)) {
+            return false;
+          }
+        }
+
+        return true;
+      }).toList();
+    }
+
+    return filtered;
   }
 
   @override
@@ -233,9 +327,9 @@ class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
 
     // Determine which ingredients are being used
     final pantryNames = pantryItems.map((e) => e.name).toList();
-    final activeIngredients = sessionIngredients.isNotEmpty 
-      ? sessionIngredients 
-      : pantryNames;
+    final activeIngredients = sessionIngredients.isNotEmpty
+        ? sessionIngredients
+        : pantryNames;
     final isQuickSearch = sessionIngredients.isNotEmpty;
 
     return Scaffold(
@@ -251,20 +345,76 @@ class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
         ],
       ),
       body: activeIngredients.isEmpty
-          ? _buildEmptyState(theme)
+          ? EmptyRecipesWidget(
+              reason: EmptyRecipesReason.noIngredients,
+              onAction: () {
+                // Navigate to home tab to add ingredients
+                DefaultTabController.of(context).animateTo(0);
+              },
+            )
           : Column(
               children: [
+                // Search bar
+                RecipeSearchBar(
+                  query: _searchQuery,
+                  onChanged: (query) {
+                    setState(() {
+                      _searchQuery = query;
+                    });
+                  },
+                  onClear: () {
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  },
+                ),
+
+                // Filter chips
+                RecipeFilterChips(
+                  selectedFilters: _selectedFilters,
+                  onFiltersChanged: (filters) {
+                    setState(() {
+                      _selectedFilters = filters;
+                    });
+                  },
+                ),
+
                 // Ingredients being used
                 _buildIngredientsChips(activeIngredients, isQuickSearch, theme),
-                
+
                 // Recipe results
                 Expanded(
                   child: recipesAsync.when(
-                    data: (recipes) => recipes.isEmpty
-                        ? _buildNoRecipesState(theme)
-                        : _buildRecipesList(recipes),
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => _buildErrorState(error, theme),
+                    data: (recipes) {
+                      if (recipes.isEmpty) {
+                        return EmptyRecipesWidget(
+                          reason: EmptyRecipesReason.generationFailed,
+                          onAction: _generateRecipes,
+                        );
+                      }
+
+                      final filteredRecipes = _filterRecipes(recipes);
+
+                      if (filteredRecipes.isEmpty) {
+                        return EmptyRecipesWidget(
+                          reason: EmptyRecipesReason.noMatchingFilters,
+                          onAction: () {
+                            setState(() {
+                              _searchQuery = '';
+                              _selectedFilters = {};
+                            });
+                          },
+                        );
+                      }
+
+                      return _buildRecipesList(filteredRecipes);
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, _) => EmptyRecipesWidget(
+                      reason: EmptyRecipesReason.generationFailed,
+                      onAction: _generateRecipes,
+                    ),
                   ),
                 ),
               ],
@@ -272,15 +422,17 @@ class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
     );
   }
 
-  Widget _buildIngredientsChips(List<String> ingredients, bool isQuickSearch, ThemeData theme) {
+  Widget _buildIngredientsChips(
+    List<String> ingredients,
+    bool isQuickSearch,
+    ThemeData theme,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant,
-          ),
+          bottom: BorderSide(color: theme.colorScheme.outlineVariant),
         ),
       ),
       child: Column(
@@ -331,182 +483,31 @@ class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
         final favoriteRecipes = ref.watch(favoriteRecipesProvider);
         final isFavorite = favoriteRecipes.any((r) => r.id == recipe.id);
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RecipeDetailScreen(recipe: recipe),
-                ),
-              );
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Recipe header
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              recipe.name,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (recipe.description.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                recipe.description,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorite ? Colors.red : null,
-                        ),
-                        onPressed: () {
-                          ref.read(favoriteRecipesProvider.notifier).toggleFavorite(recipe);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+        return RecipeCard(
+          recipe: recipe,
+          isFavorite: isFavorite,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RecipeDetailScreen(recipe: recipe),
+              ),
+            );
+          },
+          onFavorite: () {
+            ref.read(favoriteRecipesProvider.notifier).toggleFavorite(recipe);
 
-                // Recipe meta info
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: _buildMetaChip(Icons.schedule, '${recipe.prepTime + recipe.cookTime} min'),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: _buildMetaChip(Icons.signal_cellular_alt, recipe.difficulty),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: _buildMetaChip(Icons.restaurant, '${recipe.ingredients.length} items'),
-                      ),
-                    ],
-                  ),
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  isFavorite ? 'Removed from favorites' : 'Added to favorites',
                 ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          },
         );
       },
-    );
-  }
-
-  Widget _buildMetaChip(IconData icon, String label) {
-    return Chip(
-      avatar: Icon(icon, size: 16),
-      label: Text(label),
-      visualDensity: VisualDensity.compact,
-    );
-  }
-
-  Widget _buildEmptyState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.restaurant_menu_outlined,
-            size: 80,
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No ingredients selected',
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Scan or add ingredients to find recipes',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoRecipesState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_off,
-            size: 80,
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No recipes found',
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Try different ingredients or preferences',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(Object error, ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 80,
-            color: theme.colorScheme.error,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Failed to generate recipes',
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            error.toString(),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _generateRecipes,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Try Again'),
-          ),
-        ],
-      ),
     );
   }
 }

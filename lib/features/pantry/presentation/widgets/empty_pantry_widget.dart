@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 class EmptyPantryWidget extends StatelessWidget {
   final VoidCallback onScan;
   final VoidCallback onManual;
-  const EmptyPantryWidget({super.key, required this.onScan, required this.onManual});
+  const EmptyPantryWidget({
+    super.key,
+    required this.onScan,
+    required this.onManual,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +29,9 @@ class EmptyPantryWidget extends StatelessWidget {
             Text(
               'Start by scanning or typing ingredients you have.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -38,7 +44,7 @@ class EmptyPantryWidget extends StatelessWidget {
               onPressed: onManual,
               icon: const Icon(Icons.edit),
               label: const Text('Type to Add'),
-            )
+            ),
           ],
         ),
       ),

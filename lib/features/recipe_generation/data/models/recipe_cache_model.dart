@@ -66,8 +66,8 @@ class RecipeCacheModel {
       skillLevel: json['skill_level'] as String?,
       cuisinePreference: json['cuisine_preference'] as String?,
       createdAt: (json['created_at'] as Timestamp).toDate(),
-      expiresAt: json['expires_at'] != null 
-          ? (json['expires_at'] as Timestamp).toDate() 
+      expiresAt: json['expires_at'] != null
+          ? (json['expires_at'] as Timestamp).toDate()
           : null,
     );
   }

@@ -3,7 +3,7 @@ import '../constants/app_constants.dart';
 import '../errors/rate_limit_exceptions.dart';
 
 /// Service for enforcing user-level rate limits on Gemini API calls
-/// 
+///
 /// Tracks usage in Firestore `user_usage` collection with hourly and daily counters.
 /// Resets counters automatically based on timestamps.
 class RateLimiterService {
@@ -12,7 +12,7 @@ class RateLimiterService {
   RateLimiterService(this._firestore);
 
   /// Check if user can generate a recipe (enforces hourly and daily limits)
-  /// 
+  ///
   /// Throws [RecipeGenerationHourlyLimitException] or [RecipeGenerationDailyLimitException]
   /// if limit exceeded.
   Future<void> checkRecipeGenerationLimit(String userId) async {
@@ -23,21 +23,21 @@ class RateLimiterService {
       dailyLimit: AppConstants.maxRecipeGenerationsPerDay,
       hourlyExceptionBuilder: (current, max, resetIn) =>
           RecipeGenerationHourlyLimitException(
-        currentCount: current,
-        maxAllowed: max,
-        resetIn: resetIn,
-      ),
+            currentCount: current,
+            maxAllowed: max,
+            resetIn: resetIn,
+          ),
       dailyExceptionBuilder: (current, max, resetIn) =>
           RecipeGenerationDailyLimitException(
-        currentCount: current,
-        maxAllowed: max,
-        resetIn: resetIn,
-      ),
+            currentCount: current,
+            maxAllowed: max,
+            resetIn: resetIn,
+          ),
     );
   }
 
   /// Check if user can detect ingredients (enforces hourly and daily limits)
-  /// 
+  ///
   /// Throws [IngredientDetectionHourlyLimitException] or [IngredientDetectionDailyLimitException]
   /// if limit exceeded.
   Future<void> checkIngredientDetectionLimit(String userId) async {
@@ -48,16 +48,16 @@ class RateLimiterService {
       dailyLimit: AppConstants.maxIngredientDetectionsPerDay,
       hourlyExceptionBuilder: (current, max, resetIn) =>
           IngredientDetectionHourlyLimitException(
-        currentCount: current,
-        maxAllowed: max,
-        resetIn: resetIn,
-      ),
+            currentCount: current,
+            maxAllowed: max,
+            resetIn: resetIn,
+          ),
       dailyExceptionBuilder: (current, max, resetIn) =>
           IngredientDetectionDailyLimitException(
-        currentCount: current,
-        maxAllowed: max,
-        resetIn: resetIn,
-      ),
+            currentCount: current,
+            maxAllowed: max,
+            resetIn: resetIn,
+          ),
     );
   }
 
@@ -99,10 +99,18 @@ class RateLimiterService {
       final dailyExpired = dailyResetAt == null || now.isAfter(dailyResetAt);
 
       return {
-        'recipe_generation_hourly': hourlyExpired ? 0 : (data['recipe_generation_hourly'] ?? 0),
-        'recipe_generation_daily': dailyExpired ? 0 : (data['recipe_generation_daily'] ?? 0),
-        'ingredient_detection_hourly': hourlyExpired ? 0 : (data['ingredient_detection_hourly'] ?? 0),
-        'ingredient_detection_daily': dailyExpired ? 0 : (data['ingredient_detection_daily'] ?? 0),
+        'recipe_generation_hourly': hourlyExpired
+            ? 0
+            : (data['recipe_generation_hourly'] ?? 0),
+        'recipe_generation_daily': dailyExpired
+            ? 0
+            : (data['recipe_generation_daily'] ?? 0),
+        'ingredient_detection_hourly': hourlyExpired
+            ? 0
+            : (data['ingredient_detection_hourly'] ?? 0),
+        'ingredient_detection_daily': dailyExpired
+            ? 0
+            : (data['ingredient_detection_daily'] ?? 0),
         'hourly_reset_at': hourlyResetAt,
         'daily_reset_at': dailyResetAt,
       };
@@ -124,16 +132,24 @@ class RateLimiterService {
     required String actionType,
     required int hourlyLimit,
     required int dailyLimit,
-    required RateLimitException Function(int, int, Duration) hourlyExceptionBuilder,
-    required RateLimitException Function(int, int, Duration) dailyExceptionBuilder,
+    required RateLimitException Function(int, int, Duration)
+    hourlyExceptionBuilder,
+    required RateLimitException Function(int, int, Duration)
+    dailyExceptionBuilder,
   }) async {
     try {
-      final docRef = _firestore.collection(AppConstants.userUsageCollection).doc(userId);
+      final docRef = _firestore
+          .collection(AppConstants.userUsageCollection)
+          .doc(userId);
       final doc = await docRef.get();
 
       final now = DateTime.now();
       final hourlyResetAt = now.add(const Duration(hours: 1));
-      final dailyResetAt = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+      final dailyResetAt = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).add(const Duration(days: 1));
 
       if (!doc.exists) {
         // First usage - create document with initial counters
@@ -149,14 +165,16 @@ class RateLimiterService {
       }
 
       final data = doc.data()!;
-      
+
       // Get current counters
       int hourlyCount = data['${actionType}_hourly'] ?? 0;
       int dailyCount = data['${actionType}_daily'] ?? 0;
-      
+
       // Get reset timestamps
-      final storedHourlyResetAt = (data['hourly_reset_at'] as Timestamp?)?.toDate();
-      final storedDailyResetAt = (data['daily_reset_at'] as Timestamp?)?.toDate();
+      final storedHourlyResetAt = (data['hourly_reset_at'] as Timestamp?)
+          ?.toDate();
+      final storedDailyResetAt = (data['daily_reset_at'] as Timestamp?)
+          ?.toDate();
 
       // Check if counters need to be reset
       if (storedHourlyResetAt != null && now.isAfter(storedHourlyResetAt)) {
@@ -186,8 +204,10 @@ class RateLimiterService {
         final resetIn = storedHourlyResetAt != null
             ? storedHourlyResetAt.difference(now)
             : const Duration(hours: 1);
-        
-        print('[RateLimiter] Hourly limit exceeded for $actionType: $hourlyCount/$hourlyLimit');
+
+        print(
+          '[RateLimiter] Hourly limit exceeded for $actionType: $hourlyCount/$hourlyLimit',
+        );
         throw hourlyExceptionBuilder(hourlyCount, hourlyLimit, resetIn);
       }
 
@@ -196,13 +216,17 @@ class RateLimiterService {
         final resetIn = storedDailyResetAt != null
             ? storedDailyResetAt.difference(now)
             : Duration(hours: 24 - now.hour);
-        
-        print('[RateLimiter] Daily limit exceeded for $actionType: $dailyCount/$dailyLimit');
+
+        print(
+          '[RateLimiter] Daily limit exceeded for $actionType: $dailyCount/$dailyLimit',
+        );
         throw dailyExceptionBuilder(dailyCount, dailyLimit, resetIn);
       }
 
       // All checks passed
-      print('[RateLimiter] $actionType allowed: hourly=$hourlyCount/$hourlyLimit, daily=$dailyCount/$dailyLimit');
+      print(
+        '[RateLimiter] $actionType allowed: hourly=$hourlyCount/$hourlyLimit, daily=$dailyCount/$dailyLimit',
+      );
     } catch (e) {
       if (e is RateLimitException) {
         rethrow;
@@ -215,12 +239,18 @@ class RateLimiterService {
   /// Increment usage counter (fire-and-forget)
   Future<void> _incrementCounter(String userId, String actionType) async {
     try {
-      final docRef = _firestore.collection(AppConstants.userUsageCollection).doc(userId);
+      final docRef = _firestore
+          .collection(AppConstants.userUsageCollection)
+          .doc(userId);
       final doc = await docRef.get();
 
       final now = DateTime.now();
       final hourlyResetAt = now.add(const Duration(hours: 1));
-      final dailyResetAt = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+      final dailyResetAt = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).add(const Duration(days: 1));
 
       if (!doc.exists) {
         // Create initial document
@@ -254,18 +284,25 @@ class RateLimiterService {
     try {
       final now = DateTime.now();
       final hourlyResetAt = now.add(const Duration(hours: 1));
-      final dailyResetAt = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+      final dailyResetAt = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).add(const Duration(days: 1));
 
-      await _firestore.collection(AppConstants.userUsageCollection).doc(userId).set({
-        'user_id': userId,
-        'recipe_generation_hourly': 0,
-        'recipe_generation_daily': 0,
-        'ingredient_detection_hourly': 0,
-        'ingredient_detection_daily': 0,
-        'hourly_reset_at': Timestamp.fromDate(hourlyResetAt),
-        'daily_reset_at': Timestamp.fromDate(dailyResetAt),
-        'last_updated': FieldValue.serverTimestamp(),
-      });
+      await _firestore
+          .collection(AppConstants.userUsageCollection)
+          .doc(userId)
+          .set({
+            'user_id': userId,
+            'recipe_generation_hourly': 0,
+            'recipe_generation_daily': 0,
+            'ingredient_detection_hourly': 0,
+            'ingredient_detection_daily': 0,
+            'hourly_reset_at': Timestamp.fromDate(hourlyResetAt),
+            'daily_reset_at': Timestamp.fromDate(dailyResetAt),
+            'last_updated': FieldValue.serverTimestamp(),
+          });
 
       print('[RateLimiter] Reset all limits for user $userId');
     } catch (e) {

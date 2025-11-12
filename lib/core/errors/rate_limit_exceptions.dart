@@ -41,12 +41,12 @@ class RecipeGenerationHourlyLimitException extends RateLimitException {
     required int maxAllowed,
     required Duration resetIn,
   }) : super(
-          message: 'Recipe generation hourly limit exceeded',
-          type: 'recipe generations per hour',
-          currentCount: currentCount,
-          maxAllowed: maxAllowed,
-          resetIn: resetIn,
-        );
+         message: 'Recipe generation hourly limit exceeded',
+         type: 'recipe generations per hour',
+         currentCount: currentCount,
+         maxAllowed: maxAllowed,
+         resetIn: resetIn,
+       );
 }
 
 /// Thrown when daily recipe generation limit is exceeded
@@ -56,12 +56,12 @@ class RecipeGenerationDailyLimitException extends RateLimitException {
     required int maxAllowed,
     required Duration resetIn,
   }) : super(
-          message: 'Recipe generation daily limit exceeded',
-          type: 'recipe generations per day',
-          currentCount: currentCount,
-          maxAllowed: maxAllowed,
-          resetIn: resetIn,
-        );
+         message: 'Recipe generation daily limit exceeded',
+         type: 'recipe generations per day',
+         currentCount: currentCount,
+         maxAllowed: maxAllowed,
+         resetIn: resetIn,
+       );
 }
 
 /// Thrown when hourly ingredient detection limit is exceeded
@@ -71,12 +71,12 @@ class IngredientDetectionHourlyLimitException extends RateLimitException {
     required int maxAllowed,
     required Duration resetIn,
   }) : super(
-          message: 'Ingredient detection hourly limit exceeded',
-          type: 'ingredient scans per hour',
-          currentCount: currentCount,
-          maxAllowed: maxAllowed,
-          resetIn: resetIn,
-        );
+         message: 'Ingredient detection hourly limit exceeded',
+         type: 'ingredient scans per hour',
+         currentCount: currentCount,
+         maxAllowed: maxAllowed,
+         resetIn: resetIn,
+       );
 }
 
 /// Thrown when daily ingredient detection limit is exceeded
@@ -86,10 +86,10 @@ class IngredientDetectionDailyLimitException extends RateLimitException {
     required int maxAllowed,
     required Duration resetIn,
   }) : super(
-          message: 'Ingredient detection daily limit exceeded',
-          type: 'ingredient scans per day',
-          currentCount: currentCount,
-          maxAllowed: maxAllowed,
-          resetIn: resetIn,
-        );
+         message: 'Ingredient detection daily limit exceeded',
+         type: 'ingredient scans per day',
+         currentCount: currentCount,
+         maxAllowed: maxAllowed,
+         resetIn: resetIn,
+       );
 }

@@ -89,7 +89,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (userId == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User not found. Please sign in again.')),
+            const SnackBar(
+              content: Text('User not found. Please sign in again.'),
+            ),
           );
         }
         return;
@@ -157,10 +159,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                          Text(
-                            'Step ${_currentPage + 1} of 5',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
+                            Text(
+                              'Step ${_currentPage + 1} of 5',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                             TextButton.icon(
                               onPressed: _isLoading ? null : _skipOnboarding,
                               icon: const Icon(Icons.skip_next, size: 18),
@@ -333,48 +335,51 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             spacing: 10,
             runSpacing: 10,
             alignment: WrapAlignment.center,
-            children: [
-              'Vegetarian',
-              'Vegan',
-              'Gluten-Free',
-              'Dairy-Free',
-              'Nut-Free',
-              'Halal',
-              'Kosher',
-              'None',
-            ].map((restriction) {
-              final isSelected = restriction == 'None'
-                  ? _dietaryRestrictions.isEmpty
-                  : _dietaryRestrictions.contains(restriction);
-              return FilterChip(
-                label: Text(restriction),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (restriction == 'None') {
-                      _dietaryRestrictions.clear();
-                    } else {
-                      if (selected) {
-                        _dietaryRestrictions.add(restriction);
-                      } else {
-                        _dietaryRestrictions.remove(restriction);
-                      }
-                    }
-                  });
-                },
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-              );
-            }).toList(),
+            children:
+                [
+                  'Vegetarian',
+                  'Vegan',
+                  'Gluten-Free',
+                  'Dairy-Free',
+                  'Nut-Free',
+                  'Halal',
+                  'Kosher',
+                  'None',
+                ].map((restriction) {
+                  final isSelected = restriction == 'None'
+                      ? _dietaryRestrictions.isEmpty
+                      : _dietaryRestrictions.contains(restriction);
+                  return FilterChip(
+                    label: Text(restriction),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (restriction == 'None') {
+                          _dietaryRestrictions.clear();
+                        } else {
+                          if (selected) {
+                            _dietaryRestrictions.add(restriction);
+                          } else {
+                            _dietaryRestrictions.remove(restriction);
+                          }
+                        }
+                      });
+                    },
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  );
+                }).toList(),
           ),
           const SizedBox(height: AppConstants.largePadding * 2),
           if (_dietaryRestrictions.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(AppConstants.defaultPadding),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -433,33 +438,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppConstants.largePadding * 2),
-          _buildSpiceOption(
-            'None',
-            'No spice for me, thanks',
-            '😊',
-            'none',
-          ),
+          _buildSpiceOption('None', 'No spice for me, thanks', '😊', 'none'),
           const SizedBox(height: AppConstants.defaultPadding),
-          _buildSpiceOption(
-            'Mild',
-            'Just a hint of spice',
-            '🌶️',
-            'mild',
-          ),
+          _buildSpiceOption('Mild', 'Just a hint of spice', '🌶️', 'mild'),
           const SizedBox(height: AppConstants.defaultPadding),
-          _buildSpiceOption(
-            'Medium',
-            'I like a good kick',
-            '🌶️🌶️',
-            'medium',
-          ),
+          _buildSpiceOption('Medium', 'I like a good kick', '🌶️🌶️', 'medium'),
           const SizedBox(height: AppConstants.defaultPadding),
-          _buildSpiceOption(
-            'Hot',
-            'Bring on the heat!',
-            '🌶️🌶️🌶️',
-            'hot',
-          ),
+          _buildSpiceOption('Hot', 'Bring on the heat!', '🌶️🌶️🌶️', 'hot'),
           const SizedBox(height: AppConstants.defaultPadding),
           _buildSpiceOption(
             'Very Hot',
@@ -489,10 +474,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           child: Row(
             children: [
-              Text(
-                emoji,
-                style: const TextStyle(fontSize: 36),
-              ),
+              Text(emoji, style: const TextStyle(fontSize: 36)),
               const SizedBox(width: AppConstants.defaultPadding),
               Expanded(
                 child: Column(
@@ -511,8 +493,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isSelected
-                            ? Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8)
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer.withOpacity(0.8)
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ],
@@ -567,50 +553,53 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             spacing: 10,
             runSpacing: 10,
             alignment: WrapAlignment.center,
-            children: [
-              'Italian',
-              'Mexican',
-              'Chinese',
-              'Japanese',
-              'Indian',
-              'Thai',
-              'French',
-              'Mediterranean',
-              'Korean',
-              'Vietnamese',
-              'American',
-              'Greek',
-              'Spanish',
-              'Middle Eastern',
-              'Caribbean',
-              'Brazilian',
-            ].map((cuisine) {
-              final isSelected = _favoriteCuisines.contains(cuisine);
-              return FilterChip(
-                label: Text(cuisine),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _favoriteCuisines.add(cuisine);
-                    } else {
-                      _favoriteCuisines.remove(cuisine);
-                    }
-                  });
-                },
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-              );
-            }).toList(),
+            children:
+                [
+                  'Italian',
+                  'Mexican',
+                  'Chinese',
+                  'Japanese',
+                  'Indian',
+                  'Thai',
+                  'French',
+                  'Mediterranean',
+                  'Korean',
+                  'Vietnamese',
+                  'American',
+                  'Greek',
+                  'Spanish',
+                  'Middle Eastern',
+                  'Caribbean',
+                  'Brazilian',
+                ].map((cuisine) {
+                  final isSelected = _favoriteCuisines.contains(cuisine);
+                  return FilterChip(
+                    label: Text(cuisine),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _favoriteCuisines.add(cuisine);
+                        } else {
+                          _favoriteCuisines.remove(cuisine);
+                        }
+                      });
+                    },
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  );
+                }).toList(),
           ),
           const SizedBox(height: AppConstants.largePadding * 2),
           if (_favoriteCuisines.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(AppConstants.defaultPadding),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -636,9 +625,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -653,7 +640,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   child: Text(
                     'You can skip this if you\'re open to all cuisines',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ),
@@ -701,59 +690,62 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             spacing: 10,
             runSpacing: 10,
             alignment: WrapAlignment.center,
-            children: [
-              'Peanuts',
-              'Tree Nuts',
-              'Shellfish',
-              'Fish',
-              'Eggs',
-              'Soy',
-              'Wheat',
-              'Sesame',
-              'Mushrooms',
-              'Cilantro',
-              'Coconut',
-              'Onions',
-              'Garlic',
-              'Tomatoes',
-              'Bell Peppers',
-              'Celery',
-              'Olives',
-              'Blue Cheese',
-              'None',
-            ].map((ingredient) {
-              final isSelected = ingredient == 'None'
-                  ? _excludedIngredients.isEmpty
-                  : _excludedIngredients.contains(ingredient);
-              return FilterChip(
-                label: Text(ingredient),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (ingredient == 'None') {
-                      _excludedIngredients.clear();
-                    } else {
-                      if (selected) {
-                        _excludedIngredients.add(ingredient);
-                      } else {
-                        _excludedIngredients.remove(ingredient);
-                      }
-                    }
-                  });
-                },
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-              );
-            }).toList(),
+            children:
+                [
+                  'Peanuts',
+                  'Tree Nuts',
+                  'Shellfish',
+                  'Fish',
+                  'Eggs',
+                  'Soy',
+                  'Wheat',
+                  'Sesame',
+                  'Mushrooms',
+                  'Cilantro',
+                  'Coconut',
+                  'Onions',
+                  'Garlic',
+                  'Tomatoes',
+                  'Bell Peppers',
+                  'Celery',
+                  'Olives',
+                  'Blue Cheese',
+                  'None',
+                ].map((ingredient) {
+                  final isSelected = ingredient == 'None'
+                      ? _excludedIngredients.isEmpty
+                      : _excludedIngredients.contains(ingredient);
+                  return FilterChip(
+                    label: Text(ingredient),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (ingredient == 'None') {
+                          _excludedIngredients.clear();
+                        } else {
+                          if (selected) {
+                            _excludedIngredients.add(ingredient);
+                          } else {
+                            _excludedIngredients.remove(ingredient);
+                          }
+                        }
+                      });
+                    },
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  );
+                }).toList(),
           ),
           const SizedBox(height: AppConstants.largePadding * 2),
           if (_excludedIngredients.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(AppConstants.defaultPadding),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.errorContainer.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -779,9 +771,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(AppConstants.defaultPadding),
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -796,7 +786,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   child: Text(
                     'This is separate from dietary restrictions and helps personalize your experience',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ),
@@ -850,8 +842,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isSelected
-                            ? Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8)
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer.withOpacity(0.8)
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ],

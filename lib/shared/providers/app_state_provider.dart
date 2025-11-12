@@ -8,7 +8,7 @@ class DietaryProfile {
   final List<String> restrictions; // e.g., ['vegetarian', 'gluten-free']
   final String skillLevel; // 'beginner', 'intermediate', 'advanced'
   final String? cuisinePreference; // e.g., 'italian', 'asian', 'mexican'
-  
+
   const DietaryProfile({
     this.restrictions = const [],
     this.skillLevel = 'beginner',
@@ -55,7 +55,7 @@ class Recipe {
   final String difficulty;
   final List<String> tags;
   final DateTime createdAt;
-  
+
   const Recipe({
     required this.id,
     required this.name,
@@ -174,7 +174,9 @@ class PantryIngredientsNotifier extends StateNotifier<List<PantryItem>> {
   void addIngredients(List<String> ingredients) {
     final newState = [...state];
     for (final ingredient in ingredients) {
-      if (!newState.any((e) => e.name.toLowerCase() == ingredient.toLowerCase())) {
+      if (!newState.any(
+        (e) => e.name.toLowerCase() == ingredient.toLowerCase(),
+      )) {
         newState.add(PantryItem.fromLegacy(ingredient));
       }
     }
@@ -210,7 +212,9 @@ class FavoriteRecipesNotifier extends StateNotifier<List<Recipe>> {
 
   void _loadFromStorage() {
     final stored = recipeBox.get('favoriteRecipes', defaultValue: []);
-    state = (stored as List).map((json) => Recipe.fromJson(Map<String, dynamic>.from(json))).toList();
+    state = (stored as List)
+        .map((json) => Recipe.fromJson(Map<String, dynamic>.from(json)))
+        .toList();
   }
 
   void _saveToStorage() {
@@ -298,24 +302,28 @@ class DietaryProfileNotifier extends StateNotifier<DietaryProfile> {
 // ============================================================================
 
 /// Provider for session ingredients (temporary, for quick searches)
-final sessionIngredientsProvider = StateNotifierProvider<SessionIngredientsNotifier, List<String>>((ref) {
-  return SessionIngredientsNotifier();
-});
+final sessionIngredientsProvider =
+    StateNotifierProvider<SessionIngredientsNotifier, List<String>>((ref) {
+      return SessionIngredientsNotifier();
+    });
 
 /// Provider for pantry ingredients (persistent)
-final pantryIngredientsProvider = StateNotifierProvider<PantryIngredientsNotifier, List<PantryItem>>((ref) {
-  final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
-  return PantryIngredientsNotifier(prefsBox);
-});
+final pantryIngredientsProvider =
+    StateNotifierProvider<PantryIngredientsNotifier, List<PantryItem>>((ref) {
+      final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
+      return PantryIngredientsNotifier(prefsBox);
+    });
 
 /// Provider for favorite recipes (persistent)
-final favoriteRecipesProvider = StateNotifierProvider<FavoriteRecipesNotifier, List<Recipe>>((ref) {
-  final recipeBox = Hive.box(AppConstants.hiveRecipeBox);
-  return FavoriteRecipesNotifier(recipeBox);
-});
+final favoriteRecipesProvider =
+    StateNotifierProvider<FavoriteRecipesNotifier, List<Recipe>>((ref) {
+      final recipeBox = Hive.box(AppConstants.hiveRecipeBox);
+      return FavoriteRecipesNotifier(recipeBox);
+    });
 
 /// Provider for dietary profile (persistent)
-final dietaryProfileProvider = StateNotifierProvider<DietaryProfileNotifier, DietaryProfile>((ref) {
-  final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
-  return DietaryProfileNotifier(prefsBox);
-});
+final dietaryProfileProvider =
+    StateNotifierProvider<DietaryProfileNotifier, DietaryProfile>((ref) {
+      final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
+      return DietaryProfileNotifier(prefsBox);
+    });

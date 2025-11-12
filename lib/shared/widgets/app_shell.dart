@@ -7,7 +7,7 @@ import '../../features/favorites/presentation/screens/favorites_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 
 /// AppShell - The main navigation container for the app
-/// 
+///
 /// This widget serves as the "Container" that holds the bottom navigation bar
 /// and switches between the 5 main screens. It has no data logic - just navigation.
 class AppShell extends ConsumerStatefulWidget {
@@ -22,11 +22,11 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   // The 5 main screens
   static const List<Widget> _screens = [
-    HomeScreen(),           // Tab 0: Quick scan/search
-    MyPantryScreen(),       // Tab 1: Pantry management
-    RecipeResultsScreen(),  // Tab 2: Recipe results
-    FavoritesScreen(),      // Tab 3: Saved favorites
-    ProfileScreen(),        // Tab 4: User profile
+    HomeScreen(), // Tab 0: Quick scan/search
+    MyPantryScreen(), // Tab 1: Pantry management
+    RecipeResultsScreen(), // Tab 2: Recipe results
+    FavoritesScreen(), // Tab 3: Saved favorites
+    ProfileScreen(), // Tab 4: User profile
   ];
 
   void _onTabTapped(int index) {
@@ -47,12 +47,9 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _onTabTapped,

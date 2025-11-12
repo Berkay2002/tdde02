@@ -78,13 +78,19 @@ class PantryItem {
       category = IngredientCategoryHelper.detectCategory(name);
     }
     return PantryItem(
-      id: json['id'] as String? ?? '${DateTime.now().millisecondsSinceEpoch}_$name',
+      id:
+          json['id'] as String? ??
+          '${DateTime.now().millisecondsSinceEpoch}_$name',
       name: name,
       category: category,
       quantity: json['quantity'] as String?,
       unit: json['unit'] as String?,
-      dateAdded: DateTime.tryParse(json['dateAdded'] as String? ?? '') ?? DateTime.now(),
-      expirationDate: json['expirationDate'] != null ? DateTime.tryParse(json['expirationDate'] as String) : null,
+      dateAdded:
+          DateTime.tryParse(json['dateAdded'] as String? ?? '') ??
+          DateTime.now(),
+      expirationDate: json['expirationDate'] != null
+          ? DateTime.tryParse(json['expirationDate'] as String)
+          : null,
     );
   }
 

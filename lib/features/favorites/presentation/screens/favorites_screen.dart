@@ -4,7 +4,7 @@ import '../../../../shared/providers/app_state_provider.dart';
 import '../../../recipe_detail/presentation/screens/recipe_detail_screen.dart';
 
 /// FavoritesScreen - Tab 4
-/// 
+///
 /// Displays all saved favorite recipes.
 /// Users can view, remove, or navigate to recipe details.
 class FavoritesScreen extends ConsumerWidget {
@@ -14,7 +14,7 @@ class FavoritesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final favoriteRecipes = ref.watch(favoriteRecipesProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Favorites'),
@@ -45,10 +45,7 @@ class FavoritesScreen extends ConsumerWidget {
             color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
-          Text(
-            'No favorites yet',
-            style: theme.textTheme.titleLarge,
-          ),
+          Text('No favorites yet', style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(
             'Save recipes you love to find them here',
@@ -118,14 +115,20 @@ class FavoritesScreen extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.favorite, color: Colors.red),
                         onPressed: () {
-                          ref.read(favoriteRecipesProvider.notifier).removeRecipe(recipe.id);
+                          ref
+                              .read(favoriteRecipesProvider.notifier)
+                              .removeRecipe(recipe.id);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('${recipe.name} removed from favorites'),
+                              content: Text(
+                                '${recipe.name} removed from favorites',
+                              ),
                               action: SnackBarAction(
                                 label: 'Undo',
                                 onPressed: () {
-                                  ref.read(favoriteRecipesProvider.notifier).addRecipe(recipe);
+                                  ref
+                                      .read(favoriteRecipesProvider.notifier)
+                                      .addRecipe(recipe);
                                 },
                               ),
                             ),
@@ -157,9 +160,9 @@ class FavoritesScreen extends ConsumerWidget {
                         '${recipe.ingredients.length} ingredients',
                       ),
                       if (recipe.tags.isNotEmpty)
-                        ...recipe.tags.take(2).map((tag) => 
-                          _buildMetaChip(Icons.label, tag)
-                        ),
+                        ...recipe.tags
+                            .take(2)
+                            .map((tag) => _buildMetaChip(Icons.label, tag)),
                     ],
                   ),
                 ),
@@ -185,7 +188,9 @@ class FavoritesScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear All Favorites?'),
-        content: const Text('This will remove all saved recipes from your favorites.'),
+        content: const Text(
+          'This will remove all saved recipes from your favorites.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

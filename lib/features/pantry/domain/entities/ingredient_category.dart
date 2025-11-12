@@ -66,14 +66,22 @@ class IngredientCategoryHelper {
     final lower = name.toLowerCase();
     bool matches(List<String> list) => list.any((e) => lower.contains(e));
 
-    if (matches(IngredientCategoriesLists.vegetables)) return IngredientCategory.vegetables;
-    if (matches(IngredientCategoriesLists.proteins)) return IngredientCategory.proteins;
-    if (matches(IngredientCategoriesLists.dairy)) return IngredientCategory.dairy;
-    if (matches(IngredientCategoriesLists.grains)) return IngredientCategory.grains;
-    if (matches(IngredientCategoriesLists.herbs)) return IngredientCategory.herbs;
-    if (matches(IngredientCategoriesLists.fruits)) return IngredientCategory.fruits;
-    if (matches(IngredientCategoriesLists.canned)) return IngredientCategory.canned;
-    if (matches(IngredientCategoriesLists.condiments)) return IngredientCategory.condiments;
+    if (matches(IngredientCategoriesLists.vegetables))
+      return IngredientCategory.vegetables;
+    if (matches(IngredientCategoriesLists.proteins))
+      return IngredientCategory.proteins;
+    if (matches(IngredientCategoriesLists.dairy))
+      return IngredientCategory.dairy;
+    if (matches(IngredientCategoriesLists.grains))
+      return IngredientCategory.grains;
+    if (matches(IngredientCategoriesLists.herbs))
+      return IngredientCategory.herbs;
+    if (matches(IngredientCategoriesLists.fruits))
+      return IngredientCategory.fruits;
+    if (matches(IngredientCategoriesLists.canned))
+      return IngredientCategory.canned;
+    if (matches(IngredientCategoriesLists.condiments))
+      return IngredientCategory.condiments;
     return IngredientCategory.unknown;
   }
 }

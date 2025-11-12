@@ -50,7 +50,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   Future<void> _savePreferences() async {
     // Show loading indicator
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Row(
@@ -69,7 +69,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     );
 
     try {
-      final currentPrefs = await ref.read(userPreferencesNotifierProvider.future);
+      final currentPrefs = await ref.read(
+        userPreferencesNotifierProvider.future,
+      );
 
       if (currentPrefs == null) {
         if (mounted) {

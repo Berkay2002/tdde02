@@ -4,7 +4,12 @@ class PantrySearchBar extends StatelessWidget {
   final String query;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
-  const PantrySearchBar({super.key, required this.query, required this.onChanged, required this.onClear});
+  const PantrySearchBar({
+    super.key,
+    required this.query,
+    required this.onChanged,
+    required this.onClear,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,10 +20,7 @@ class PantrySearchBar extends StatelessWidget {
           hintText: 'Search ingredients...',
           prefixIcon: const Icon(Icons.search),
           suffixIcon: query.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: onClear,
-                )
+              ? IconButton(icon: const Icon(Icons.clear), onPressed: onClear)
               : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),

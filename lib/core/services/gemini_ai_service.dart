@@ -12,7 +12,7 @@ import 'rate_limiter_service.dart';
 ///
 /// This service uses Google's Gemini models via Firebase AI for cloud-based
 /// multimodal AI inference. No local model downloads required.
-/// 
+///
 /// **Rate Limiting**: Enforces per-user limits to prevent API quota abuse.
 class GeminiAIService {
   final RateLimiterService _rateLimiter;
@@ -52,7 +52,9 @@ class GeminiAIService {
       );
 
       _isInitialized = true;
-      print('GeminiAIService: Initialization successful with ${AppConstants.geminiModel}');
+      print(
+        'GeminiAIService: Initialization successful with ${AppConstants.geminiModel}',
+      );
     } catch (e) {
       print('GeminiAIService: Initialization failed: $e');
       throw ModelLoadException('Failed to initialize Gemini AI: $e');
@@ -60,11 +62,14 @@ class GeminiAIService {
   }
 
   /// Detect ingredients from preprocessed image data using multimodal prompting
-  /// 
+  ///
   /// **Rate Limiting**: Enforces hourly and daily limits per user.
   /// Throws [IngredientDetectionHourlyLimitException] or [IngredientDetectionDailyLimitException]
   /// if user has exceeded their quota.
-  Future<List<String>> detectIngredients(Uint8List imageData, String userId) async {
+  Future<List<String>> detectIngredients(
+    Uint8List imageData,
+    String userId,
+  ) async {
     if (!_isInitialized || _model == null) {
       throw ModelNotInitializedException('Model has not been initialized');
     }
@@ -82,7 +87,7 @@ class GeminiAIService {
         Content.multi([
           TextPart(prompt),
           InlineDataPart('image/jpeg', imageData),
-        ])
+        ]),
       ];
 
       // Generate response with timeout
@@ -109,7 +114,7 @@ class GeminiAIService {
   }
 
   /// Generate recipe from ingredients and preferences using text prompting
-  /// 
+  ///
   /// **Rate Limiting**: Enforces hourly and daily limits per user.
   /// Throws [RecipeGenerationHourlyLimitException] or [RecipeGenerationDailyLimitException]
   /// if user has exceeded their quota.
@@ -175,25 +180,25 @@ class GeminiAIService {
 
     while (true) {
       try {
-        return await _generateWithTimeout(
-          content: content,
-          timeout: timeout,
-        );
+        return await _generateWithTimeout(content: content, timeout: timeout);
       } catch (e) {
         attempt++;
-        
+
         // Check if we should retry
-        final shouldRetry = attempt <= maxRetries && 
-                           (e is InferenceTimeoutException || 
-                            e.toString().contains('network') ||
-                            e.toString().contains('connection'));
-        
+        final shouldRetry =
+            attempt <= maxRetries &&
+            (e is InferenceTimeoutException ||
+                e.toString().contains('network') ||
+                e.toString().contains('connection'));
+
         if (!shouldRetry) {
           rethrow;
         }
 
-        print('GeminiAIService: Attempt $attempt failed: $e. Retrying in ${retryDelay.inSeconds}s...');
-        
+        print(
+          'GeminiAIService: Attempt $attempt failed: $e. Retrying in ${retryDelay.inSeconds}s...',
+        );
+
         // Wait before retrying with exponential backoff
         await Future.delayed(retryDelay);
         retryDelay *= 2; // Double the delay for next retry
@@ -253,7 +258,7 @@ class GeminiAIService {
 
       final candidate = response.candidates.first;
       print('GeminiAIService: Finish reason: ${candidate.finishReason}');
-      
+
       // Check if blocked by safety filters
       if (candidate.finishReason == FinishReason.safety) {
         print('GeminiAIService: Response blocked by safety filters');
@@ -262,7 +267,9 @@ class GeminiAIService {
 
       final text = response.text;
       if (text == null || text.isEmpty) {
-        print('GeminiAIService: Empty response text. Candidates: ${response.candidates.length}');
+        print(
+          'GeminiAIService: Empty response text. Candidates: ${response.candidates.length}',
+        );
         throw InferenceException('Received empty response from model');
       }
 
@@ -291,7 +298,7 @@ class GeminiAIService {
               Content.multi([
                 TextPart(prompt),
                 InlineDataPart('image/jpeg', imageData),
-              ])
+              ]),
             ]
           : [Content.text(prompt)];
 

@@ -6,7 +6,7 @@ import '../widgets/quick_manual_input_sheet.dart';
 import '../../../camera/presentation/screens/camera_screen.dart';
 
 /// HomeScreen - Tab 1
-/// 
+///
 /// Quick scan or manual entry for session-based recipe search.
 /// This screen launches the camera or manual input modal and sends
 /// the results to sessionIngredients, then switches to the Recipes tab.
@@ -18,16 +18,14 @@ class HomeScreen extends ConsumerWidget {
     final ingredients = await Navigator.push<List<String>>(
       context,
       MaterialPageRoute(
-        builder: (context) => const CameraScreen(
-          mode: CameraMode.quickScan,
-        ),
+        builder: (context) => const CameraScreen(mode: CameraMode.quickScan),
       ),
     );
 
     if (ingredients != null && ingredients.isNotEmpty && context.mounted) {
       // Send to Brain's sessionIngredients
       ref.read(sessionIngredientsProvider.notifier).setIngredients(ingredients);
-      
+
       // Switch to Recipes tab
       switchToRecipeTab(context);
     }
@@ -47,12 +45,9 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final sessionIngredients = ref.watch(sessionIngredientsProvider);
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quick Search'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Quick Search'), centerTitle: true),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -118,7 +113,9 @@ class HomeScreen extends ConsumerWidget {
                         label: Text(ingredient),
                         deleteIcon: const Icon(Icons.close, size: 18),
                         onDeleted: () {
-                          ref.read(sessionIngredientsProvider.notifier).removeIngredient(ingredient);
+                          ref
+                              .read(sessionIngredientsProvider.notifier)
+                              .removeIngredient(ingredient);
                         },
                       );
                     }).toList(),
@@ -158,7 +155,7 @@ class _ActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Card(
       elevation: 2,
       child: InkWell(
@@ -174,11 +171,7 @@ class _ActionCard extends StatelessWidget {
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  size: 32,
-                  color: color,
-                ),
+                child: Icon(icon, size: 32, color: color),
               ),
               const SizedBox(width: 16),
               Expanded(

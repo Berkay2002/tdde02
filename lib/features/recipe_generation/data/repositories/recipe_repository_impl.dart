@@ -30,10 +30,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<Recipe?> getRecipeById(String recipeId) async {
     try {
-      final doc = await _firestore
-          .collection('recipes')
-          .doc(recipeId)
-          .get();
+      final doc = await _firestore.collection('recipes').doc(recipeId).get();
 
       if (!doc.exists) return null;
       final data = doc.data();
@@ -81,7 +78,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
           .toList();
 
       final docRef = _firestore.collection('recipes').doc();
-      
+
       final data = {
         'id': docRef.id,
         'user_id': recipe.userId,
@@ -157,10 +154,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'updated_at': FieldValue.serverTimestamp(),
       };
 
-      await _firestore
-          .collection('recipes')
-          .doc(recipe.id)
-          .update(data);
+      await _firestore.collection('recipes').doc(recipe.id).update(data);
 
       final updatedRecipe = await getRecipeById(recipe.id);
       if (updatedRecipe == null) {
@@ -185,13 +179,10 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<Recipe> toggleFavorite(String recipeId, bool isFavorite) async {
     try {
-      await _firestore
-          .collection('recipes')
-          .doc(recipeId)
-          .update({
-            'is_favorite': isFavorite,
-            'updated_at': FieldValue.serverTimestamp(),
-          });
+      await _firestore.collection('recipes').doc(recipeId).update({
+        'is_favorite': isFavorite,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
 
       final recipe = await getRecipeById(recipeId);
       if (recipe == null) {
@@ -211,13 +202,10 @@ class RecipeRepositoryImpl implements RecipeRepository {
         throw Exception('Rating must be between 1 and 5');
       }
 
-      await _firestore
-          .collection('recipes')
-          .doc(recipeId)
-          .update({
-            'rating': rating,
-            'updated_at': FieldValue.serverTimestamp(),
-          });
+      await _firestore.collection('recipes').doc(recipeId).update({
+        'rating': rating,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
 
       final recipe = await getRecipeById(recipeId);
       if (recipe == null) {
@@ -261,7 +249,10 @@ class RecipeRepositoryImpl implements RecipeRepository {
       // Check if cache is still valid (not expired)
       if (!cache.isValid) {
         // Delete expired cache
-        await _firestore.collection('recipe_cache').doc('${userId}_$cacheKey').delete();
+        await _firestore
+            .collection('recipe_cache')
+            .doc('${userId}_$cacheKey')
+            .delete();
         return null;
       }
 

@@ -96,7 +96,7 @@ Make the recipe practical and achievable for home cooks. Use simple language.
     print('=== RAW RECIPE RESPONSE ===');
     print(response);
     print('=========================');
-    
+
     final lines = response.split('\n');
     final result = <String, dynamic>{};
     final ingredients = <String>[];
@@ -111,7 +111,8 @@ Make the recipe practical and achievable for home cooks. Use simple language.
       // Strip markdown formatting from line for parsing
       final cleanLine = _stripMarkdown(trimmed);
 
-      if (cleanLine.startsWith('Recipe Name:') || (trimmed.startsWith('**') && !result.containsKey('name'))) {
+      if (cleanLine.startsWith('Recipe Name:') ||
+          (trimmed.startsWith('**') && !result.containsKey('name'))) {
         // Handle both "Recipe Name: X" and "**Recipe Name**" formats
         String name = cleanLine
             .replaceFirst('Recipe Name:', '')
@@ -120,7 +121,9 @@ Make the recipe practical and achievable for home cooks. Use simple language.
         result['name'] = name;
         print('Parsed name: $name');
       } else if (cleanLine.startsWith('Description:')) {
-        result['description'] = cleanLine.replaceFirst('Description:', '').trim();
+        result['description'] = cleanLine
+            .replaceFirst('Description:', '')
+            .trim();
       } else if (cleanLine.startsWith('Prep Time:')) {
         final timeStr = cleanLine.replaceFirst('Prep Time:', '').trim();
         result['prepTime'] = _extractMinutes(timeStr);
@@ -135,15 +138,19 @@ Make the recipe practical and achievable for home cooks. Use simple language.
         print('Switched to ingredients section');
       } else if (cleanLine.toLowerCase().contains('instruction')) {
         currentSection = 'instructions';
-        print('Switched to instructions section. Found ${ingredients.length} ingredients.');
+        print(
+          'Switched to instructions section. Found ${ingredients.length} ingredients.',
+        );
       } else if (cleanLine.startsWith('Tips:')) {
         result['tips'] = cleanLine.replaceFirst('Tips:', '').trim();
         currentSection = null;
       } else if (currentSection == 'ingredients') {
         // Handle various ingredient formats
         String? ingredient;
-        
-        if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) {
+
+        if (trimmed.startsWith('-') ||
+            trimmed.startsWith('*') ||
+            trimmed.startsWith('•')) {
           ingredient = trimmed.replaceFirst(RegExp(r'^[-*•]\s*'), '').trim();
         } else if (RegExp(r'^\d+\.').hasMatch(trimmed)) {
           ingredient = trimmed.replaceFirst(RegExp(r'^\d+\.\s*'), '').trim();
@@ -151,23 +158,31 @@ Make the recipe practical and achievable for home cooks. Use simple language.
           // Plain text line in ingredients section
           ingredient = trimmed;
         }
-        
-        if (ingredient != null && ingredient.isNotEmpty && ingredient.length < 200) {
+
+        if (ingredient != null &&
+            ingredient.isNotEmpty &&
+            ingredient.length < 200) {
           ingredients.add(_stripMarkdown(ingredient));
           print('Added ingredient: $ingredient');
         }
       } else if (currentSection == 'instructions' &&
           RegExp(r'^\d+\.').hasMatch(trimmed)) {
-        final instruction = trimmed.replaceFirst(RegExp(r'^\d+\.\s*'), '').trim();
+        final instruction = trimmed
+            .replaceFirst(RegExp(r'^\d+\.\s*'), '')
+            .trim();
         instructions.add(instruction);
-        print('Added instruction ${instructions.length}: ${instruction.substring(0, instruction.length > 50 ? 50 : instruction.length)}...');
+        print(
+          'Added instruction ${instructions.length}: ${instruction.substring(0, instruction.length > 50 ? 50 : instruction.length)}...',
+        );
       }
     }
 
     result['ingredients'] = ingredients;
     result['instructions'] = instructions;
-    
-    print('Final parsed: ${ingredients.length} ingredients, ${instructions.length} instructions');
+
+    print(
+      'Final parsed: ${ingredients.length} ingredients, ${instructions.length} instructions',
+    );
 
     return result;
   }
@@ -176,10 +191,10 @@ Make the recipe practical and achievable for home cooks. Use simple language.
   static String _stripMarkdown(String text) {
     return text
         .replaceAllMapped(RegExp(r'\*\*(.+?)\*\*'), (m) => m.group(1)!) // Bold
-        .replaceAllMapped(RegExp(r'\*(.+?)\*'), (m) => m.group(1)!)     // Italic
-        .replaceAllMapped(RegExp(r'__(.+?)__'), (m) => m.group(1)!)     // Bold alt
-        .replaceAllMapped(RegExp(r'_(.+?)_'), (m) => m.group(1)!)       // Italic alt
-        .replaceAllMapped(RegExp(r'`(.+?)`'), (m) => m.group(1)!)       // Code
+        .replaceAllMapped(RegExp(r'\*(.+?)\*'), (m) => m.group(1)!) // Italic
+        .replaceAllMapped(RegExp(r'__(.+?)__'), (m) => m.group(1)!) // Bold alt
+        .replaceAllMapped(RegExp(r'_(.+?)_'), (m) => m.group(1)!) // Italic alt
+        .replaceAllMapped(RegExp(r'`(.+?)`'), (m) => m.group(1)!) // Code
         .trim();
   }
 

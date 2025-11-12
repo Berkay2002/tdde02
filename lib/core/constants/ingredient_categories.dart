@@ -15,27 +15,81 @@ class IngredientCategoriesColors {
 /// Keyword lists used for simple category detection.
 class IngredientCategoriesLists {
   static const vegetables = [
-    'tomato','onion','pepper','lettuce','carrot','broccoli','cucumber','spinach','potato'
+    'tomato',
+    'onion',
+    'pepper',
+    'lettuce',
+    'carrot',
+    'broccoli',
+    'cucumber',
+    'spinach',
+    'potato',
   ];
   static const proteins = [
-    'chicken','beef','pork','fish','salmon','tuna','egg','eggs','tofu','turkey','shrimp'
+    'chicken',
+    'beef',
+    'pork',
+    'fish',
+    'salmon',
+    'tuna',
+    'egg',
+    'eggs',
+    'tofu',
+    'turkey',
+    'shrimp',
   ];
-  static const dairy = [
-    'milk','cheese','yogurt','butter','cream'
-  ];
+  static const dairy = ['milk', 'cheese', 'yogurt', 'butter', 'cream'];
   static const grains = [
-    'rice','pasta','bread','noodle','oats','quinoa','couscous','potato'
+    'rice',
+    'pasta',
+    'bread',
+    'noodle',
+    'oats',
+    'quinoa',
+    'couscous',
+    'potato',
   ];
   static const herbs = [
-    'basil','rosemary','thyme','parsley','cilantro','garlic','ginger','mint'
+    'basil',
+    'rosemary',
+    'thyme',
+    'parsley',
+    'cilantro',
+    'garlic',
+    'ginger',
+    'mint',
   ];
   static const fruits = [
-    'apple','banana','berry','orange','grape','lemon','lime','mango','pear','peach'
+    'apple',
+    'banana',
+    'berry',
+    'orange',
+    'grape',
+    'lemon',
+    'lime',
+    'mango',
+    'pear',
+    'peach',
   ];
   static const canned = [
-    'canned','beans','tomatoes','peas','corn','sardine'
+    'canned',
+    'beans',
+    'tomatoes',
+    'peas',
+    'corn',
+    'sardine',
   ];
   static const condiments = [
-    'oil','olive oil','soy','sauce','vinegar','ketchup','mustard','mayo','mayonnaise','salt','pepper'
+    'oil',
+    'olive oil',
+    'soy',
+    'sauce',
+    'vinegar',
+    'ketchup',
+    'mustard',
+    'mayo',
+    'mayonnaise',
+    'salt',
+    'pepper',
   ];
 }

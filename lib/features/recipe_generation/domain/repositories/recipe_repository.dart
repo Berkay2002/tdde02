@@ -45,4 +45,3 @@ abstract class RecipeRepository {
     String? cuisinePreference,
   );
 }
-

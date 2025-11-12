@@ -8,7 +8,7 @@ import '../widgets/pantry_search_bar.dart';
 import '../../../camera/presentation/screens/camera_screen.dart';
 
 /// MyPantryScreen - Tab 2
-/// 
+///
 /// Manages the persistent pantryIngredients list.
 /// Users can add ingredients via camera or manual input,
 /// and can remove ingredients they no longer have.
@@ -34,16 +34,14 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
     final ingredients = await Navigator.push<List<String>>(
       context,
       MaterialPageRoute(
-        builder: (context) => const CameraScreen(
-          mode: CameraMode.pantryAdd,
-        ),
+        builder: (context) => const CameraScreen(mode: CameraMode.pantryAdd),
       ),
     );
 
     if (ingredients != null && ingredients.isNotEmpty && mounted) {
       // Add to pantryIngredients
       ref.read(pantryIngredientsProvider.notifier).addIngredients(ingredients);
-      
+
       // Show confirmation
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -68,7 +66,7 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
     if (text.isNotEmpty) {
       ref.read(pantryIngredientsProvider.notifier).addIngredient(text);
       _controller.clear();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$text added to pantry!'),
@@ -80,14 +78,16 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
 
   void _removeIngredient(String ingredient) {
     ref.read(pantryIngredientsProvider.notifier).removeIngredient(ingredient);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$ingredient removed from pantry'),
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () {
-            ref.read(pantryIngredientsProvider.notifier).addIngredient(ingredient);
+            ref
+                .read(pantryIngredientsProvider.notifier)
+                .addIngredient(ingredient);
           },
         ),
       ),
@@ -99,7 +99,9 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear Pantry?'),
-        content: const Text('This will remove all ingredients from your pantry.'),
+        content: const Text(
+          'This will remove all ingredients from your pantry.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -109,9 +111,9 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
             onPressed: () {
               ref.read(pantryIngredientsProvider.notifier).clear();
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pantry cleared')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Pantry cleared')));
             },
             child: const Text('Clear'),
           ),
@@ -127,7 +129,7 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
     final pantryItems = notifier.filteredItems;
     final searchQuery = notifier.searchQuery;
     final allItems = ref.watch(pantryIngredientsProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Pantry'),
@@ -145,8 +147,10 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
         children: [
           PantrySearchBar(
             query: searchQuery,
-            onChanged: (q) => ref.read(pantryIngredientsProvider.notifier).setSearchQuery(q),
-            onClear: () => ref.read(pantryIngredientsProvider.notifier).setSearchQuery(''),
+            onChanged: (q) =>
+                ref.read(pantryIngredientsProvider.notifier).setSearchQuery(q),
+            onClear: () =>
+                ref.read(pantryIngredientsProvider.notifier).setSearchQuery(''),
           ),
           // Add buttons
           Padding(
@@ -214,6 +218,7 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
       ),
     );
   }
+
   Widget _buildIngredientsList(List<PantryItem> items, ThemeData theme) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),

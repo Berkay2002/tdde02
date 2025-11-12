@@ -17,7 +17,8 @@ class RecipeDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isFavorite = ref.watch(favoriteRecipesProvider.notifier).isFavorite(recipe.id);
+    final favoriteRecipes = ref.watch(favoriteRecipesProvider);
+    final isFavorite = favoriteRecipes.any((r) => r.id == recipe.id);
     
     return Scaffold(
       appBar: AppBar(
@@ -51,7 +52,7 @@ class RecipeDetailScreen extends ConsumerWidget {
         children: [
           // Recipe title
           Text(
-            recipe.name,
+            _stripMarkdown(recipe.name),
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -192,7 +193,7 @@ class RecipeDetailScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        instruction,
+                        _stripMarkdown(instruction),
                         style: theme.textTheme.bodyLarge,
                       ),
                     ),
@@ -232,5 +233,16 @@ class RecipeDetailScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// Strip common markdown formatting from text
+  String _stripMarkdown(String text) {
+    return text
+        .replaceAllMapped(RegExp(r'\*\*(.+?)\*\*'), (m) => m.group(1)!) // Bold
+        .replaceAllMapped(RegExp(r'\*(.+?)\*'), (m) => m.group(1)!)     // Italic
+        .replaceAllMapped(RegExp(r'__(.+?)__'), (m) => m.group(1)!)     // Bold alt
+        .replaceAllMapped(RegExp(r'_(.+?)_'), (m) => m.group(1)!)       // Italic alt
+        .replaceAllMapped(RegExp(r'`(.+?)`'), (m) => m.group(1)!)       // Code
+        .trim();
   }
 }

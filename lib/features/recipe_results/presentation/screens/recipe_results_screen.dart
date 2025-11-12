@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../shared/providers/app_state_provider.dart';
-import '../../../../core/services/gemini_ai_service.dart';
+import '../../../../shared/providers/services_provider.dart';
 import '../../../recipe_generation/data/repositories/recipe_repository_impl.dart';
 import '../../../recipe_detail/presentation/screens/recipe_detail_screen.dart';
 
@@ -14,7 +14,6 @@ final recipeGenerationProvider = StateNotifierProvider<RecipeGenerationNotifier,
 
 class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
   final Ref ref;
-  final GeminiAIService _aiService = GeminiAIService();
   final RecipeRepositoryImpl _repository = RecipeRepositoryImpl(FirebaseFirestore.instance);
   
   // Track last ingredients used to avoid unnecessary regeneration
@@ -84,8 +83,9 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
       }
 
       // No cache found - generate new recipes
-      if (!_aiService.isInitialized) {
-        await _aiService.initialize();
+      final aiService = ref.read(geminiAIServiceProvider);
+      if (!aiService.isInitialized) {
+        await aiService.initialize();
       }
 
       // Generate 3 recipe suggestions with graceful failure handling
@@ -96,8 +96,9 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
       
       for (int i = 0; i < 3; i++) {
         try {
-          final recipeData = await _aiService.generateRecipe(
+          final recipeData = await aiService.generateRecipe(
             ingredients: ingredients,
+            userId: userId,
             dietaryRestrictions: profile.restrictions.join(', '),
             skillLevel: profile.skillLevel,
             cuisinePreference: profile.cuisinePreference,
@@ -327,7 +328,8 @@ class _RecipeResultsScreenState extends ConsumerState<RecipeResultsScreen> {
       itemCount: recipes.length,
       itemBuilder: (context, index) {
         final recipe = recipes[index];
-        final isFavorite = ref.watch(favoriteRecipesProvider.notifier).isFavorite(recipe.id);
+        final favoriteRecipes = ref.watch(favoriteRecipesProvider);
+        final isFavorite = favoriteRecipes.any((r) => r.id == recipe.id);
 
         return Card(
           margin: const EdgeInsets.only(bottom: 16),

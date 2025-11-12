@@ -93,6 +93,10 @@ Make the recipe practical and achievable for home cooks. Use simple language.
 
   /// Parse recipe response from AI
   static Map<String, dynamic> parseRecipeResponse(String response) {
+    print('=== RAW RECIPE RESPONSE ===');
+    print(response);
+    print('=========================');
+    
     final lines = response.split('\n');
     final result = <String, dynamic>{};
     final ingredients = <String>[];
@@ -104,38 +108,79 @@ Make the recipe practical and achievable for home cooks. Use simple language.
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
 
-      if (trimmed.startsWith('Recipe Name:')) {
-        result['name'] = trimmed.replaceFirst('Recipe Name:', '').trim();
-      } else if (trimmed.startsWith('Description:')) {
-        result['description'] = trimmed.replaceFirst('Description:', '').trim();
-      } else if (trimmed.startsWith('Prep Time:')) {
-        final timeStr = trimmed.replaceFirst('Prep Time:', '').trim();
+      // Strip markdown formatting from line for parsing
+      final cleanLine = _stripMarkdown(trimmed);
+
+      if (cleanLine.startsWith('Recipe Name:') || (trimmed.startsWith('**') && !result.containsKey('name'))) {
+        // Handle both "Recipe Name: X" and "**Recipe Name**" formats
+        String name = cleanLine
+            .replaceFirst('Recipe Name:', '')
+            .replaceFirst(RegExp(r'^\*\*|\*\*$'), '')
+            .trim();
+        result['name'] = name;
+        print('Parsed name: $name');
+      } else if (cleanLine.startsWith('Description:')) {
+        result['description'] = cleanLine.replaceFirst('Description:', '').trim();
+      } else if (cleanLine.startsWith('Prep Time:')) {
+        final timeStr = cleanLine.replaceFirst('Prep Time:', '').trim();
         result['prepTime'] = _extractMinutes(timeStr);
-      } else if (trimmed.startsWith('Cook Time:')) {
-        final timeStr = trimmed.replaceFirst('Cook Time:', '').trim();
+      } else if (cleanLine.startsWith('Cook Time:')) {
+        final timeStr = cleanLine.replaceFirst('Cook Time:', '').trim();
         result['cookTime'] = _extractMinutes(timeStr);
-      } else if (trimmed.startsWith('Servings:')) {
-        final servingsStr = trimmed.replaceFirst('Servings:', '').trim();
+      } else if (cleanLine.startsWith('Servings:')) {
+        final servingsStr = cleanLine.replaceFirst('Servings:', '').trim();
         result['servings'] = int.tryParse(servingsStr.split(' ').first) ?? 4;
-      } else if (trimmed == 'Ingredients:') {
+      } else if (cleanLine.toLowerCase().contains('ingredient')) {
         currentSection = 'ingredients';
-      } else if (trimmed == 'Instructions:') {
+        print('Switched to ingredients section');
+      } else if (cleanLine.toLowerCase().contains('instruction')) {
         currentSection = 'instructions';
-      } else if (trimmed.startsWith('Tips:')) {
-        result['tips'] = trimmed.replaceFirst('Tips:', '').trim();
+        print('Switched to instructions section. Found ${ingredients.length} ingredients.');
+      } else if (cleanLine.startsWith('Tips:')) {
+        result['tips'] = cleanLine.replaceFirst('Tips:', '').trim();
         currentSection = null;
-      } else if (currentSection == 'ingredients' && trimmed.startsWith('-')) {
-        ingredients.add(trimmed.replaceFirst('-', '').trim());
+      } else if (currentSection == 'ingredients') {
+        // Handle various ingredient formats
+        String? ingredient;
+        
+        if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) {
+          ingredient = trimmed.replaceFirst(RegExp(r'^[-*•]\s*'), '').trim();
+        } else if (RegExp(r'^\d+\.').hasMatch(trimmed)) {
+          ingredient = trimmed.replaceFirst(RegExp(r'^\d+\.\s*'), '').trim();
+        } else if (trimmed.isNotEmpty && !trimmed.endsWith(':')) {
+          // Plain text line in ingredients section
+          ingredient = trimmed;
+        }
+        
+        if (ingredient != null && ingredient.isNotEmpty && ingredient.length < 200) {
+          ingredients.add(_stripMarkdown(ingredient));
+          print('Added ingredient: $ingredient');
+        }
       } else if (currentSection == 'instructions' &&
           RegExp(r'^\d+\.').hasMatch(trimmed)) {
-        instructions.add(trimmed.replaceFirst(RegExp(r'^\d+\.\s*'), '').trim());
+        final instruction = trimmed.replaceFirst(RegExp(r'^\d+\.\s*'), '').trim();
+        instructions.add(instruction);
+        print('Added instruction ${instructions.length}: ${instruction.substring(0, instruction.length > 50 ? 50 : instruction.length)}...');
       }
     }
 
     result['ingredients'] = ingredients;
     result['instructions'] = instructions;
+    
+    print('Final parsed: ${ingredients.length} ingredients, ${instructions.length} instructions');
 
     return result;
+  }
+
+  /// Strip markdown formatting from text
+  static String _stripMarkdown(String text) {
+    return text
+        .replaceAllMapped(RegExp(r'\*\*(.+?)\*\*'), (m) => m.group(1)!) // Bold
+        .replaceAllMapped(RegExp(r'\*(.+?)\*'), (m) => m.group(1)!)     // Italic
+        .replaceAllMapped(RegExp(r'__(.+?)__'), (m) => m.group(1)!)     // Bold alt
+        .replaceAllMapped(RegExp(r'_(.+?)_'), (m) => m.group(1)!)       // Italic alt
+        .replaceAllMapped(RegExp(r'`(.+?)`'), (m) => m.group(1)!)       // Code
+        .trim();
   }
 
   /// Parse ingredient list from AI response

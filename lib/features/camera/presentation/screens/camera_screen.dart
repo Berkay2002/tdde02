@@ -3,9 +3,10 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/services/permission_service.dart';
-import '../../../../core/services/gemini_ai_service.dart';
+import '../../../../shared/providers/services_provider.dart';
 import '../../../../core/utils/image_processor.dart';
 import '../providers/camera_provider.dart';
 import '../widgets/camera_controls_widget.dart';
@@ -180,19 +181,25 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     );
 
     try {
+      // Get current user ID
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User must be logged in');
+      }
+
       // Load and preprocess the image
       final file = File(imagePath);
       final bytes = await file.readAsBytes();
       final processedBytes = await ImageProcessor.preprocessForInference(bytes);
 
       // Initialize AI service if needed
-      final aiService = GeminiAIService();
+      final aiService = ref.read(geminiAIServiceProvider);
       if (!aiService.isInitialized) {
         await aiService.initialize();
       }
 
       // Detect ingredients
-      final ingredients = await aiService.detectIngredients(processedBytes);
+      final ingredients = await aiService.detectIngredients(processedBytes, user.uid);
 
       if (mounted) {
         Navigator.pop(context); // Close loading dialog

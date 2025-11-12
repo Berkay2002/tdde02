@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/ingredient_detection/presentation/providers/ingredient_detection_provider.dart';
+import '../providers/services_provider.dart';
 
 /// Splash screen that loads the AI model on app startup
 class SplashScreen extends ConsumerStatefulWidget {

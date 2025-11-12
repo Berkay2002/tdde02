@@ -1,0 +1,60 @@
+# iOS Fastlane Configuration
+# Automates building, testing, and deployment
+# Usage: fastlane [lane_name]
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Run tests"
+  lane :test do
+    run_tests(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      devices: ["iPhone 15 Pro"]
+    )
+  end
+
+  desc "Build debug version"
+  lane :build_debug do
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Debug",
+      export_method: "development",
+      skip_package_ipa: true
+    )
+  end
+
+  desc "Build release version"
+  lane :build_release do
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "app-store"
+    )
+  end
+
+  desc "Build and run on simulator"
+  lane :simulator do
+    build_debug
+    sh("xcrun simctl install booted ../build/ios/Runner.app")
+  end
+
+  desc "Run Flutter tests"
+  lane :flutter_test do
+    sh("cd ../.. && flutter test")
+  end
+
+  desc "Run Flutter analyze"
+  lane :flutter_analyze do
+    sh("cd ../.. && flutter analyze")
+  end
+
+  desc "Full CI workflow"
+  lane :ci do
+    flutter_analyze
+    flutter_test
+    test
+  end
+end

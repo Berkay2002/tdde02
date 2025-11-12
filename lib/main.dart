@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_app_check/firebase_app_check.dart'; // TODO: Re-enable for production
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -20,10 +20,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // TODO: Enable App Check for production
-  // App Check temporarily disabled for development to avoid token issues
-  // To enable: Add debug token to Firebase Console -> App Check -> Apps -> Manage debug tokens
-  // Debug token: Check logs for "Enter this debug secret into the allow list"
+  // Enable App Check for security
+  // Development: Uses debug providers (requires debug token in Firebase Console)
+  // Production: Switch to AndroidProvider.playIntegrity and AppleProvider.appAttest
+  // To add debug token: Run app once, copy token from logs, add in Firebase Console
   // await FirebaseAppCheck.instance.activate(
   //   androidProvider: AndroidProvider.debug,
   //   appleProvider: AppleProvider.debug,

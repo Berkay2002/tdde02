@@ -1,0 +1,20 @@
+// App-level configuration for iOS
+// This file contains build settings shared across Debug and Release builds
+
+// App Display Name
+APP_DISPLAY_NAME = Flutter Recipe Generator
+
+// Bundle Identifier
+BUNDLE_IDENTIFIER = com.example.flutterApplication1
+
+// Minimum iOS Version (must match Podfile)
+IPHONEOS_DEPLOYMENT_TARGET = 13.0
+
+// Enable bitcode (NO for Flutter apps)
+ENABLE_BITCODE = NO
+
+// Code signing
+CODE_SIGN_STYLE = Automatic
+
+// Swift version
+SWIFT_VERSION = 5.0

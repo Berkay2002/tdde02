@@ -61,6 +61,29 @@ class IngredientCategoryHelper {
     }
   }
 
+  static String getName(IngredientCategory category) {
+    switch (category) {
+      case IngredientCategory.vegetables:
+        return 'Vegetables';
+      case IngredientCategory.proteins:
+        return 'Proteins';
+      case IngredientCategory.dairy:
+        return 'Dairy';
+      case IngredientCategory.grains:
+        return 'Grains';
+      case IngredientCategory.herbs:
+        return 'Herbs';
+      case IngredientCategory.fruits:
+        return 'Fruits';
+      case IngredientCategory.canned:
+        return 'Canned';
+      case IngredientCategory.condiments:
+        return 'Condiments';
+      case IngredientCategory.unknown:
+        return 'Other';
+    }
+  }
+
   /// Naive category detection based on keyword lookup.
   static IngredientCategory detectCategory(String name) {
     final lower = name.toLowerCase();

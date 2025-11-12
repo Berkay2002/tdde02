@@ -7,7 +7,8 @@ import '../../features/pantry/domain/entities/pantry_item.dart';
 class DietaryProfile {
   final List<String> restrictions; // e.g., ['vegetarian', 'gluten-free']
   final List<String> skillLevels; // e.g., ['beginner', 'intermediate']
-  final List<String> cuisinePreferences; // e.g., ['italian', 'asian', 'mexican']
+  final List<String>
+  cuisinePreferences; // e.g., ['italian', 'asian', 'mexican']
 
   const DietaryProfile({
     this.restrictions = const [],
@@ -36,12 +37,18 @@ class DietaryProfile {
   factory DietaryProfile.fromJson(Map<String, dynamic> json) {
     return DietaryProfile(
       restrictions: (json['restrictions'] as List?)?.cast<String>() ?? [],
-      skillLevels: (json['skillLevels'] as List?)?.cast<String>() ??
+      skillLevels:
+          (json['skillLevels'] as List?)?.cast<String>() ??
           // Migration: convert old single value to list
-          (json['skillLevel'] != null ? [json['skillLevel'] as String] : ['beginner']),
-      cuisinePreferences: (json['cuisinePreferences'] as List?)?.cast<String>() ??
+          (json['skillLevel'] != null
+              ? [json['skillLevel'] as String]
+              : ['beginner']),
+      cuisinePreferences:
+          (json['cuisinePreferences'] as List?)?.cast<String>() ??
           // Migration: convert old single value to list
-          (json['cuisinePreference'] != null ? [json['cuisinePreference'] as String] : []),
+          (json['cuisinePreference'] != null
+              ? [json['cuisinePreference'] as String]
+              : []),
     );
   }
 }
@@ -197,6 +204,16 @@ class PantryIngredientsNotifier extends StateNotifier<List<PantryItem>> {
 
   void removeIngredient(String ingredient) {
     state = state.where((item) => item.name != ingredient).toList();
+    _saveToStorage();
+  }
+
+  void updateItem(PantryItem updatedItem) {
+    state = state.map((item) {
+      if (item.id == updatedItem.id) {
+        return updatedItem;
+      }
+      return item;
+    }).toList();
     _saveToStorage();
   }
 

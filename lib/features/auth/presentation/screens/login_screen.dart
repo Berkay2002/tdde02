@@ -27,58 +27,80 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await ref
-        .read(authNotifierProvider.notifier)
-        .signIn(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
+    try {
+      await ref
+          .read(authNotifierProvider.notifier)
+          .signIn(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
-    final authState = ref.read(authNotifierProvider);
+      if (!mounted) return;
 
-    if (!mounted) return;
+      final authState = ref.read(authNotifierProvider);
 
-    authState.when(
-      data: (user) {
-        if (user != null) {
-          Navigator.of(context).pushReplacementNamed('/home');
-        }
-      },
-      loading: () {},
-      error: (error, stack) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Login failed: ${error.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      },
-    );
+      authState.when(
+        data: (user) {
+          if (user != null) {
+            // Pop back to WelcomeScreen, which will auto-navigate to AppShell
+            Navigator.of(context).pop();
+          }
+        },
+        loading: () {},
+        error: (error, stack) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login failed: ${error.toString()}'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Login failed: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   Future<void> _handleGoogleSignIn() async {
-    await ref.read(authNotifierProvider.notifier).signInWithGoogle();
+    try {
+      await ref.read(authNotifierProvider.notifier).signInWithGoogle();
 
-    final authState = ref.read(authNotifierProvider);
+      if (!mounted) return;
 
-    if (!mounted) return;
+      final authState = ref.read(authNotifierProvider);
 
-    authState.when(
-      data: (user) {
-        if (user != null) {
-          Navigator.of(context).pushReplacementNamed('/home');
-        }
-      },
-      loading: () {},
-      error: (error, stack) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google sign in failed: ${error.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      },
-    );
+      authState.when(
+        data: (user) {
+          if (user != null) {
+            // Pop back to WelcomeScreen, which will auto-navigate to AppShell
+            Navigator.of(context).pop();
+          }
+        },
+        loading: () {},
+        error: (error, stack) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Google sign in failed: ${error.toString()}'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google sign in failed: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   @override

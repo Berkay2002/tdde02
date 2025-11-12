@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
+// import 'package:firebase_app_check/firebase_app_check.dart'; // TODO: Re-enable for production
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -20,17 +20,15 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Activate Firebase App Check
-  // Debug provider: will use a debug token for development
-  // For production, use: AndroidProvider.playIntegrity for Android
-  await FirebaseAppCheck.instance.activate(
-    // Using deprecated parameters until new API is available in stable release
-    // ignore: deprecated_member_use
-    androidProvider: AndroidProvider.debug,
-    // ignore: deprecated_member_use
-    appleProvider: AppleProvider.debug,
-  );
-  await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+  // TODO: Enable App Check for production
+  // App Check temporarily disabled for development to avoid token issues
+  // To enable: Add debug token to Firebase Console -> App Check -> Apps -> Manage debug tokens
+  // Debug token: Check logs for "Enter this debug secret into the allow list"
+  // await FirebaseAppCheck.instance.activate(
+  //   androidProvider: AndroidProvider.debug,
+  //   appleProvider: AppleProvider.debug,
+  // );
+  // await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
 
   // Note: Firebase AI (Gemini) is initialized lazily when GeminiAIService is first used
   // No upfront initialization needed - it will use Firebase credentials automatically

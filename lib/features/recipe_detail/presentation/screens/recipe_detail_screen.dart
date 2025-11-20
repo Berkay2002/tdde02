@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/providers/app_state_provider.dart';
 import '../../../../core/constants/recipe_categories.dart';
+import '../../../chat/presentation/widgets/chat_bottom_sheet.dart';
+import '../../../chat/presentation/providers/chat_context_provider.dart';
+import '../../../chat/data/models/chat_context.dart';
+import '../../../chat/data/models/recipe_reference.dart';
 
 /// RecipeDetailScreen - Detailed view of a single recipe
 ///
@@ -33,6 +37,25 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
       widget.recipe.difficulty,
     );
     final totalTime = widget.recipe.prepTime + widget.recipe.cookTime;
+
+    // Create recipe reference for chat context
+    final recipeReference = RecipeReference(
+      id: widget.recipe.id,
+      name: widget.recipe.name,
+      description: widget.recipe.description,
+      ingredients: widget.recipe.ingredients,
+      prepTime: widget.recipe.prepTime,
+      cookTime: widget.recipe.cookTime,
+      difficulty: widget.recipe.difficulty,
+    );
+
+    // Update chat context with current recipe
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(chatContextProvider.notifier)
+          .setCurrentRecipe(widget.recipe.id, recipeReference);
+      ref.read(chatContextProvider.notifier).setScreen(ChatScreen.recipeDetail);
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -331,6 +354,18 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
           }),
           const SizedBox(height: 24),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showChatBottomSheet(
+            context,
+            title: 'Ask about ${widget.recipe.name}',
+          );
+        },
+        icon: const Icon(Icons.chat_bubble_outline),
+        label: const Text('Ask Chef'),
+        backgroundColor: theme.colorScheme.secondary,
+        foregroundColor: theme.colorScheme.onSecondary,
       ),
     );
   }

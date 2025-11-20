@@ -57,23 +57,26 @@ void main() {
         expect(key1, isNot(equals(key2)));
       });
 
-      test('should generate different keys for different dietary restrictions', () {
-        final ingredients = ['chicken', 'rice'];
-        final key1 = RecipeCacheModel.generateCacheKey(
-          ingredients,
-          'vegetarian',
-          'beginner',
-          'Italian',
-        );
-        final key2 = RecipeCacheModel.generateCacheKey(
-          ingredients,
-          'vegan',
-          'beginner',
-          'Italian',
-        );
+      test(
+        'should generate different keys for different dietary restrictions',
+        () {
+          final ingredients = ['chicken', 'rice'];
+          final key1 = RecipeCacheModel.generateCacheKey(
+            ingredients,
+            'vegetarian',
+            'beginner',
+            'Italian',
+          );
+          final key2 = RecipeCacheModel.generateCacheKey(
+            ingredients,
+            'vegan',
+            'beginner',
+            'Italian',
+          );
 
-        expect(key1, isNot(equals(key2)));
-      });
+          expect(key1, isNot(equals(key2)));
+        },
+      );
 
       test('should generate different keys for different skill levels', () {
         final ingredients = ['chicken', 'rice'];
@@ -93,23 +96,26 @@ void main() {
         expect(key1, isNot(equals(key2)));
       });
 
-      test('should generate different keys for different cuisine preferences', () {
-        final ingredients = ['chicken', 'rice'];
-        final key1 = RecipeCacheModel.generateCacheKey(
-          ingredients,
-          'vegetarian',
-          'beginner',
-          'Italian',
-        );
-        final key2 = RecipeCacheModel.generateCacheKey(
-          ingredients,
-          'vegetarian',
-          'beginner',
-          'Asian',
-        );
+      test(
+        'should generate different keys for different cuisine preferences',
+        () {
+          final ingredients = ['chicken', 'rice'];
+          final key1 = RecipeCacheModel.generateCacheKey(
+            ingredients,
+            'vegetarian',
+            'beginner',
+            'Italian',
+          );
+          final key2 = RecipeCacheModel.generateCacheKey(
+            ingredients,
+            'vegetarian',
+            'beginner',
+            'Asian',
+          );
 
-        expect(key1, isNot(equals(key2)));
-      });
+          expect(key1, isNot(equals(key2)));
+        },
+      );
 
       test('should handle null preferences consistently', () {
         final ingredients = ['chicken', 'rice'];
@@ -145,8 +151,12 @@ void main() {
           'Italian',
         );
 
-        expect(key1, equals(key2),
-            reason: 'Null and empty string should be treated as equivalent (no restriction)');
+        expect(
+          key1,
+          equals(key2),
+          reason:
+              'Null and empty string should be treated as equivalent (no restriction)',
+        );
       });
     });
 
@@ -208,7 +218,7 @@ void main() {
       test('should serialize to JSON correctly', () {
         final now = DateTime.now();
         final expiresAt = now.add(const Duration(days: 7));
-        
+
         final cache = RecipeCacheModel(
           id: 'test_123',
           userId: 'user123',
@@ -240,7 +250,7 @@ void main() {
       test('should deserialize from JSON correctly', () {
         final now = DateTime.now();
         final expiresAt = now.add(const Duration(days: 7));
-        
+
         final json = {
           'id': 'test_123',
           'user_id': 'user123',
@@ -271,7 +281,7 @@ void main() {
 
       test('should handle null optional fields in JSON', () {
         final now = DateTime.now();
-        
+
         final json = {
           'id': 'test_123',
           'user_id': 'user123',
@@ -297,7 +307,9 @@ void main() {
           id: 'test_123',
           userId: 'user123',
           ingredients: ['chicken', 'rice'],
-          recipes: [{'name': 'Test Recipe'}],
+          recipes: [
+            {'name': 'Test Recipe'},
+          ],
           dietaryRestrictions: 'vegan',
           skillLevel: 'intermediate',
           cuisinePreference: 'Asian',
@@ -312,7 +324,10 @@ void main() {
         expect(restored.userId, equals(original.userId));
         expect(restored.ingredients, equals(original.ingredients));
         expect(restored.recipes, equals(original.recipes));
-        expect(restored.dietaryRestrictions, equals(original.dietaryRestrictions));
+        expect(
+          restored.dietaryRestrictions,
+          equals(original.dietaryRestrictions),
+        );
         expect(restored.skillLevel, equals(original.skillLevel));
         expect(restored.cuisinePreference, equals(original.cuisinePreference));
       });

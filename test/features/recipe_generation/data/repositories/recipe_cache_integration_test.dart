@@ -68,61 +68,67 @@ void main() {
         expect(cachedRecipes[1]['name'], equals('Fried Rice'));
       });
 
-      test('should return cached recipes regardless of ingredient order', () async {
-        final testRecipes = [
-          {'name': 'Test Recipe', 'difficulty': 'easy'},
-        ];
+      test(
+        'should return cached recipes regardless of ingredient order',
+        () async {
+          final testRecipes = [
+            {'name': 'Test Recipe', 'difficulty': 'easy'},
+          ];
 
-        // Save with one order
-        await repository.saveCachedRecipes(
-          testUserId,
-          ['chicken', 'rice', 'onion'],
-          testRecipes,
-          'vegetarian',
-          'beginner',
-          'Italian',
-        );
+          // Save with one order
+          await repository.saveCachedRecipes(
+            testUserId,
+            ['chicken', 'rice', 'onion'],
+            testRecipes,
+            'vegetarian',
+            'beginner',
+            'Italian',
+          );
 
-        // Retrieve with different order
-        final cachedRecipes = await repository.getCachedRecipes(
-          testUserId,
-          ['rice', 'onion', 'chicken'],
-          'vegetarian',
-          'beginner',
-          'Italian',
-        );
+          // Retrieve with different order
+          final cachedRecipes = await repository.getCachedRecipes(
+            testUserId,
+            ['rice', 'onion', 'chicken'],
+            'vegetarian',
+            'beginner',
+            'Italian',
+          );
 
-        expect(cachedRecipes, isNotNull);
-        expect(cachedRecipes, hasLength(1));
-        expect(cachedRecipes![0]['name'], equals('Test Recipe'));
-      });
+          expect(cachedRecipes, isNotNull);
+          expect(cachedRecipes, hasLength(1));
+          expect(cachedRecipes![0]['name'], equals('Test Recipe'));
+        },
+      );
 
-      test('should return null for different user even with same ingredients', () async {
-        final testRecipes = [
-          {'name': 'Test Recipe', 'difficulty': 'easy'},
-        ];
+      test(
+        'should return null for different user even with same ingredients',
+        () async {
+          final testRecipes = [
+            {'name': 'Test Recipe', 'difficulty': 'easy'},
+          ];
 
-        // Save for user 1
-        await repository.saveCachedRecipes(
-          'user_1',
-          ['chicken', 'rice'],
-          testRecipes,
-          'vegetarian',
-          'beginner',
-          'Italian',
-        );
+          // Save for user 1
+          await repository.saveCachedRecipes(
+            'user_1',
+            ['chicken', 'rice'],
+            testRecipes,
+            'vegetarian',
+            'beginner',
+            'Italian',
+          );
 
-        // Try to retrieve for user 2
-        final cachedRecipes = await repository.getCachedRecipes(
-          'user_2',
-          ['chicken', 'rice'],
-          'vegetarian',
-          'beginner',
-          'Italian',
-        );
+          // Try to retrieve for user 2
+          final cachedRecipes = await repository.getCachedRecipes(
+            'user_2',
+            ['chicken', 'rice'],
+            'vegetarian',
+            'beginner',
+            'Italian',
+          );
 
-        expect(cachedRecipes, isNull);
-      });
+          expect(cachedRecipes, isNull);
+        },
+      );
 
       test('should return null for different preferences', () async {
         final testRecipes = [
@@ -194,7 +200,9 @@ void main() {
           'skill_level': 'beginner',
           'cuisine_preference': 'Italian',
           'created_at': Timestamp.fromDate(expiredDate),
-          'expires_at': Timestamp.fromDate(expiredDate.add(const Duration(days: 7))),
+          'expires_at': Timestamp.fromDate(
+            expiredDate.add(const Duration(days: 7)),
+          ),
         };
 
         await fakeFirestore
@@ -211,8 +219,11 @@ void main() {
           'Italian',
         );
 
-        expect(cachedRecipes, isNull,
-            reason: 'Expired cache should return null');
+        expect(
+          cachedRecipes,
+          isNull,
+          reason: 'Expired cache should return null',
+        );
 
         // Note: fake_cloud_firestore doesn't actually delete documents,
         // but the real implementation does. This test validates the null return.
@@ -320,8 +331,12 @@ void main() {
         stopwatch.stop();
 
         expect(cachedRecipes, isNotNull);
-        expect(stopwatch.elapsedMilliseconds, lessThan(500),
-            reason: 'Cache retrieval took ${stopwatch.elapsedMilliseconds}ms, expected <500ms');
+        expect(
+          stopwatch.elapsedMilliseconds,
+          lessThan(500),
+          reason:
+              'Cache retrieval took ${stopwatch.elapsedMilliseconds}ms, expected <500ms',
+        );
       });
 
       test('cache save should be fast (<1000ms)', () async {
@@ -341,8 +356,12 @@ void main() {
         );
         stopwatch.stop();
 
-        expect(stopwatch.elapsedMilliseconds, lessThan(1000),
-            reason: 'Cache save took ${stopwatch.elapsedMilliseconds}ms, expected <1000ms');
+        expect(
+          stopwatch.elapsedMilliseconds,
+          lessThan(1000),
+          reason:
+              'Cache save took ${stopwatch.elapsedMilliseconds}ms, expected <1000ms',
+        );
       });
 
       test('should handle multiple concurrent cache operations', () async {
@@ -353,7 +372,7 @@ void main() {
           final testRecipes = [
             {'name': 'Recipe $i', 'difficulty': 'easy'},
           ];
-          
+
           futures.add(
             repository.saveCachedRecipes(
               testUserId,
@@ -438,7 +457,9 @@ void main() {
           100,
           (i) => {
             'name': 'Recipe $i',
-            'difficulty': i % 3 == 0 ? 'easy' : (i % 3 == 1 ? 'medium' : 'hard'),
+            'difficulty': i % 3 == 0
+                ? 'easy'
+                : (i % 3 == 1 ? 'medium' : 'hard'),
             'prepTime': i * 5,
             'cookTime': i * 10,
           },

@@ -9,6 +9,9 @@ import '../widgets/quick_pantry_widget.dart';
 import '../widgets/recent_recipes_widget.dart';
 import '../widgets/empty_home_widget.dart';
 import '../widgets/quick_tip_widget.dart';
+import '../../../chat/presentation/widgets/chat_bottom_sheet.dart';
+import '../../../chat/presentation/providers/chat_context_provider.dart';
+import '../../../chat/data/models/chat_context.dart';
 
 /// HomeScreen - Tab 1
 ///
@@ -53,6 +56,16 @@ class HomeScreen extends ConsumerWidget {
     final pantryItems = ref.watch(pantryIngredientsProvider);
     final favoriteRecipes = ref.watch(favoriteRecipesProvider);
 
+    // Update chat context with current session ingredients
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(chatContextProvider.notifier)
+          .updateFromAppState(
+            screen: ChatScreen.home,
+            sessionIngredients: sessionIngredients,
+          );
+    });
+
     // Determine if user is new (no pantry, no favorites, no session)
     final isNewUser =
         pantryItems.isEmpty &&
@@ -61,6 +74,20 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Home'), centerTitle: true),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showChatBottomSheet(
+            context,
+            title: sessionIngredients.isNotEmpty
+                ? 'Ask about your ingredients'
+                : 'AI Chef Assistant',
+          );
+        },
+        icon: const Icon(Icons.chat_bubble_outline),
+        label: const Text('Ask Chef'),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(

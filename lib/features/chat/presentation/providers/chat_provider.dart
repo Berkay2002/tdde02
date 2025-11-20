@@ -47,7 +47,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   Box? _chatBox;
 
   ChatNotifier(this._aiService, this._userId, this._ref)
-      : super(const ChatState()) {
+    : super(const ChatState()) {
     _initializeStorage();
   }
 
@@ -69,7 +69,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final storedMessages = _chatBox!.get('messages_$_userId') as List?;
       if (storedMessages != null && storedMessages.isNotEmpty) {
         final messages = storedMessages
-            .map((json) => ChatMessage.fromJson(Map<String, dynamic>.from(json as Map)))
+            .map(
+              (json) =>
+                  ChatMessage.fromJson(Map<String, dynamic>.from(json as Map)),
+            )
             .toList();
 
         // Only load last 20 messages to avoid context bloat
@@ -78,7 +81,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
               ? messages.sublist(messages.length - 20)
               : messages,
         );
-        print('[ChatNotifier] Loaded ${state.messages.length} messages from storage');
+        print(
+          '[ChatNotifier] Loaded ${state.messages.length} messages from storage',
+        );
       }
     } catch (e) {
       print('[ChatNotifier] Failed to load chat history: $e');
@@ -110,8 +115,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // Create user message
     final userMessage = ChatMessage.user(
       content: content,
-      attachedRecipeIds:
-          chatContext.attachedRecipes?.map((r) => r.id).toList(),
+      attachedRecipeIds: chatContext.attachedRecipes?.map((r) => r.id).toList(),
     );
 
     // Add user message to state
@@ -235,9 +239,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
 /// Provider for chat state
 final chatProvider =
-    StateNotifierProvider.family<ChatNotifier, ChatState, String>(
-  (ref, userId) {
-    final aiService = ref.watch(geminiAIServiceProvider);
-    return ChatNotifier(aiService, userId, ref);
-  },
-);
+    StateNotifierProvider.family<ChatNotifier, ChatState, String>((
+      ref,
+      userId,
+    ) {
+      final aiService = ref.watch(geminiAIServiceProvider);
+      return ChatNotifier(aiService, userId, ref);
+    });

@@ -60,9 +60,7 @@ class _ChatBottomSheetState extends ConsumerState<ChatBottomSheet> {
       height: MediaQuery.of(context).size.height * 0.75,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -104,7 +102,7 @@ class _ChatBottomSheetState extends ConsumerState<ChatBottomSheet> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Thinking...', 
+                    'Thinking...',
                     style: TextStyle(
                       color: theme.colorScheme.onSurface.withOpacity(0.6),
                       fontSize: 14,
@@ -131,9 +129,7 @@ class _ChatBottomSheetState extends ConsumerState<ChatBottomSheet> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Row(
         children: [
@@ -303,19 +299,15 @@ class _ChatBottomSheetState extends ConsumerState<ChatBottomSheet> {
 
 /// Helper function to show chat bottom sheet
 void showChatBottomSheet(
-  BuildContext context,
-  {
+  BuildContext context, {
   String title = 'AI Chef Assistant',
   List<RecipeReference>? availableRecipes,
-}
-) {
+}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => ChatBottomSheet(
-      title: title,
-      availableRecipes: availableRecipes,
-    ),
+    builder: (context) =>
+        ChatBottomSheet(title: title, availableRecipes: availableRecipes),
   );
 }

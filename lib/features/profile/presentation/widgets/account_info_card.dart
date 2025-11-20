@@ -123,21 +123,20 @@ class AccountInfoCard extends ConsumerWidget {
       try {
         // Sign out and invalidate auth providers to trigger reactivity
         await ref.read(authNotifierProvider.notifier).signOut();
-        
+
         // Invalidate providers to ensure reactive updates
         ref.invalidate(authStateChangesProvider);
         ref.invalidate(currentUserProvider);
         ref.invalidate(authNotifierProvider);
-        
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Signed out successfully')),
           );
           // Navigate to welcome screen and clear navigation stack
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/welcome',
-            (route) => false,
-          );
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/welcome', (route) => false);
         }
       } catch (e) {
         if (context.mounted) {

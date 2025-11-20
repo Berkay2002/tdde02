@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/features/recipe_generation/data/repositories/recipe_repository_impl.dart';
 
 /// Performance benchmarking tests for recipe caching
-/// 
+///
 /// These tests validate that cache operations meet performance targets:
 /// - Cache hit: <500ms
 /// - Cache miss: <100ms (no data to retrieve)
@@ -21,7 +21,7 @@ void main() {
 
     test('cache miss performance (<100ms)', () async {
       final stopwatch = Stopwatch()..start();
-      
+
       final result = await repository.getCachedRecipes(
         testUserId,
         ['chicken', 'rice', 'onion'],
@@ -29,14 +29,17 @@ void main() {
         'beginner',
         'Italian',
       );
-      
+
       stopwatch.stop();
       final duration = stopwatch.elapsedMilliseconds;
 
       expect(result, isNull);
-      expect(duration, lessThan(100),
-          reason: 'Cache miss took ${duration}ms, expected <100ms');
-      
+      expect(
+        duration,
+        lessThan(100),
+        reason: 'Cache miss took ${duration}ms, expected <100ms',
+      );
+
       print('✓ Cache miss performance: ${duration}ms');
     });
 
@@ -46,12 +49,16 @@ void main() {
         3,
         (i) => {
           'name': 'Recipe ${i + 1}',
-          'description': 'A delicious recipe with detailed instructions and ingredients',
+          'description':
+              'A delicious recipe with detailed instructions and ingredients',
           'difficulty': ['easy', 'medium', 'hard'][i % 3],
           'prepTime': 15 + (i * 5),
           'cookTime': 30 + (i * 10),
           'ingredients': List.generate(10, (j) => 'ingredient_${i}_$j'),
-          'instructions': List.generate(8, (j) => 'Step ${j + 1}: Do something important'),
+          'instructions': List.generate(
+            8,
+            (j) => 'Step ${j + 1}: Do something important',
+          ),
         },
       );
 
@@ -66,7 +73,7 @@ void main() {
 
       // Benchmark: Retrieve cached data
       final stopwatch = Stopwatch()..start();
-      
+
       final result = await repository.getCachedRecipes(
         testUserId,
         ['chicken', 'rice', 'onion', 'garlic', 'tomato'],
@@ -74,15 +81,18 @@ void main() {
         'intermediate',
         'Italian',
       );
-      
+
       stopwatch.stop();
       final duration = stopwatch.elapsedMilliseconds;
 
       expect(result, isNotNull);
       expect(result, hasLength(3));
-      expect(duration, lessThan(500),
-          reason: 'Cache hit took ${duration}ms, expected <500ms');
-      
+      expect(
+        duration,
+        lessThan(500),
+        reason: 'Cache hit took ${duration}ms, expected <500ms',
+      );
+
       print('✓ Cache hit performance: ${duration}ms');
     });
 
@@ -96,13 +106,16 @@ void main() {
           'prepTime': 20,
           'cookTime': 40,
           'ingredients': List.generate(15, (j) => 'ingredient_${i}_$j'),
-          'instructions': List.generate(12, (j) => 'Step ${j + 1}: Detailed cooking instruction'),
+          'instructions': List.generate(
+            12,
+            (j) => 'Step ${j + 1}: Detailed cooking instruction',
+          ),
           'tags': ['healthy', 'quick', 'family-friendly'],
         },
       );
 
       final stopwatch = Stopwatch()..start();
-      
+
       await repository.saveCachedRecipes(
         testUserId,
         ['chicken', 'rice', 'onion', 'garlic', 'tomato', 'basil'],
@@ -111,13 +124,16 @@ void main() {
         'advanced',
         'Mediterranean',
       );
-      
+
       stopwatch.stop();
       final duration = stopwatch.elapsedMilliseconds;
 
-      expect(duration, lessThan(1000),
-          reason: 'Cache save took ${duration}ms, expected <1000ms');
-      
+      expect(
+        duration,
+        lessThan(1000),
+        reason: 'Cache save took ${duration}ms, expected <1000ms',
+      );
+
       print('✓ Cache save performance: ${duration}ms');
     });
 
@@ -132,7 +148,7 @@ void main() {
             'difficulty': 'easy',
             'prepTime': 15,
             'cookTime': 30,
-          }
+          },
         ];
 
         // Save
@@ -158,18 +174,28 @@ void main() {
         );
         getWatch.stop();
 
-        durations.add(saveWatch.elapsedMilliseconds + getWatch.elapsedMilliseconds);
+        durations.add(
+          saveWatch.elapsedMilliseconds + getWatch.elapsedMilliseconds,
+        );
       }
 
       final avgDuration = durations.reduce((a, b) => a + b) / durations.length;
       final maxDuration = durations.reduce((a, b) => a > b ? a : b);
 
-      expect(avgDuration, lessThan(300),
-          reason: 'Average operation time was ${avgDuration}ms, expected <300ms');
-      expect(maxDuration, lessThan(1500),
-          reason: 'Max operation time was ${maxDuration}ms, expected <1500ms');
-      
-      print('✓ Sequential operations - Avg: ${avgDuration.toStringAsFixed(2)}ms, Max: ${maxDuration}ms');
+      expect(
+        avgDuration,
+        lessThan(300),
+        reason: 'Average operation time was ${avgDuration}ms, expected <300ms',
+      );
+      expect(
+        maxDuration,
+        lessThan(1500),
+        reason: 'Max operation time was ${maxDuration}ms, expected <1500ms',
+      );
+
+      print(
+        '✓ Sequential operations - Avg: ${avgDuration.toStringAsFixed(2)}ms, Max: ${maxDuration}ms',
+      );
     });
 
     test('cache key generation performance', () async {
@@ -177,7 +203,7 @@ void main() {
       final ingredients = List.generate(20, (i) => 'ingredient_$i');
 
       final stopwatch = Stopwatch()..start();
-      
+
       for (int i = 0; i < iterations; i++) {
         repository.getCachedRecipes(
           testUserId,
@@ -187,14 +213,20 @@ void main() {
           'Asian',
         );
       }
-      
+
       stopwatch.stop();
       final avgDuration = stopwatch.elapsedMilliseconds / iterations;
 
-      expect(avgDuration, lessThan(10),
-          reason: 'Average cache key generation took ${avgDuration.toStringAsFixed(2)}ms, expected <10ms');
-      
-      print('✓ Cache key generation - Avg: ${avgDuration.toStringAsFixed(2)}ms per key');
+      expect(
+        avgDuration,
+        lessThan(10),
+        reason:
+            'Average cache key generation took ${avgDuration.toStringAsFixed(2)}ms, expected <10ms',
+      );
+
+      print(
+        '✓ Cache key generation - Avg: ${avgDuration.toStringAsFixed(2)}ms per key',
+      );
     });
 
     test('stress test: high-frequency cache operations', () async {
@@ -205,24 +237,28 @@ void main() {
       // Simulate high-frequency concurrent operations
       for (int i = 0; i < operationsCount; i++) {
         final testRecipes = [
-          {'name': 'Recipe $i', 'difficulty': 'easy'}
+          {'name': 'Recipe $i', 'difficulty': 'easy'},
         ];
 
         futures.add(
-          repository.saveCachedRecipes(
-            testUserId,
-            ['ingredient_${i % 10}'],
-            testRecipes,
-            'vegetarian',
-            'beginner',
-            'Italian',
-          ).then((_) => repository.getCachedRecipes(
-            testUserId,
-            ['ingredient_${i % 10}'],
-            'vegetarian',
-            'beginner',
-            'Italian',
-          )),
+          repository
+              .saveCachedRecipes(
+                testUserId,
+                ['ingredient_${i % 10}'],
+                testRecipes,
+                'vegetarian',
+                'beginner',
+                'Italian',
+              )
+              .then(
+                (_) => repository.getCachedRecipes(
+                  testUserId,
+                  ['ingredient_${i % 10}'],
+                  'vegetarian',
+                  'beginner',
+                  'Italian',
+                ),
+              ),
         );
       }
 
@@ -231,10 +267,16 @@ void main() {
 
       final avgTime = stopwatch.elapsedMilliseconds / operationsCount;
 
-      expect(avgTime, lessThan(200),
-          reason: 'Average time per operation was ${avgTime.toStringAsFixed(2)}ms, expected <200ms');
-      
-      print('✓ Stress test: $operationsCount operations in ${stopwatch.elapsedMilliseconds}ms (avg: ${avgTime.toStringAsFixed(2)}ms)');
+      expect(
+        avgTime,
+        lessThan(200),
+        reason:
+            'Average time per operation was ${avgTime.toStringAsFixed(2)}ms, expected <200ms',
+      );
+
+      print(
+        '✓ Stress test: $operationsCount operations in ${stopwatch.elapsedMilliseconds}ms (avg: ${avgTime.toStringAsFixed(2)}ms)',
+      );
     });
 
     test('memory efficiency: large recipe payload', () async {
@@ -248,14 +290,17 @@ void main() {
           'prepTime': 30,
           'cookTime': 90,
           'ingredients': List.generate(30, (j) => 'ingredient_${i}_$j'),
-          'instructions': List.generate(20, (j) => 'Step ${j + 1}: ${"Instruction " * 10}'),
+          'instructions': List.generate(
+            20,
+            (j) => 'Step ${j + 1}: ${"Instruction " * 10}',
+          ),
           'tags': List.generate(10, (j) => 'tag_$j'),
           'nutritionalInfo': {
             'calories': 450 + i * 10,
             'protein': 25 + i,
             'carbs': 50 + i * 2,
             'fat': 15 + i,
-          }
+          },
         },
       );
 
@@ -282,12 +327,21 @@ void main() {
 
       expect(result, isNotNull);
       expect(result, hasLength(10));
-      expect(saveWatch.elapsedMilliseconds, lessThan(2000),
-          reason: 'Large payload save took ${saveWatch.elapsedMilliseconds}ms');
-      expect(getWatch.elapsedMilliseconds, lessThan(1000),
-          reason: 'Large payload retrieval took ${getWatch.elapsedMilliseconds}ms');
-      
-      print('✓ Large payload - Save: ${saveWatch.elapsedMilliseconds}ms, Get: ${getWatch.elapsedMilliseconds}ms');
+      expect(
+        saveWatch.elapsedMilliseconds,
+        lessThan(2000),
+        reason: 'Large payload save took ${saveWatch.elapsedMilliseconds}ms',
+      );
+      expect(
+        getWatch.elapsedMilliseconds,
+        lessThan(1000),
+        reason:
+            'Large payload retrieval took ${getWatch.elapsedMilliseconds}ms',
+      );
+
+      print(
+        '✓ Large payload - Save: ${saveWatch.elapsedMilliseconds}ms, Get: ${getWatch.elapsedMilliseconds}ms',
+      );
     });
   });
 }

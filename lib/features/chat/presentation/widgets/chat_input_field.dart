@@ -48,16 +48,17 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
     if (text.contains('@recipe')) {
       final lastAtIndex = text.lastIndexOf('@recipe', _cursorPosition);
       if (lastAtIndex != -1) {
-        final searchQuery = text.substring(
-          lastAtIndex + 7,
-          _cursorPosition,
-        ).trim().toLowerCase();
+        final searchQuery = text
+            .substring(lastAtIndex + 7, _cursorPosition)
+            .trim()
+            .toLowerCase();
 
         setState(() {
           _showRecipeDropdown = true;
           _filteredRecipes = widget.availableRecipes
-              .where((recipe) =>
-                  recipe.name.toLowerCase().contains(searchQuery))
+              .where(
+                (recipe) => recipe.name.toLowerCase().contains(searchQuery),
+              )
               .take(5)
               .toList();
         });
@@ -130,10 +131,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               border: Border(
-                top: BorderSide(
-                  color: theme.dividerColor,
-                  width: 1,
-                ),
+                top: BorderSide(color: theme.dividerColor, width: 1),
               ),
             ),
             child: Column(
@@ -182,10 +180,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               border: Border(
-                top: BorderSide(
-                  color: theme.dividerColor,
-                  width: 1,
-                ),
+                top: BorderSide(color: theme.dividerColor, width: 1),
               ),
             ),
             child: ListView.builder(
@@ -243,7 +238,8 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
                   onPressed: () {
                     final currentText = _controller.text;
                     final cursorPos = _controller.selection.base.offset;
-                    final newText = '${currentText.substring(0, cursorPos)}@recipe ${currentText.substring(cursorPos)}';
+                    final newText =
+                        '${currentText.substring(0, cursorPos)}@recipe ${currentText.substring(cursorPos)}';
                     _controller.text = newText;
                     _controller.selection = TextSelection.collapsed(
                       offset: cursorPos + 8,

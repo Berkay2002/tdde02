@@ -200,18 +200,20 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       if (widget.mode == CameraMode.pantryAdd) {
         // Use detection provider for pantry mode - it will handle structured detection
         print('Camera: Starting ingredient detection...');
-        
+
         // Call the detection method and get success status
-        final success = await ref.read(ingredientDetectionProvider.notifier).detectIngredients(
-          processedBytes,
-          DateTime.now().millisecondsSinceEpoch.toString(),
-        );
-        
+        final success = await ref
+            .read(ingredientDetectionProvider.notifier)
+            .detectIngredients(
+              processedBytes,
+              DateTime.now().millisecondsSinceEpoch.toString(),
+            );
+
         print('Camera: Detection complete - success: $success');
 
         if (mounted) {
           Navigator.pop(context); // Close loading dialog
-          
+
           if (success) {
             // Pop camera screen and signal success
             print('Camera: Detection successful, navigating back with true');
@@ -219,13 +221,17 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           } else {
             // Read the error message from state
             final detectionState = ref.read(ingredientDetectionProvider);
-            final errorMessage = detectionState.errorMessage ?? 'No ingredients detected. Please try again.';
-            
+            final errorMessage =
+                detectionState.errorMessage ??
+                'No ingredients detected. Please try again.';
+
             print('Camera: Detection failed - $errorMessage');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(errorMessage),
-                backgroundColor: detectionState.errorMessage != null ? Colors.red : Colors.orange,
+                backgroundColor: detectionState.errorMessage != null
+                    ? Colors.red
+                    : Colors.orange,
               ),
             );
           }

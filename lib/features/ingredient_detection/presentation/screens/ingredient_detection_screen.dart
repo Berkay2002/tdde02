@@ -20,11 +20,15 @@ class IngredientDetectionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detectionState = ref.watch(ingredientDetectionProvider);
-    
+
     // Debug logging
     print('IngredientDetectionScreen: Building with state:');
-    print('  - Items: ${detectionState.detectedIngredients?.detectedItems.length ?? 0}');
-    print('  - Ingredients list: ${detectionState.detectedIngredients?.ingredients.length ?? 0}');
+    print(
+      '  - Items: ${detectionState.detectedIngredients?.detectedItems.length ?? 0}',
+    );
+    print(
+      '  - Ingredients list: ${detectionState.detectedIngredients?.ingredients.length ?? 0}',
+    );
     print('  - Error: ${detectionState.errorMessage}');
     print('  - Is loading: ${detectionState.isLoading}');
 
@@ -39,7 +43,9 @@ class IngredientDetectionScreen extends ConsumerWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(isPantryMode ? 'Review Ingredients' : 'Detected Ingredients'),
+          title: Text(
+            isPantryMode ? 'Review Ingredients' : 'Detected Ingredients',
+          ),
           actions: [
             if (detectionState.detectedIngredients != null &&
                 detectionState.detectedIngredients!.ingredients.isNotEmpty)
@@ -289,7 +295,9 @@ class IngredientDetectionScreen extends ConsumerWidget {
               // Only clear ingredients if not in pantry mode
               // In pantry mode, user will add to pantry then clear
               if (!isPantryMode) {
-                ref.read(ingredientDetectionProvider.notifier).clearIngredients();
+                ref
+                    .read(ingredientDetectionProvider.notifier)
+                    .clearIngredients();
               }
               Navigator.pop(context);
             },

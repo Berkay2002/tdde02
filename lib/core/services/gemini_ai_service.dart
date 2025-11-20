@@ -455,10 +455,9 @@ class GeminiAIService {
 
       final promptText = fullPrompt.toString();
       print('GeminiAIService: Streaming chat response for user $userId');
-      
+
       // Use existing stream generator
       yield* generateResponseStream(prompt: promptText);
-      
     } catch (e) {
       print('GeminiAIService: Chat streaming error: $e');
       throw InferenceException('Chat failed: $e');

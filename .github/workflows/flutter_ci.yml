@@ -38,7 +38,7 @@ jobs:
         run: flutter analyze
 
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed .
+        run: find lib test -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" | xargs dart format --output=none --set-exit-if-changed
 
       - name: Build Android app
         run: flutter build apk --debug

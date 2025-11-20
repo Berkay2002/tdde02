@@ -5,7 +5,7 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // AI Model Configuration - Firebase AI with Gemini API
-  static const String geminiModel = 'gemini-2.5-flash'; // Multimodal model
+  static const String geminiModel = 'gemini-3-pro-preview'; // Multimodal model
   static const int maxTokens = 8196; // Increased to prevent truncation
   static const int topK = 40;
   static const double temperature =

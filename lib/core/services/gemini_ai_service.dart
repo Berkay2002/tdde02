@@ -49,6 +49,7 @@ class GeminiAIService {
           maxOutputTokens: AppConstants.maxTokens,
           responseMimeType: 'application/json', // JSON for structured output
         ),
+        tools: [Tool.googleSearch()],
       );
 
       _isInitialized = true;
@@ -375,7 +376,7 @@ class GeminiAIService {
   /// Generate response with streaming support
   ///
   /// Returns a stream of partial results as they are generated
-  Stream<String> generateResponseStream({
+  Stream<ChatResponseChunk> generateResponseStream({
     required String prompt,
     Uint8List? imageData,
   }) async* {
@@ -399,8 +400,28 @@ class GeminiAIService {
 
       await for (final chunk in response) {
         final text = chunk.text;
-        if (text != null && text.isNotEmpty) {
-          yield text;
+        Map<String, dynamic>? metadata;
+
+        if (chunk.candidates.isNotEmpty) {
+          final candidate = chunk.candidates.first;
+          if (candidate.groundingMetadata != null) {
+            // Manually converting GroundingMetadata to Map since we don't have direct access to toJson 
+            // or to be safe. Assuming standard fields.
+            final gm = candidate.groundingMetadata!;
+            metadata = {
+               if (gm.searchEntryPoint != null) 'searchEntryPoint': gm.searchEntryPoint?.renderedContent,
+               'webSearchQueries': gm.webSearchQueries,
+               'groundingChunks': gm.groundingChunks.map((c) => {'uri': c.web?.uri, 'title': c.web?.title}).toList(),
+               // 'groundingSupports': gm.groundingSupports.map((s) => {
+               //     'segment': {'startIndex': s.segment.startIndex, 'endIndex': s.segment.endIndex},
+               //     'groundingChunkIndices': s.groundingChunkIndices
+               // }).toList(),
+            };
+          }
+        }
+
+        if ((text != null && text.isNotEmpty) || metadata != null) {
+          yield ChatResponseChunk(text: text ?? '', groundingMetadata: metadata);
         }
       }
     } catch (e) {
@@ -410,7 +431,7 @@ class GeminiAIService {
   }
 
   /// Stream chat response with context and history
-  Stream<String> streamChatResponse({
+  Stream<ChatResponseChunk> streamChatResponse({
     required String userMessage,
     required String userId,
     String? systemPrompt,
@@ -472,4 +493,12 @@ class GeminiAIService {
       print('GeminiAIService: Service disposed');
     }
   }
+}
+
+/// DTO for streaming chat response with metadata
+class ChatResponseChunk {
+  final String text;
+  final Map<String, dynamic>? groundingMetadata;
+
+  ChatResponseChunk({required this.text, this.groundingMetadata});
 }

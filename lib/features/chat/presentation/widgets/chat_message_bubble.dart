@@ -96,7 +96,10 @@ class ChatMessageBubble extends StatelessWidget {
                         ),
                       ),
                     if (message.groundingMetadata != null)
-                      _buildGroundingSources(context, message.groundingMetadata!),
+                      _buildGroundingSources(
+                        context,
+                        message.groundingMetadata!,
+                      ),
                     if (message.groundingMetadata != null &&
                         message.groundingMetadata!['searchEntryPoint'] != null)
                       Padding(
@@ -257,29 +260,28 @@ class ChatMessageBubble extends StatelessWidget {
         children: [
           Text(
             'Sources',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Wrap(
             spacing: 8,
             runSpacing: 4,
-            children:
-                chunks.map<Widget>((chunk) {
-                  final uri = chunk['uri'] as String?;
-                  final title = chunk['title'] as String? ?? 'Source';
-                  if (uri == null) return const SizedBox.shrink();
+            children: chunks.map<Widget>((chunk) {
+              final uri = chunk['uri'] as String?;
+              final title = chunk['title'] as String? ?? 'Source';
+              if (uri == null) return const SizedBox.shrink();
 
-                  return ActionChip(
-                    label: Text(title, style: const TextStyle(fontSize: 10)),
-                    avatar: const Icon(Icons.link, size: 12),
-                    onPressed: () => launchUrl(Uri.parse(uri)),
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  );
-                }).toList(),
+              return ActionChip(
+                label: Text(title, style: const TextStyle(fontSize: 10)),
+                avatar: const Icon(Icons.link, size: 12),
+                onPressed: () => launchUrl(Uri.parse(uri)),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            }).toList(),
           ),
         ],
       ),

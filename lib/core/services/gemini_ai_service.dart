@@ -405,23 +405,29 @@ class GeminiAIService {
         if (chunk.candidates.isNotEmpty) {
           final candidate = chunk.candidates.first;
           if (candidate.groundingMetadata != null) {
-            // Manually converting GroundingMetadata to Map since we don't have direct access to toJson 
+            // Manually converting GroundingMetadata to Map since we don't have direct access to toJson
             // or to be safe. Assuming standard fields.
             final gm = candidate.groundingMetadata!;
             metadata = {
-               if (gm.searchEntryPoint != null) 'searchEntryPoint': gm.searchEntryPoint?.renderedContent,
-               'webSearchQueries': gm.webSearchQueries,
-               'groundingChunks': gm.groundingChunks.map((c) => {'uri': c.web?.uri, 'title': c.web?.title}).toList(),
-               // 'groundingSupports': gm.groundingSupports.map((s) => {
-               //     'segment': {'startIndex': s.segment.startIndex, 'endIndex': s.segment.endIndex},
-               //     'groundingChunkIndices': s.groundingChunkIndices
-               // }).toList(),
+              if (gm.searchEntryPoint != null)
+                'searchEntryPoint': gm.searchEntryPoint?.renderedContent,
+              'webSearchQueries': gm.webSearchQueries,
+              'groundingChunks': gm.groundingChunks
+                  .map((c) => {'uri': c.web?.uri, 'title': c.web?.title})
+                  .toList(),
+              // 'groundingSupports': gm.groundingSupports.map((s) => {
+              //     'segment': {'startIndex': s.segment.startIndex, 'endIndex': s.segment.endIndex},
+              //     'groundingChunkIndices': s.groundingChunkIndices
+              // }).toList(),
             };
           }
         }
 
         if ((text != null && text.isNotEmpty) || metadata != null) {
-          yield ChatResponseChunk(text: text ?? '', groundingMetadata: metadata);
+          yield ChatResponseChunk(
+            text: text ?? '',
+            groundingMetadata: metadata,
+          );
         }
       }
     } catch (e) {

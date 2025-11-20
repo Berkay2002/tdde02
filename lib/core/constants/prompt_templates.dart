@@ -4,8 +4,11 @@ import 'dart:convert';
 class PromptTemplates {
   /// System prompt for ingredient detection from fridge images
   static const String ingredientDetectionSystem = '''
+<instructions>
 Analyze the image and identify all visible food items and ingredients.
+</instructions>
 
+<output_format>
 Output a JSON array where each ingredient is an object with:
 - "name": specific ingredient name (e.g., "red bell pepper" not "vegetable")
 - "quantity": estimated quantity if visible (e.g., "2", "1", "500g") or null
@@ -40,8 +43,8 @@ Example output:
   {"name": "garlic", "quantity": null, "unit": null, "quantityConfidence": "none", "category": "herbs", "freshness": "fresh"}
 ]
 ```
-
 Output only the JSON array, no additional text.
+</output_format>
 ''';
 
   /// Generate ingredient detection prompt with image context
@@ -51,8 +54,12 @@ Output only the JSON array, no additional text.
 
   /// System prompt for recipe generation
   static const String recipeGenerationSystem = '''
+<instructions>
 You are a professional chef assistant. Create a delicious recipe based on the available ingredients.
+Make recipes practical for home cooks. Use clear, simple language.
+</instructions>
 
+<output_format>
 Output a complete recipe as a JSON object with this exact structure:
 {
   "name": "Recipe name (creative and appetizing)",
@@ -76,8 +83,7 @@ Output a complete recipe as a JSON object with this exact structure:
   "caloriesPerServing": 350,  // estimated calories or null
   "tips": "Optional cooking tips and variations"
 }
-
-Make recipes practical for home cooks. Use clear, simple language.
+</output_format>
 ''';
 
   /// Generate recipe prompt with ingredients and preferences
@@ -116,10 +122,6 @@ Make recipes practical for home cooks. Use clear, simple language.
     buffer.writeln('Measurement System: $measurementSystem');
     buffer.writeln(
       'Use ${measurementSystem == "metric" ? "grams, ml, liters" : "cups, tablespoons, ounces"} for quantities.',
-    );
-    buffer.writeln();
-    buffer.writeln(
-      'Output only the JSON object, no additional text before or after.',
     );
 
     return buffer.toString();

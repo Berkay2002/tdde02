@@ -59,10 +59,7 @@ class FirestoreSyncService {
       final recipeBox = Hive.box(AppConstants.hiveRecipeBox);
       final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
 
-      await Future.wait([
-        recipeBox.clear(),
-        prefsBox.clear(),
-      ]);
+      await Future.wait([recipeBox.clear(), prefsBox.clear()]);
     } catch (e) {
       print('Error clearing local data: $e');
     }
@@ -79,7 +76,8 @@ class FirestoreSyncService {
 
     if (doc.exists && doc.data() != null) {
       final data = doc.data()!;
-      final items = (data['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final items =
+          (data['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
       final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
       prefsBox.put('pantryIngredients', items);
@@ -96,9 +94,9 @@ class FirestoreSyncService {
         .collection('pantry')
         .doc('items')
         .set({
-      'items': items,
-      'updated_at': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+          'items': items,
+          'updated_at': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
   }
 
   // FAVORITES SYNC
@@ -125,15 +123,12 @@ class FirestoreSyncService {
       if (recipe is Map) {
         final recipeId = recipe['id'] as String?;
         if (recipeId != null) {
-          await _firestore.collection('recipes').doc(recipeId).set(
-            {
-              ...Map<String, dynamic>.from(recipe),
-              'user_id': userId,
-              'is_favorite': true,
-              'updated_at': FieldValue.serverTimestamp(),
-            },
-            SetOptions(merge: true),
-          );
+          await _firestore.collection('recipes').doc(recipeId).set({
+            ...Map<String, dynamic>.from(recipe),
+            'user_id': userId,
+            'is_favorite': true,
+            'updated_at': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
         }
       }
     }
@@ -141,8 +136,10 @@ class FirestoreSyncService {
 
   // PREFERENCES SYNC
   Future<void> _syncPreferencesFromFirestore(String userId) async {
-    final doc =
-        await _firestore.collection('user_preferences').doc(userId).get();
+    final doc = await _firestore
+        .collection('user_preferences')
+        .doc(userId)
+        .get();
 
     if (doc.exists && doc.data() != null) {
       final data = doc.data()!;
@@ -161,13 +158,19 @@ class FirestoreSyncService {
     final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
 
     await _firestore.collection('user_preferences').doc(userId).set({
-      'dietary_restrictions':
-          prefsBox.get('dietaryRestrictions', defaultValue: []),
+      'dietary_restrictions': prefsBox.get(
+        'dietaryRestrictions',
+        defaultValue: [],
+      ),
       'skill_levels': prefsBox.get('skillLevels', defaultValue: []),
-      'cuisine_preferences':
-          prefsBox.get('cuisinePreferences', defaultValue: []),
-      'measurement_system':
-          prefsBox.get('measurementSystem', defaultValue: 'metric'),
+      'cuisine_preferences': prefsBox.get(
+        'cuisinePreferences',
+        defaultValue: [],
+      ),
+      'measurement_system': prefsBox.get(
+        'measurementSystem',
+        defaultValue: 'metric',
+      ),
       'updated_at': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
@@ -185,31 +188,31 @@ class FirestoreSyncService {
         .doc('items')
         .snapshots()
         .listen((snapshot) {
-      if (snapshot.exists && snapshot.data() != null) {
-        final data = snapshot.data()!;
-        final items = data['items'] ?? [];
+          if (snapshot.exists && snapshot.data() != null) {
+            final data = snapshot.data()!;
+            final items = data['items'] ?? [];
 
-        final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
-        prefsBox.put('pantryIngredients', items);
-      }
-    });
+            final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
+            prefsBox.put('pantryIngredients', items);
+          }
+        });
 
     // Listen to preferences changes
-    _firestore.collection('user_preferences').doc(userId).snapshots().listen(
-      (snapshot) {
-        if (snapshot.exists && snapshot.data() != null) {
-          final data = snapshot.data()!;
-          final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
+    _firestore.collection('user_preferences').doc(userId).snapshots().listen((
+      snapshot,
+    ) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final data = snapshot.data()!;
+        final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
 
-          prefsBox.put('dietaryRestrictions', data['dietary_restrictions'] ?? []);
-          prefsBox.put('skillLevels', data['skill_levels'] ?? []);
-          prefsBox.put('cuisinePreferences', data['cuisine_preferences'] ?? []);
-          prefsBox.put(
-            'measurementSystem',
-            data['measurement_system'] ?? 'metric',
-          );
-        }
-      },
-    );
+        prefsBox.put('dietaryRestrictions', data['dietary_restrictions'] ?? []);
+        prefsBox.put('skillLevels', data['skill_levels'] ?? []);
+        prefsBox.put('cuisinePreferences', data['cuisine_preferences'] ?? []);
+        prefsBox.put(
+          'measurementSystem',
+          data['measurement_system'] ?? 'metric',
+        );
+      }
+    });
   }
 }

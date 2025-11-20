@@ -21,10 +21,10 @@ AuthRepository authRepository(AuthRepositoryRef ref) {
   final auth = ref.watch(firebaseAuthProvider);
   final firestore = ref.watch(firestoreProvider);
   final googleSignIn = ref.watch(googleSignInProvider);
-  
+
   final recipeBox = Hive.box(AppConstants.hiveRecipeBox);
   final prefsBox = Hive.box(AppConstants.hivePreferencesBox);
-  
+
   return AuthRepositoryImpl(
     auth,
     firestore,

@@ -409,6 +409,61 @@ class GeminiAIService {
     }
   }
 
+  /// Stream chat response with context and history
+  Stream<String> streamChatResponse({
+    required String userMessage,
+    required String userId,
+    String? systemPrompt,
+    Map<String, dynamic>? context,
+    List<Map<String, dynamic>>? conversationHistory,
+  }) async* {
+    if (!_isInitialized || _model == null) {
+      throw ModelNotInitializedException('Model has not been initialized');
+    }
+
+    try {
+      // Construct prompt with context and history
+      final fullPrompt = StringBuffer();
+
+      // Add system prompt and context
+      if (systemPrompt != null) {
+        fullPrompt.writeln('System: $systemPrompt');
+        fullPrompt.writeln();
+      }
+
+      if (context != null && context.isNotEmpty) {
+        fullPrompt.writeln('Current Context:');
+        // Format context values nicely
+        context.forEach((key, value) {
+          fullPrompt.writeln('- $key: $value');
+        });
+        fullPrompt.writeln();
+      }
+
+      // Add conversation history
+      if (conversationHistory != null) {
+        for (final entry in conversationHistory) {
+          final role = entry['role'] == 'user' ? 'User' : 'Assistant';
+          final content = entry['content'];
+          fullPrompt.writeln('$role: $content');
+        }
+      }
+
+      // Add current user message
+      fullPrompt.writeln('User: $userMessage');
+      fullPrompt.writeln('Assistant:');
+
+      final promptText = fullPrompt.toString();
+      print('GeminiAIService: Streaming chat response for user $userId');
+
+      // Use existing stream generator
+      yield* generateResponseStream(prompt: promptText);
+    } catch (e) {
+      print('GeminiAIService: Chat streaming error: $e');
+      throw InferenceException('Chat failed: $e');
+    }
+  }
+
   /// Dispose of resources
   Future<void> dispose() async {
     if (_isInitialized) {

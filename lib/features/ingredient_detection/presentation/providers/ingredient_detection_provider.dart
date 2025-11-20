@@ -84,7 +84,9 @@ class IngredientDetection extends _$IngredientDetection {
       final structuredIngredients = await inferenceService
           .detectIngredientsStructured(processedImage, user.uid);
 
-      print('IngredientDetection: Received ${structuredIngredients.length} structured ingredients');
+      print(
+        'IngredientDetection: Received ${structuredIngredients.length} structured ingredients',
+      );
 
       // Parse into DetectedIngredientItem objects
       final detectedItems = <DetectedIngredientItem>[];
@@ -101,7 +103,9 @@ class IngredientDetection extends _$IngredientDetection {
       // Extract names for legacy support
       final ingredients = detectedItems.map((item) => item.name).toList();
 
-      print('IngredientDetection: Parsed ${detectedItems.length} items into entities');
+      print(
+        'IngredientDetection: Parsed ${detectedItems.length} items into entities',
+      );
 
       // Step 3: Create DetectedIngredients entity
       final detected = DetectedIngredients(
@@ -117,7 +121,9 @@ class IngredientDetection extends _$IngredientDetection {
       print(
         'IngredientDetection: Successfully detected ${ingredients.length} ingredients',
       );
-      print('IngredientDetection: State updated with ${state.detectedIngredients?.detectedItems.length ?? 0} items');
+      print(
+        'IngredientDetection: State updated with ${state.detectedIngredients?.detectedItems.length ?? 0} items',
+      );
 
       // Log items needing clarification
       final needsClarification = detected.itemsNeedingClarification;
@@ -126,7 +132,7 @@ class IngredientDetection extends _$IngredientDetection {
           'IngredientDetection: ${needsClarification.length} items need user clarification',
         );
       }
-      
+
       return true; // Success
     } on RateLimitException catch (e) {
       // Handle rate limit errors with user-friendly message

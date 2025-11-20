@@ -20,19 +20,17 @@ class WelcomeScreen extends ConsumerWidget {
           // User is authenticated, go to the main app shell with tabs
           return AppShell(key: appShellKey);
         }
-        
+
         // User not authenticated, show welcome screen
         return _buildWelcomeScreen(context);
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (_, __) => _buildWelcomeScreen(context),
     );
   }
 
   Widget _buildWelcomeScreen(BuildContext context) {
-
     return Scaffold(
       body: SafeArea(
         child: Padding(

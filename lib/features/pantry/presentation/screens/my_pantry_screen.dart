@@ -56,16 +56,16 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
       final confirmed = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => const IngredientDetectionScreen(
-            isPantryMode: true,
-          ),
+          builder: (context) =>
+              const IngredientDetectionScreen(isPantryMode: true),
         ),
       );
 
       // If user confirmed, add ingredients to pantry
       if (confirmed == true && mounted) {
-        final detectionState =
-            ref.read(ingredientDetectionProvider).detectedIngredients;
+        final detectionState = ref
+            .read(ingredientDetectionProvider)
+            .detectedIngredients;
 
         if (detectionState != null && detectionState.detectedItems.isNotEmpty) {
           // Convert DetectedIngredientItems to pantry format with confirmed quantities

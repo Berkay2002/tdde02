@@ -113,9 +113,8 @@ class _QuickManualInputSheetState extends ConsumerState<QuickManualInputSheet> {
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (context) => const QuickManualInputSheet(
-              showRetryCamera: true,
-            ),
+            builder: (context) =>
+                const QuickManualInputSheet(showRetryCamera: true),
           );
         }
       }

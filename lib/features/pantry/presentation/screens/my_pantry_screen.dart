@@ -69,7 +69,8 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
               .read(ingredientDetectionProvider)
               .detectedIngredients;
 
-          if (detectionState != null && detectionState.detectedItems.isNotEmpty) {
+          if (detectionState != null &&
+              detectionState.detectedItems.isNotEmpty) {
             // Convert DetectedIngredientItems to pantry format with confirmed quantities
             final pantryData = detectionState.detectedItems.map((item) {
               return {
@@ -103,7 +104,8 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
           final retryCameraResult = await Navigator.push<dynamic>(
             context,
             MaterialPageRoute(
-              builder: (context) => const CameraScreen(mode: CameraMode.pantryAdd),
+              builder: (context) =>
+                  const CameraScreen(mode: CameraMode.pantryAdd),
             ),
           );
           // If no ingredients detected on retry, exit the loop

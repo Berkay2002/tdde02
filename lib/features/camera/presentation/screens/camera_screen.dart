@@ -203,7 +203,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             // Show helpful message and return null to indicate no detection
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('No ingredients detected. Try manual entry instead.'),
+                content: Text(
+                  'No ingredients detected. Try manual entry instead.',
+                ),
                 duration: Duration(seconds: 3),
               ),
             );

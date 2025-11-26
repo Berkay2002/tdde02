@@ -33,7 +33,9 @@ class HomeScreen extends ConsumerWidget {
     if (context.mounted) {
       if (ingredients != null && ingredients.isNotEmpty) {
         // Send to Brain's sessionIngredients
-        ref.read(sessionIngredientsProvider.notifier).setIngredients(ingredients);
+        ref
+            .read(sessionIngredientsProvider.notifier)
+            .setIngredients(ingredients);
 
         // Switch to Recipes tab
         switchToRecipeTab(context);
@@ -43,9 +45,8 @@ class HomeScreen extends ConsumerWidget {
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (context) => const QuickManualInputSheet(
-            showRetryCamera: true,
-          ),
+          builder: (context) =>
+              const QuickManualInputSheet(showRetryCamera: true),
         );
       }
       // If ingredients is null, user cancelled - do nothing

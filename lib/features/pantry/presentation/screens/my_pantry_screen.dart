@@ -44,8 +44,12 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
 
   Future<void> _handleCameraScan() async {
     // Launch camera modal for pantry add
-    final cameraResult = await Navigator.push<dynamic>(
-      context,
+    if (!mounted) return;
+
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    final cameraResult = await navigator.push<dynamic>(
       MaterialPageRoute(
         builder: (context) => const CameraScreen(mode: CameraMode.pantryAdd),
       ),
@@ -55,8 +59,7 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
     if (cameraResult == true && mounted) {
       bool shouldRetry = true;
       while (shouldRetry && mounted) {
-        final confirmed = await Navigator.push<bool>(
-          context,
+        final confirmed = await navigator.push<bool>(
           MaterialPageRoute(
             builder: (context) =>
                 const IngredientDetectionScreen(isPantryMode: true),
@@ -86,14 +89,16 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
                 .read(pantryIngredientsProvider.notifier)
                 .addIngredientsStructured(pantryData);
 
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '${pantryData.length} ingredient(s) added to pantry!',
+            if (mounted) {
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '${pantryData.length} ingredient(s) added to pantry!',
+                  ),
+                  backgroundColor: Colors.green,
                 ),
-                backgroundColor: Colors.green,
-              ),
-            );
+              );
+            }
 
             // Clear the detection state
             ref.read(ingredientDetectionProvider.notifier).clearIngredients();
@@ -101,8 +106,7 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
           shouldRetry = false;
         } else if (confirmed == false && mounted) {
           // User wants to retake photo - launch camera again
-          final retryCameraResult = await Navigator.push<dynamic>(
-            context,
+          final retryCameraResult = await navigator.push<dynamic>(
             MaterialPageRoute(
               builder: (context) =>
                   const CameraScreen(mode: CameraMode.pantryAdd),

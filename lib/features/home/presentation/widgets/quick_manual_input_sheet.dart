@@ -90,34 +90,32 @@ class _QuickManualInputSheetState extends ConsumerState<QuickManualInputSheet> {
     Navigator.pop(context);
 
     // Launch camera again
-    if (mounted) {
-      final ingredients = await Navigator.push<List<String>>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const CameraScreen(mode: CameraMode.quickScan),
-        ),
+    if (!mounted) return;
+
+    final navigator = Navigator.of(context);
+    final ingredients = await navigator.push<List<String>>(
+      MaterialPageRoute(
+        builder: (context) => const CameraScreen(mode: CameraMode.quickScan),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (ingredients != null && ingredients.isNotEmpty) {
+      // Send to sessionIngredients
+      ref.read(sessionIngredientsProvider.notifier).setIngredients(ingredients);
+
+      // Switch to Recipes tab
+      switchToRecipeTab(context);
+    } else if (ingredients != null && ingredients.isEmpty) {
+      // No ingredients detected again - show manual entry again
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) =>
+            const QuickManualInputSheet(showRetryCamera: true),
       );
-
-      if (context.mounted) {
-        if (ingredients != null && ingredients.isNotEmpty) {
-          // Send to sessionIngredients
-          ref
-              .read(sessionIngredientsProvider.notifier)
-              .setIngredients(ingredients);
-
-          // Switch to Recipes tab
-          switchToRecipeTab(context);
-        } else if (ingredients != null && ingredients.isEmpty) {
-          // No ingredients detected again - show manual entry again
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) =>
-                const QuickManualInputSheet(showRetryCamera: true),
-          );
-        }
-      }
     }
   }
 

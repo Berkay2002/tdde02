@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/ingredient_detection_provider.dart';
-import '../widgets/ingredient_list_widget.dart';
 import '../widgets/detection_loading_widget.dart';
 import '../widgets/clarification_prompt_banner.dart';
 import '../widgets/ingredient_item_card.dart';
@@ -172,6 +171,123 @@ class IngredientDetectionScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.no_food_outlined,
+              size: 80,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No Ingredients Detected',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isPantryMode
+                  ? 'We couldn\'t detect any ingredients. You can add them manually below.'
+                  : 'Try taking a clearer photo or add ingredients manually.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => _showAddIngredientDialog(context, ref),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Ingredient Manually'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                // Clear current detection state
+                ref
+                    .read(ingredientDetectionProvider.notifier)
+                    .clearIngredients();
+                // Pop back with false to signal retry needed
+                Navigator.pop(context, false);
+              },
+              icon: const Icon(Icons.camera_alt),
+              label: const Text('Retake Photo'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 24,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddIngredientDialog(BuildContext context, WidgetRef ref) {
+    final nameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Ingredient'),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Ingredient Name',
+            hintText: 'e.g., Tomato, Monster Energy Drink',
+          ),
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = nameController.text.trim();
+              if (name.isNotEmpty) {
+                // For now, just add the ingredient name
+                // The structured item creation will happen when detection runs again
+                // or we can initialize with an empty detection state
+                ref
+                    .read(ingredientDetectionProvider.notifier)
+                    .addIngredient(name);
+
+                Navigator.pop(context);
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Added $name')));
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEditedBanner(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -212,8 +328,8 @@ class IngredientDetectionScreen extends ConsumerWidget {
   ) {
     final detected = state.detectedIngredients;
     if (detected == null || detected.detectedItems.isEmpty) {
-      // Fallback to legacy list widget if no structured items
-      return const IngredientListWidget();
+      // Show empty state with manual add option
+      return _buildEmptyState(context, ref);
     }
 
     return Column(
@@ -286,31 +402,7 @@ class IngredientDetectionScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
         ],
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              // Only clear ingredients if not in pantry mode
-              // In pantry mode, user will add to pantry then clear
-              if (!isPantryMode) {
-                ref
-                    .read(ingredientDetectionProvider.notifier)
-                    .clearIngredients();
-              }
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('Take New Photo'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }

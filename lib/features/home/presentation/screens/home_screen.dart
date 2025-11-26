@@ -30,12 +30,25 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
 
-    if (ingredients != null && ingredients.isNotEmpty && context.mounted) {
-      // Send to Brain's sessionIngredients
-      ref.read(sessionIngredientsProvider.notifier).setIngredients(ingredients);
+    if (context.mounted) {
+      if (ingredients != null && ingredients.isNotEmpty) {
+        // Send to Brain's sessionIngredients
+        ref.read(sessionIngredientsProvider.notifier).setIngredients(ingredients);
 
-      // Switch to Recipes tab
-      switchToRecipeTab(context);
+        // Switch to Recipes tab
+        switchToRecipeTab(context);
+      } else if (ingredients != null && ingredients.isEmpty) {
+        // No ingredients detected - offer manual entry with retry option
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => const QuickManualInputSheet(
+            showRetryCamera: true,
+          ),
+        );
+      }
+      // If ingredients is null, user cancelled - do nothing
     }
   }
 

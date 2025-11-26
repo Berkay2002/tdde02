@@ -53,47 +53,66 @@ class _MyPantryScreenState extends ConsumerState<MyPantryScreen> {
 
     // If camera detected ingredients, navigate to detection screen for review
     if (cameraResult == true && mounted) {
-      final confirmed = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              const IngredientDetectionScreen(isPantryMode: true),
-        ),
-      );
+      bool shouldRetry = true;
+      while (shouldRetry && mounted) {
+        final confirmed = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                const IngredientDetectionScreen(isPantryMode: true),
+          ),
+        );
 
-      // If user confirmed, add ingredients to pantry
-      if (confirmed == true && mounted) {
-        final detectionState = ref
-            .read(ingredientDetectionProvider)
-            .detectedIngredients;
+        // If user confirmed, add ingredients to pantry
+        if (confirmed == true && mounted) {
+          final detectionState = ref
+              .read(ingredientDetectionProvider)
+              .detectedIngredients;
 
-        if (detectionState != null && detectionState.detectedItems.isNotEmpty) {
-          // Convert DetectedIngredientItems to pantry format with confirmed quantities
-          final pantryData = detectionState.detectedItems.map((item) {
-            return {
-              'name': item.name,
-              'quantity': item.finalQuantity,
-              'unit': item.finalUnit,
-              'category': item.category,
-              'freshness': item.freshness,
-            };
-          }).toList();
+          if (detectionState != null && detectionState.detectedItems.isNotEmpty) {
+            // Convert DetectedIngredientItems to pantry format with confirmed quantities
+            final pantryData = detectionState.detectedItems.map((item) {
+              return {
+                'name': item.name,
+                'quantity': item.finalQuantity,
+                'unit': item.finalUnit,
+                'category': item.category,
+                'freshness': item.freshness,
+              };
+            }).toList();
 
-          ref
-              .read(pantryIngredientsProvider.notifier)
-              .addIngredientsStructured(pantryData);
+            ref
+                .read(pantryIngredientsProvider.notifier)
+                .addIngredientsStructured(pantryData);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '${pantryData.length} ingredient(s) added to pantry!',
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${pantryData.length} ingredient(s) added to pantry!',
+                ),
+                backgroundColor: Colors.green,
               ),
-              backgroundColor: Colors.green,
+            );
+
+            // Clear the detection state
+            ref.read(ingredientDetectionProvider.notifier).clearIngredients();
+          }
+          shouldRetry = false;
+        } else if (confirmed == false && mounted) {
+          // User wants to retake photo - launch camera again
+          final retryCameraResult = await Navigator.push<dynamic>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CameraScreen(mode: CameraMode.pantryAdd),
             ),
           );
-
-          // Clear the detection state
-          ref.read(ingredientDetectionProvider.notifier).clearIngredients();
+          // If no ingredients detected on retry, exit the loop
+          if (retryCameraResult != true) {
+            shouldRetry = false;
+          }
+        } else {
+          // User cancelled
+          shouldRetry = false;
         }
       }
     }

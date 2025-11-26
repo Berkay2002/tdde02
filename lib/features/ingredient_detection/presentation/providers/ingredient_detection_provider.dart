@@ -156,11 +156,46 @@ class IngredientDetection extends _$IngredientDetection {
   /// Add a new ingredient manually
   void addIngredient(String ingredient) {
     final current = state.detectedIngredients;
-    if (current == null) return;
+
+    // If no detection state exists, create a new one
+    if (current == null) {
+      final newDetection = DetectedIngredients(
+        imageId: 'manual_${DateTime.now().millisecondsSinceEpoch}',
+        detectionTime: DateTime.now(),
+        ingredients: [ingredient],
+        detectedItems: [
+          DetectedIngredientItem(
+            name: ingredient,
+            quantity: '1',
+            unit: 'unit',
+            quantityConfidence: QuantityConfidence.high,
+            needsUserClarification: false,
+          ),
+        ],
+        isManuallyEdited: true,
+      );
+      state = state.copyWith(detectedIngredients: newDetection);
+      print(
+        'IngredientDetection: Created new detection with ingredient: $ingredient',
+      );
+      return;
+    }
 
     final updatedIngredients = [...current.ingredients, ingredient];
+    final updatedItems = [
+      ...current.detectedItems,
+      DetectedIngredientItem(
+        name: ingredient,
+        quantity: '1',
+        unit: 'unit',
+        quantityConfidence: QuantityConfidence.high,
+        needsUserClarification: false,
+      ),
+    ];
+
     final updated = current.copyWith(
       ingredients: updatedIngredients,
+      detectedItems: updatedItems,
       isManuallyEdited: true,
     );
 

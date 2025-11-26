@@ -184,27 +184,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         if (mounted) {
           Navigator.pop(context); // Close loading dialog
 
-          if (success) {
-            // Pop camera screen and signal success
-            print('Camera: Detection successful, navigating back with true');
-            Navigator.pop(context, true);
-          } else {
-            // Read the error message from state
-            final detectionState = ref.read(ingredientDetectionProvider);
-            final errorMessage =
-                detectionState.errorMessage ??
-                'No ingredients detected. Please try again.';
-
-            print('Camera: Detection failed - $errorMessage');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(errorMessage),
-                backgroundColor: detectionState.errorMessage != null
-                    ? Colors.red
-                    : Colors.orange,
-              ),
-            );
-          }
+          // Always navigate to detection screen, regardless of success
+          // This allows users to manually add/edit ingredients
+          print('Camera: Navigating to detection screen (success: $success)');
+          Navigator.pop(context, true);
         }
       } else {
         // Use simple detection for quick scan mode
@@ -216,17 +199,18 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         if (mounted) {
           Navigator.pop(context); // Close loading dialog
 
-          if (ingredients.isNotEmpty) {
-            // Return the ingredients list
-            Navigator.pop(context, ingredients);
-          } else {
-            // Show error if no ingredients detected
+          if (ingredients.isEmpty) {
+            // Show helpful message and return null to indicate no detection
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('No ingredients detected. Please try again.'),
-                backgroundColor: Colors.orange,
+                content: Text('No ingredients detected. Try manual entry instead.'),
+                duration: Duration(seconds: 3),
               ),
             );
+            Navigator.pop(context, null);
+          } else {
+            // Return detected ingredients
+            Navigator.pop(context, ingredients);
           }
         }
       }

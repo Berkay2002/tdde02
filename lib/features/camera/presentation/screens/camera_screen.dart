@@ -37,7 +37,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initializeCamera();
+    // Delay initialization to avoid modifying provider during build
+    Future.microtask(() => _initializeCamera());
   }
 
   @override
@@ -63,44 +64,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   }
 
   Future<void> _initializeCamera() async {
-    final hasPermission = await _permissionService.checkCameraPermission();
+    print('CameraScreen: Starting camera initialization...');
 
-    if (!hasPermission) {
-      final granted = await _permissionService.requestCameraPermission();
-      if (!granted) {
-        if (mounted) {
-          _showPermissionDeniedDialog();
-        }
-        return;
-      }
-    }
-
+    // On iOS, the permission dialog appears when we try to access the camera
+    // So we'll try to initialize directly and handle any permission errors
+    print('CameraScreen: Initializing camera...');
     await ref.read(cameraNotifierProvider.notifier).initializeCamera();
-  }
-
-  void _showPermissionDeniedDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Camera Permission Required'),
-        content: const Text(
-          'This app needs camera access to scan your fridge. Please grant camera permission in settings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _permissionService.openAppSettings();
-            },
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
-    );
+    print('CameraScreen: Camera initialization complete');
   }
 
   Future<void> _handleCapture() async {
@@ -331,11 +301,20 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _initializeCamera,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
-                ),
+                if (cameraState.errorMessage?.contains('permission') ?? false)
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      await _permissionService.openAppSettings();
+                    },
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Open Settings'),
+                  )
+                else
+                  ElevatedButton.icon(
+                    onPressed: _initializeCamera,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
               ],
             ),
           ),
@@ -351,10 +330,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         }
 
         return Stack(
+          fit: StackFit.expand,
           children: [
-            Center(
-              child: AspectRatio(
-                aspectRatio: controller.value.aspectRatio,
+            // Use FittedBox to prevent stretching
+            FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: controller.value.previewSize!.height,
+                height: controller.value.previewSize!.width,
                 child: CameraPreview(controller),
               ),
             ),

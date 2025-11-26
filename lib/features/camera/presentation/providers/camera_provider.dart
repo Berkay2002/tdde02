@@ -50,20 +50,40 @@ class CameraNotifier extends _$CameraNotifier {
   }
 
   Future<void> initializeCamera() async {
+    print('CameraProvider: Setting status to loading');
     state = state.copyWith(status: CameraStatus.loading);
 
     try {
-      final cameras = await availableCameras();
+      print('CameraProvider: Getting available cameras...');
+
+      // Add timeout to prevent hanging
+      final cameras = await availableCameras().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print(
+            'CameraProvider: Timeout getting cameras - permission might be denied',
+          );
+          throw Exception(
+            'Camera access timed out. Please check permissions in Settings.',
+          );
+        },
+      );
+
+      print('CameraProvider: Found ${cameras.length} cameras');
 
       if (cameras.isEmpty) {
+        print('CameraProvider: No cameras available');
         state = state.copyWith(
           status: CameraStatus.error,
-          errorMessage: 'No cameras available',
+          errorMessage: 'No cameras available on this device',
         );
         return;
       }
 
       final camera = cameras.first;
+      print(
+        'CameraProvider: Initializing camera controller for ${camera.name}...',
+      );
 
       final controller = CameraController(
         camera,
@@ -72,7 +92,17 @@ class CameraNotifier extends _$CameraNotifier {
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
 
-      await controller.initialize();
+      print('CameraProvider: Controller created, initializing...');
+      await controller.initialize().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print('CameraProvider: Timeout initializing controller');
+          throw Exception(
+            'Camera initialization timed out. Please check permissions in Settings.',
+          );
+        },
+      );
+      print('CameraProvider: Controller initialized successfully');
 
       await controller.setFlashMode(FlashMode.off);
 
@@ -82,10 +112,25 @@ class CameraNotifier extends _$CameraNotifier {
         availableCameras: cameras,
         errorMessage: null,
       );
+      print('CameraProvider: Camera ready');
     } catch (e) {
+      print('CameraProvider: Error initializing camera: $e');
+
+      // Check if it's a permission error
+      String errorMessage;
+      if (e.toString().contains('permission') ||
+          e.toString().contains('authorized') ||
+          e.toString().contains('CameraAccessDenied') ||
+          e.toString().contains('timed out')) {
+        errorMessage =
+            'Camera permission denied. Please grant camera access in Settings.';
+      } else {
+        errorMessage = 'Failed to initialize camera: ${e.toString()}';
+      }
+
       state = state.copyWith(
         status: CameraStatus.error,
-        errorMessage: 'Failed to initialize camera: ${e.toString()}',
+        errorMessage: errorMessage,
       );
     }
   }

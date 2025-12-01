@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/providers/app_state_provider.dart';
 import '../../../../shared/providers/theme_provider.dart';
+import '../../../../shared/widgets/onboarding_debug_panel.dart';
 import '../widgets/profile_header_card.dart';
 import '../widgets/cooking_stats_card.dart';
 import '../widgets/dietary_restrictions_card.dart';
@@ -28,6 +29,10 @@ class ProfileScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Debug panel
+          const OnboardingDebugPanel(),
+          const SizedBox(height: 16),
+
           // Profile header with stats
           const ProfileHeaderCard(),
           const SizedBox(height: 16),

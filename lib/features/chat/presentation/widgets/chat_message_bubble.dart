@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/chat_message.dart';
 
 /// Widget for displaying a single chat message bubble
@@ -91,6 +93,22 @@ class ChatMessageBubble extends StatelessWidget {
                           color: _getTextColor(theme, isUser, isError),
                           fontSize: 15,
                           height: 1.4,
+                        ),
+                      ),
+                    if (message.groundingMetadata != null)
+                      _buildGroundingSources(
+                        context,
+                        message.groundingMetadata!,
+                      ),
+                    if (message.groundingMetadata != null &&
+                        message.groundingMetadata!['searchEntryPoint'] != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: HtmlWidget(
+                          message.groundingMetadata!['searchEntryPoint'],
+                          onTapUrl: (url) async {
+                            return await launchUrl(Uri.parse(url));
+                          },
                         ),
                       ),
                     if (!message.isStreaming) ...[
@@ -224,6 +242,48 @@ class ChatMessageBubble extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildGroundingSources(
+    BuildContext context,
+    Map<String, dynamic> metadata,
+  ) {
+    final chunks = metadata['groundingChunks'] as List?;
+    if (chunks == null || chunks.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Sources',
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: chunks.map<Widget>((chunk) {
+              final uri = chunk['uri'] as String?;
+              final title = chunk['title'] as String? ?? 'Source';
+              if (uri == null) return const SizedBox.shrink();
+
+              return ActionChip(
+                label: Text(title, style: const TextStyle(fontSize: 10)),
+                avatar: const Icon(Icons.link, size: 12),
+                onPressed: () => launchUrl(Uri.parse(uri)),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

@@ -156,14 +156,21 @@ class ChatNotifier extends StateNotifier<ChatState> {
       );
 
       String accumulatedContent = '';
+      Map<String, dynamic>? lastMetadata;
 
       await for (final chunk in stream) {
-        accumulatedContent += chunk;
+        accumulatedContent += chunk.text;
+        if (chunk.groundingMetadata != null) {
+          lastMetadata = chunk.groundingMetadata;
+        }
 
         // Update the streaming message with accumulated content
         final updatedMessages = state.messages.map((m) {
           if (m.id == assistantMessage.id) {
-            return m.copyWith(content: accumulatedContent);
+            return m.copyWith(
+              content: accumulatedContent,
+              groundingMetadata: lastMetadata,
+            );
           }
           return m;
         }).toList();

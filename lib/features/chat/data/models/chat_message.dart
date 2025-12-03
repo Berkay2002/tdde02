@@ -22,6 +22,7 @@ class ChatMessage {
   final List<String>? attachedRecipeIds; // References to recipes in context
   final bool isStreaming; // True while AI is still generating
   final bool isError; // True if message represents an error
+  final Map<String, dynamic>? groundingMetadata; // Google Search grounding data
 
   const ChatMessage({
     required this.id,
@@ -31,6 +32,7 @@ class ChatMessage {
     this.attachedRecipeIds,
     this.isStreaming = false,
     this.isError = false,
+    this.groundingMetadata,
   });
 
   /// Create a user message
@@ -51,6 +53,7 @@ class ChatMessage {
   factory ChatMessage.assistant({
     required String content,
     bool isStreaming = false,
+    Map<String, dynamic>? groundingMetadata,
   }) {
     return ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -58,6 +61,7 @@ class ChatMessage {
       content: content,
       timestamp: DateTime.now(),
       isStreaming: isStreaming,
+      groundingMetadata: groundingMetadata,
     );
   }
 
@@ -82,6 +86,7 @@ class ChatMessage {
       'attachedRecipeIds': attachedRecipeIds,
       'isStreaming': isStreaming,
       'isError': isError,
+      'groundingMetadata': groundingMetadata,
     };
   }
 
@@ -97,6 +102,7 @@ class ChatMessage {
           .toList(),
       isStreaming: json['isStreaming'] as bool? ?? false,
       isError: json['isError'] as bool? ?? false,
+      groundingMetadata: json['groundingMetadata'] as Map<String, dynamic>?,
     );
   }
 
@@ -109,6 +115,7 @@ class ChatMessage {
     List<String>? attachedRecipeIds,
     bool? isStreaming,
     bool? isError,
+    Map<String, dynamic>? groundingMetadata,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -118,6 +125,7 @@ class ChatMessage {
       attachedRecipeIds: attachedRecipeIds ?? this.attachedRecipeIds,
       isStreaming: isStreaming ?? this.isStreaming,
       isError: isError ?? this.isError,
+      groundingMetadata: groundingMetadata ?? this.groundingMetadata,
     );
   }
 

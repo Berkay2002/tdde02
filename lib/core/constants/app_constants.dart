@@ -5,11 +5,10 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // AI Model Configuration - Firebase AI with Gemini API
-  static const String geminiModel = 'gemini-2.5-flash'; // Multimodal model
+  static const String geminiModel = 'gemini-3-pro-preview'; // Multimodal model
   static const int maxTokens = 8196; // Increased to prevent truncation
   static const int topK = 40;
-  static const double temperature =
-      0.7; // Slightly lower for more consistent results
+  static const double temperature = 1.0; // Recommended for Gemini 3 Pro Preview
 
   // Image Processing
   static const int imageSize = 512; // 512x512 resolution for Gemma 3n

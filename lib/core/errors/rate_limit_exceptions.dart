@@ -1,4 +1,6 @@
 /// Rate limiting exceptions for API quota management
+///
+/// Uses 5-hour windows aligned with meal cycles (breakfast → lunch → dinner)
 class RateLimitException implements Exception {
   final String message;
   final String type;
@@ -20,29 +22,34 @@ class RateLimitException implements Exception {
   /// Get user-friendly error message with helpful context
   String get userMessage {
     final resetTime = _formatDuration(resetIn);
-    return '$message\n\nYou\'ve used $currentCount of $maxAllowed allowed $type.\nLimit resets in $resetTime.';
+    return '$message\n\nYou\'ve used $currentCount of $maxAllowed $type.\nMore credits available in $resetTime.';
   }
 
   String _formatDuration(Duration duration) {
     if (duration.inHours > 0) {
-      return '${duration.inHours} hour${duration.inHours != 1 ? 's' : ''}';
+      final hours = duration.inHours;
+      final minutes = duration.inMinutes % 60;
+      if (minutes > 0) {
+        return '$hours hour${hours != 1 ? 's' : ''} and $minutes minute${minutes != 1 ? 's' : ''}';
+      }
+      return '$hours hour${hours != 1 ? 's' : ''}';
     } else if (duration.inMinutes > 0) {
       return '${duration.inMinutes} minute${duration.inMinutes != 1 ? 's' : ''}';
     } else {
-      return '${duration.inSeconds} second${duration.inSeconds != 1 ? 's' : ''}';
+      return 'less than a minute';
     }
   }
 }
 
-/// Thrown when hourly recipe generation limit is exceeded
-class RecipeGenerationHourlyLimitException extends RateLimitException {
-  RecipeGenerationHourlyLimitException({
+/// Thrown when window-based recipe generation limit is exceeded (5-hour window)
+class RecipeGenerationWindowLimitException extends RateLimitException {
+  RecipeGenerationWindowLimitException({
     required super.currentCount,
     required super.maxAllowed,
     required super.resetIn,
   }) : super(
-         message: 'Recipe generation hourly limit exceeded',
-         type: 'recipe generations per hour',
+         message: 'Recipe credits used up for now',
+         type: 'recipes this session',
        );
 }
 
@@ -52,21 +59,18 @@ class RecipeGenerationDailyLimitException extends RateLimitException {
     required super.currentCount,
     required super.maxAllowed,
     required super.resetIn,
-  }) : super(
-         message: 'Recipe generation daily limit exceeded',
-         type: 'recipe generations per day',
-       );
+  }) : super(message: 'Daily recipe limit reached', type: 'recipes today');
 }
 
-/// Thrown when hourly ingredient detection limit is exceeded
-class IngredientDetectionHourlyLimitException extends RateLimitException {
-  IngredientDetectionHourlyLimitException({
+/// Thrown when window-based ingredient detection limit is exceeded (5-hour window)
+class IngredientDetectionWindowLimitException extends RateLimitException {
+  IngredientDetectionWindowLimitException({
     required super.currentCount,
     required super.maxAllowed,
     required super.resetIn,
   }) : super(
-         message: 'Ingredient detection hourly limit exceeded',
-         type: 'ingredient scans per hour',
+         message: 'Scan credits used up for now',
+         type: 'scans this session',
        );
 }
 
@@ -76,8 +80,32 @@ class IngredientDetectionDailyLimitException extends RateLimitException {
     required super.currentCount,
     required super.maxAllowed,
     required super.resetIn,
+  }) : super(message: 'Daily scan limit reached', type: 'scans today');
+}
+
+/// Thrown when window-based chat message limit is exceeded (5-hour window)
+class ChatMessageWindowLimitException extends RateLimitException {
+  ChatMessageWindowLimitException({
+    required super.currentCount,
+    required super.maxAllowed,
+    required super.resetIn,
   }) : super(
-         message: 'Ingredient detection daily limit exceeded',
-         type: 'ingredient scans per day',
+         message: 'Chat credits used up for now',
+         type: 'messages this session',
        );
 }
+
+/// Thrown when daily chat message limit is exceeded
+class ChatMessageDailyLimitException extends RateLimitException {
+  ChatMessageDailyLimitException({
+    required super.currentCount,
+    required super.maxAllowed,
+    required super.resetIn,
+  }) : super(message: 'Daily chat limit reached', type: 'messages today');
+}
+
+// Legacy aliases for backward compatibility
+typedef RecipeGenerationHourlyLimitException =
+    RecipeGenerationWindowLimitException;
+typedef IngredientDetectionHourlyLimitException =
+    IngredientDetectionWindowLimitException;

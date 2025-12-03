@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyA7fjSfxdGciLM6fbKrodhG5-rNEJoQDik',
-    appId: '1:593064071345:android:65206fcaee9311bbb71290',
+    appId: '1:593064071345:android:b5fdfdbc53b59dceb71290',
     messagingSenderId: '593064071345',
     projectId: 'eternal-water-477911-m6',
     storageBucket: 'eternal-water-477911-m6.firebasestorage.app',

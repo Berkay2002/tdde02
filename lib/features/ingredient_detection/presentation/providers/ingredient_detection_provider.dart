@@ -82,7 +82,11 @@ class IngredientDetection extends _$IngredientDetection {
 
       // Use structured detection with confidence scoring
       final structuredIngredients = await inferenceService
-          .detectIngredientsStructured(processedImage, user.uid);
+          .detectIngredientsStructured(
+            processedImage,
+            user.uid,
+            userEmail: user.email,
+          );
 
       print(
         'IngredientDetection: Received ${structuredIngredients.length} structured ingredients',

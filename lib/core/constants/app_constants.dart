@@ -1,7 +1,7 @@
 /// Application-wide constants
 class AppConstants {
   // App Info
-  static const String appName = 'AI Recipe Generator';
+  static const String appName = 'Snapgredient';
   static const String appVersion = '1.0.0';
 
   // AI Model Configuration - Firebase AI with Gemini API
@@ -39,17 +39,44 @@ class AppConstants {
   static const String hivePreferencesBox = 'preferences_box';
   static const int cacheTtlDays = 7; // Recipe cache time-to-live
 
-  // Rate Limiting (Beta - Generous limits for select testers)
-  // These limits prevent abuse while allowing genuine exploration
-  static const int maxRecipeGenerationsPerHour = 20; // ~1 every 3 minutes
-  static const int maxRecipeGenerationsPerDay = 100; // ~4 per hour sustained
-  static const int maxIngredientDetectionsPerHour =
-      30; // Higher for camera retries
-  static const int maxIngredientDetectionsPerDay = 150;
-  // Gemini API free tier: 15 RPM, 1,500 RPD
-  // With ~50 beta users: 100 recipes/day/user = 5,000 potential (over limit)
-  // Caching reduces actual API calls by ~30%, so 3,500 calls
-  // This is manageable with staggered usage patterns
+  // Rate Limiting (Production - Meal-based windows)
+  // 5-hour windows align with natural meal prep cycles (breakfast → lunch → dinner)
+  // This encourages spread usage throughout the day rather than bursts
+  static const int rateLimitWindowHours = 5; // Reset every 5 hours
+  static const int maxRecipeGenerationsPerWindow =
+      5; // 5 recipes per 5-hour window
+  static const int maxRecipeGenerationsPerDay =
+      15; // ~3 meals × 5 recipe options
+  static const int maxIngredientDetectionsPerWindow =
+      8; // Allows retries/multiple items
+  static const int maxIngredientDetectionsPerDay = 25;
+  // With 5 recipes per window, users can explore options for each meal
+  // Daily cap of 15 prevents abuse while being generous for genuine use
+  // Gemini API free tier: 15 RPM, 1,500 RPD - these limits stay well under
+
+  // Chat Rate Limits (Ask Chef chatbot)
+  static const int maxChatMessagesPerWindow =
+      20; // 20 messages per 5-hour window
+  static const int maxChatMessagesPerDay = 50; // 50 messages per day
+
+  // Pro User Rate Limits (Beta testers & approved users)
+  // Very generous limits for trusted users who filled in the form
+  static const int proMaxRecipeGenerationsPerWindow = 50;
+  static const int proMaxRecipeGenerationsPerDay = 200;
+  static const int proMaxIngredientDetectionsPerWindow = 100;
+  static const int proMaxIngredientDetectionsPerDay = 300;
+  static const int proMaxChatMessagesPerWindow = 200;
+  static const int proMaxChatMessagesPerDay = 500;
+
+  // Pro Users List (manually managed - add beta testers here)
+  // These users get pro limits. Add emails in lowercase.
+  static const List<String> proUserEmails = [
+    // App owner/developer
+    'berkayorhan@hotmail.se',
+    // Beta testers - add emails here after form submission
+    // 'tester1@example.com',
+    // 'tester2@example.com',
+  ];
 
   // Dietary Restrictions
   static const List<String> dietaryRestrictions = [

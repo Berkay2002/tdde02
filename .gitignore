@@ -74,3 +74,8 @@ assets/models/*.tflite
 assets/models/*.bin
 assets/models/*.gguf
 assets/models/*.task
+
+# Keystore and signing
+android/key.properties
+*.jks
+*.keystore

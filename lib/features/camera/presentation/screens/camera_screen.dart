@@ -194,6 +194,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         final ingredients = await aiService.detectIngredients(
           processedBytes,
           user.uid,
+          userEmail: user.email,
         );
 
         if (mounted) {

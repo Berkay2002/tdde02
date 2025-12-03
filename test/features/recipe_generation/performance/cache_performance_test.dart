@@ -1,6 +1,6 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/recipe_generation/data/repositories/recipe_repository_impl.dart';
+import 'package:snapgredient/features/recipe_generation/data/repositories/recipe_repository_impl.dart';
 
 /// Performance benchmarking tests for recipe caching
 ///

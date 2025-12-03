@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/recipe_generation/data/models/recipe_cache_model.dart';
+import 'package:snapgredient/features/recipe_generation/data/models/recipe_cache_model.dart';
 
 void main() {
   group('RecipeCacheModel', () {

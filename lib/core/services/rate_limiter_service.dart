@@ -4,25 +4,67 @@ import '../errors/rate_limit_exceptions.dart';
 
 /// Service for enforcing user-level rate limits on Gemini API calls
 ///
-/// Tracks usage in Firestore `user_usage` collection with hourly and daily counters.
-/// Resets counters automatically based on timestamps.
+/// Uses 5-hour windows aligned with meal cycles (breakfast → lunch → dinner)
+/// plus daily caps. Tracks usage in Firestore `user_usage` collection.
+///
+/// **Pro Users**: Beta testers and approved users (via email whitelist) get
+/// significantly higher limits. See [AppConstants.proUserEmails].
 class RateLimiterService {
   final FirebaseFirestore _firestore;
 
   RateLimiterService(this._firestore);
 
-  /// Check if user can generate a recipe (enforces hourly and daily limits)
+  /// Check if an email belongs to a Pro user (beta tester / approved user)
+  static bool isProUser(String? email) {
+    if (email == null || email.isEmpty) return false;
+    return AppConstants.proUserEmails.contains(email.toLowerCase());
+  }
+
+  /// Get the appropriate limits based on Pro status
+  static Map<String, int> getLimitsForUser(String? email) {
+    if (isProUser(email)) {
+      return {
+        'recipe_window': AppConstants.proMaxRecipeGenerationsPerWindow,
+        'recipe_daily': AppConstants.proMaxRecipeGenerationsPerDay,
+        'detection_window': AppConstants.proMaxIngredientDetectionsPerWindow,
+        'detection_daily': AppConstants.proMaxIngredientDetectionsPerDay,
+        'chat_window': AppConstants.proMaxChatMessagesPerWindow,
+        'chat_daily': AppConstants.proMaxChatMessagesPerDay,
+      };
+    }
+    return {
+      'recipe_window': AppConstants.maxRecipeGenerationsPerWindow,
+      'recipe_daily': AppConstants.maxRecipeGenerationsPerDay,
+      'detection_window': AppConstants.maxIngredientDetectionsPerWindow,
+      'detection_daily': AppConstants.maxIngredientDetectionsPerDay,
+      'chat_window': AppConstants.maxChatMessagesPerWindow,
+      'chat_daily': AppConstants.maxChatMessagesPerDay,
+    };
+  }
+
+  /// Check if user can generate a recipe (enforces window and daily limits)
   ///
-  /// Throws [RecipeGenerationHourlyLimitException] or [RecipeGenerationDailyLimitException]
+  /// [userEmail] is optional but enables Pro user detection for higher limits.
+  /// Throws [RecipeGenerationWindowLimitException] or [RecipeGenerationDailyLimitException]
   /// if limit exceeded.
-  Future<void> checkRecipeGenerationLimit(String userId) async {
+  Future<void> checkRecipeGenerationLimit(
+    String userId, {
+    String? userEmail,
+  }) async {
+    final limits = getLimitsForUser(userEmail);
+    final isPro = isProUser(userEmail);
+
+    if (isPro) {
+      print('[RateLimiter] Pro user detected: $userEmail');
+    }
+
     await _checkLimit(
       userId: userId,
       actionType: 'recipe_generation',
-      hourlyLimit: AppConstants.maxRecipeGenerationsPerHour,
-      dailyLimit: AppConstants.maxRecipeGenerationsPerDay,
-      hourlyExceptionBuilder: (current, max, resetIn) =>
-          RecipeGenerationHourlyLimitException(
+      windowLimit: limits['recipe_window']!,
+      dailyLimit: limits['recipe_daily']!,
+      windowExceptionBuilder: (current, max, resetIn) =>
+          RecipeGenerationWindowLimitException(
             currentCount: current,
             maxAllowed: max,
             resetIn: resetIn,
@@ -36,18 +78,29 @@ class RateLimiterService {
     );
   }
 
-  /// Check if user can detect ingredients (enforces hourly and daily limits)
+  /// Check if user can detect ingredients (enforces window and daily limits)
   ///
-  /// Throws [IngredientDetectionHourlyLimitException] or [IngredientDetectionDailyLimitException]
+  /// [userEmail] is optional but enables Pro user detection for higher limits.
+  /// Throws [IngredientDetectionWindowLimitException] or [IngredientDetectionDailyLimitException]
   /// if limit exceeded.
-  Future<void> checkIngredientDetectionLimit(String userId) async {
+  Future<void> checkIngredientDetectionLimit(
+    String userId, {
+    String? userEmail,
+  }) async {
+    final limits = getLimitsForUser(userEmail);
+    final isPro = isProUser(userEmail);
+
+    if (isPro) {
+      print('[RateLimiter] Pro user detected: $userEmail');
+    }
+
     await _checkLimit(
       userId: userId,
       actionType: 'ingredient_detection',
-      hourlyLimit: AppConstants.maxIngredientDetectionsPerHour,
-      dailyLimit: AppConstants.maxIngredientDetectionsPerDay,
-      hourlyExceptionBuilder: (current, max, resetIn) =>
-          IngredientDetectionHourlyLimitException(
+      windowLimit: limits['detection_window']!,
+      dailyLimit: limits['detection_daily']!,
+      windowExceptionBuilder: (current, max, resetIn) =>
+          IngredientDetectionWindowLimitException(
             currentCount: current,
             maxAllowed: max,
             resetIn: resetIn,
@@ -71,6 +124,44 @@ class RateLimiterService {
     await _incrementCounter(userId, 'ingredient_detection');
   }
 
+  /// Check if user can send a chat message (enforces window and daily limits)
+  ///
+  /// [userEmail] is optional but enables Pro user detection for higher limits.
+  /// Throws [ChatMessageWindowLimitException] or [ChatMessageDailyLimitException]
+  /// if limit exceeded.
+  Future<void> checkChatMessageLimit(String userId, {String? userEmail}) async {
+    final limits = getLimitsForUser(userEmail);
+    final isPro = isProUser(userEmail);
+
+    if (isPro) {
+      print('[RateLimiter] Pro user detected for chat: $userEmail');
+    }
+
+    await _checkLimit(
+      userId: userId,
+      actionType: 'chat_message',
+      windowLimit: limits['chat_window']!,
+      dailyLimit: limits['chat_daily']!,
+      windowExceptionBuilder: (current, max, resetIn) =>
+          ChatMessageWindowLimitException(
+            currentCount: current,
+            maxAllowed: max,
+            resetIn: resetIn,
+          ),
+      dailyExceptionBuilder: (current, max, resetIn) =>
+          ChatMessageDailyLimitException(
+            currentCount: current,
+            maxAllowed: max,
+            resetIn: resetIn,
+          ),
+    );
+  }
+
+  /// Increment chat message counter
+  Future<void> incrementChatMessage(String userId) async {
+    await _incrementCounter(userId, 'chat_message');
+  }
+
   /// Get current usage stats for a user (for UI display)
   Future<Map<String, dynamic>> getUserUsageStats(String userId) async {
     try {
@@ -81,10 +172,11 @@ class RateLimiterService {
 
       if (!doc.exists) {
         return {
-          'recipe_generation_hourly': 0,
+          'recipe_generation_window': 0,
           'recipe_generation_daily': 0,
-          'ingredient_detection_hourly': 0,
+          'ingredient_detection_window': 0,
           'ingredient_detection_daily': 0,
+          'window_hours': AppConstants.rateLimitWindowHours,
         };
       }
 
@@ -92,48 +184,50 @@ class RateLimiterService {
       final now = DateTime.now();
 
       // Reset counters if expired
-      final hourlyResetAt = (data['hourly_reset_at'] as Timestamp?)?.toDate();
+      final windowResetAt = (data['window_reset_at'] as Timestamp?)?.toDate();
       final dailyResetAt = (data['daily_reset_at'] as Timestamp?)?.toDate();
 
-      final hourlyExpired = hourlyResetAt == null || now.isAfter(hourlyResetAt);
+      final windowExpired = windowResetAt == null || now.isAfter(windowResetAt);
       final dailyExpired = dailyResetAt == null || now.isAfter(dailyResetAt);
 
       return {
-        'recipe_generation_hourly': hourlyExpired
+        'recipe_generation_window': windowExpired
             ? 0
-            : (data['recipe_generation_hourly'] ?? 0),
+            : (data['recipe_generation_window'] ?? 0),
         'recipe_generation_daily': dailyExpired
             ? 0
             : (data['recipe_generation_daily'] ?? 0),
-        'ingredient_detection_hourly': hourlyExpired
+        'ingredient_detection_window': windowExpired
             ? 0
-            : (data['ingredient_detection_hourly'] ?? 0),
+            : (data['ingredient_detection_window'] ?? 0),
         'ingredient_detection_daily': dailyExpired
             ? 0
             : (data['ingredient_detection_daily'] ?? 0),
-        'hourly_reset_at': hourlyResetAt,
+        'window_reset_at': windowResetAt,
         'daily_reset_at': dailyResetAt,
+        'window_hours': AppConstants.rateLimitWindowHours,
       };
     } catch (e) {
       print('[RateLimiter] Failed to get usage stats: $e');
       // Return zeros on error (graceful degradation)
       return {
-        'recipe_generation_hourly': 0,
+        'recipe_generation_window': 0,
         'recipe_generation_daily': 0,
-        'ingredient_detection_hourly': 0,
+        'ingredient_detection_window': 0,
         'ingredient_detection_daily': 0,
+        'window_hours': AppConstants.rateLimitWindowHours,
       };
     }
   }
 
-  /// Core rate limiting logic
+  /// Core rate limiting logic using 5-hour windows
   Future<void> _checkLimit({
     required String userId,
     required String actionType,
-    required int hourlyLimit,
+    required int windowLimit,
     required int dailyLimit,
     required RateLimitException Function(int, int, Duration)
-    hourlyExceptionBuilder,
+    windowExceptionBuilder,
     required RateLimitException Function(int, int, Duration)
     dailyExceptionBuilder,
   }) async {
@@ -144,7 +238,8 @@ class RateLimiterService {
       final doc = await docRef.get();
 
       final now = DateTime.now();
-      final hourlyResetAt = now.add(const Duration(hours: 1));
+      final windowHours = AppConstants.rateLimitWindowHours;
+      final windowResetAt = now.add(Duration(hours: windowHours));
       final dailyResetAt = DateTime(
         now.year,
         now.month,
@@ -155,9 +250,9 @@ class RateLimiterService {
         // First usage - create document with initial counters
         await docRef.set({
           'user_id': userId,
-          '${actionType}_hourly': 0,
+          '${actionType}_window': 0,
           '${actionType}_daily': 0,
-          'hourly_reset_at': Timestamp.fromDate(hourlyResetAt),
+          'window_reset_at': Timestamp.fromDate(windowResetAt),
           'daily_reset_at': Timestamp.fromDate(dailyResetAt),
           'last_updated': FieldValue.serverTimestamp(),
         });
@@ -167,23 +262,23 @@ class RateLimiterService {
       final data = doc.data()!;
 
       // Get current counters
-      int hourlyCount = data['${actionType}_hourly'] ?? 0;
+      int windowCount = data['${actionType}_window'] ?? 0;
       int dailyCount = data['${actionType}_daily'] ?? 0;
 
       // Get reset timestamps
-      final storedHourlyResetAt = (data['hourly_reset_at'] as Timestamp?)
+      final storedWindowResetAt = (data['window_reset_at'] as Timestamp?)
           ?.toDate();
       final storedDailyResetAt = (data['daily_reset_at'] as Timestamp?)
           ?.toDate();
 
       // Check if counters need to be reset
-      if (storedHourlyResetAt != null && now.isAfter(storedHourlyResetAt)) {
-        hourlyCount = 0;
-        // Also reset hourly counters for other action types
+      if (storedWindowResetAt != null && now.isAfter(storedWindowResetAt)) {
+        windowCount = 0;
+        // Also reset window counters for other action types
         await docRef.update({
-          'recipe_generation_hourly': 0,
-          'ingredient_detection_hourly': 0,
-          'hourly_reset_at': Timestamp.fromDate(hourlyResetAt),
+          'recipe_generation_window': 0,
+          'ingredient_detection_window': 0,
+          'window_reset_at': Timestamp.fromDate(windowResetAt),
           'last_updated': FieldValue.serverTimestamp(),
         });
       }
@@ -199,16 +294,16 @@ class RateLimiterService {
         });
       }
 
-      // Check hourly limit
-      if (hourlyCount >= hourlyLimit) {
-        final resetIn = storedHourlyResetAt != null
-            ? storedHourlyResetAt.difference(now)
-            : const Duration(hours: 1);
+      // Check window limit (5-hour window)
+      if (windowCount >= windowLimit) {
+        final resetIn = storedWindowResetAt != null
+            ? storedWindowResetAt.difference(now)
+            : Duration(hours: windowHours);
 
         print(
-          '[RateLimiter] Hourly limit exceeded for $actionType: $hourlyCount/$hourlyLimit',
+          '[RateLimiter] Window limit exceeded for $actionType: $windowCount/$windowLimit',
         );
-        throw hourlyExceptionBuilder(hourlyCount, hourlyLimit, resetIn);
+        throw windowExceptionBuilder(windowCount, windowLimit, resetIn);
       }
 
       // Check daily limit
@@ -225,7 +320,7 @@ class RateLimiterService {
 
       // All checks passed
       print(
-        '[RateLimiter] $actionType allowed: hourly=$hourlyCount/$hourlyLimit, daily=$dailyCount/$dailyLimit',
+        '[RateLimiter] $actionType allowed: window=$windowCount/$windowLimit, daily=$dailyCount/$dailyLimit',
       );
     } catch (e) {
       if (e is RateLimitException) {
@@ -245,7 +340,8 @@ class RateLimiterService {
       final doc = await docRef.get();
 
       final now = DateTime.now();
-      final hourlyResetAt = now.add(const Duration(hours: 1));
+      final windowHours = AppConstants.rateLimitWindowHours;
+      final windowResetAt = now.add(Duration(hours: windowHours));
       final dailyResetAt = DateTime(
         now.year,
         now.month,
@@ -256,9 +352,9 @@ class RateLimiterService {
         // Create initial document
         await docRef.set({
           'user_id': userId,
-          '${actionType}_hourly': 1,
+          '${actionType}_window': 1,
           '${actionType}_daily': 1,
-          'hourly_reset_at': Timestamp.fromDate(hourlyResetAt),
+          'window_reset_at': Timestamp.fromDate(windowResetAt),
           'daily_reset_at': Timestamp.fromDate(dailyResetAt),
           'last_updated': FieldValue.serverTimestamp(),
         });
@@ -267,7 +363,7 @@ class RateLimiterService {
 
       // Increment existing counters
       await docRef.update({
-        '${actionType}_hourly': FieldValue.increment(1),
+        '${actionType}_window': FieldValue.increment(1),
         '${actionType}_daily': FieldValue.increment(1),
         'last_updated': FieldValue.serverTimestamp(),
       });
@@ -283,7 +379,8 @@ class RateLimiterService {
   Future<void> resetUserLimits(String userId) async {
     try {
       final now = DateTime.now();
-      final hourlyResetAt = now.add(const Duration(hours: 1));
+      final windowHours = AppConstants.rateLimitWindowHours;
+      final windowResetAt = now.add(Duration(hours: windowHours));
       final dailyResetAt = DateTime(
         now.year,
         now.month,
@@ -295,11 +392,11 @@ class RateLimiterService {
           .doc(userId)
           .set({
             'user_id': userId,
-            'recipe_generation_hourly': 0,
+            'recipe_generation_window': 0,
             'recipe_generation_daily': 0,
-            'ingredient_detection_hourly': 0,
+            'ingredient_detection_window': 0,
             'ingredient_detection_daily': 0,
-            'hourly_reset_at': Timestamp.fromDate(hourlyResetAt),
+            'window_reset_at': Timestamp.fromDate(windowResetAt),
             'daily_reset_at': Timestamp.fromDate(dailyResetAt),
             'last_updated': FieldValue.serverTimestamp(),
           });

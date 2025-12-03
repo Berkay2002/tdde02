@@ -7,58 +7,26 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:593064071345:android:65206fcaee9311bbb71290",
+        "mobilesdk_app_id": "1:593064071345:android:b5fdfdbc53b59dceb71290",
         "android_client_info": {
-          "package_name": "com.example.flutter_application_1"
+          "package_name": "com.snapgredient.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "593064071345-7mpa66vkqcuoqnrtnuqqb4qndun6pv12.apps.googleusercontent.com",
+          "client_id": "593064071345-3bckgafh70v7ch1j6oca1ko7hvmhq5nn.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.flutter_application_1",
-            "certificate_hash": "ffc21f0313f4148582dbd2a9e3aa2a54950737fa"
+            "package_name": "com.snapgredient.app",
+            "certificate_hash": "36e8fbf90e5aec54ca04b3ec503983a9f0188b9f"
           }
         },
         {
-          "client_id": "593064071345-9dmitot32b4v9gprev0voun79lhfeblo.apps.googleusercontent.com",
+          "client_id": "593064071345-fhal7n7jmbskibbd5gr82eljt9j7fopj.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.flutter_application_1",
+            "package_name": "com.snapgredient.app",
             "certificate_hash": "32f486b0b2b428d220865a5c7941c9e161864cfa"
-          }
-        },
-        {
-          "client_id": "593064071345-ip3esbhtbei0tqnev9mj6df97qgn933d.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.flutter_application_1",
-            "certificate_hash": "fdba2362a998959d683b7d6c102916311f2a2c81"
-          }
-        },
-        {
-          "client_id": "593064071345-keujn4e9qim3i7t5b5fmujcgkroqevac.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.flutter_application_1",
-            "certificate_hash": "d5ddb205009679a5b010b4f739cb3890d5a14330"
-          }
-        },
-        {
-          "client_id": "593064071345-l272l0cko8dlpbsi4bk7g6f3ocfh4ka9.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.flutter_application_1",
-            "certificate_hash": "41d2995505cc7092a11373eaca7bf834ace1be20"
-          }
-        },
-        {
-          "client_id": "593064071345-l2i1ho4k3892v4eg22867nati375dvdq.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.flutter_application_1",
-            "certificate_hash": "119da7930922e10109411015444da9dc4fda66bb"
           }
         },
         {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -17,15 +19,17 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Enable App Check for security
-  // Development: Uses debug providers (requires debug token in Firebase Console)
-  // Production: Switch to AndroidProvider.playIntegrity and AppleProvider.appAttest
-  // To add debug token: Run app once, copy token from logs, add in Firebase Console
-  // await FirebaseAppCheck.instance.activate(
-  //   androidProvider: AndroidProvider.debug,
-  //   appleProvider: AppleProvider.debug,
-  // );
-  // await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+  // Enable App Check for security - REQUIRED for production
+  // This prevents unauthorized access to Firebase services including AI Logic
+  // Play Integrity is the recommended provider for production Android apps
+  await FirebaseAppCheck.instance.activate(
+    // Use debug provider in debug mode, Play Integrity in release
+    androidProvider: kDebugMode
+        ? AndroidProvider.debug
+        : AndroidProvider.playIntegrity,
+    appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+  );
+  await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
 
   // Note: Firebase AI (Gemini) is initialized lazily when GeminiAIService is first used
   // No upfront initialization needed - it will use Firebase credentials automatically

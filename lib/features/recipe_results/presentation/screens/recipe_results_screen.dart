@@ -120,12 +120,14 @@ class RecipeGenerationNotifier extends StateNotifier<AsyncValue<List<Recipe>>> {
       final recipesData = <Map<String, dynamic>>[];
       int successCount = 0;
       int failCount = 0;
+      final user = FirebaseAuth.instance.currentUser;
 
       for (int i = 0; i < 3; i++) {
         try {
           final recipeData = await aiService.generateRecipe(
             ingredients: ingredients,
             userId: userId,
+            userEmail: user?.email,
             dietaryRestrictions: profile.restrictions.join(', '),
             skillLevel: profile.skillLevels.isNotEmpty
                 ? profile.skillLevels.first

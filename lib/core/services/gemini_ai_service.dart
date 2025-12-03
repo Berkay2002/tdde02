@@ -66,16 +66,21 @@ class GeminiAIService {
   /// Returns structured ingredient data with metadata
   ///
   /// **Rate Limiting**: Enforces hourly and daily limits per user.
+  /// Pro users (beta testers) get higher limits.
   Future<List<Map<String, dynamic>>> detectIngredientsStructured(
     Uint8List imageData,
-    String userId,
-  ) async {
+    String userId, {
+    String? userEmail,
+  }) async {
     if (!_isInitialized || _model == null) {
       throw ModelNotInitializedException('Model has not been initialized');
     }
 
     // Check rate limit BEFORE making API call
-    await _rateLimiter.checkIngredientDetectionLimit(userId);
+    await _rateLimiter.checkIngredientDetectionLimit(
+      userId,
+      userEmail: userEmail,
+    );
 
     try {
       print('GeminiAIService: Starting structured ingredient detection');
@@ -129,18 +134,23 @@ class GeminiAIService {
   /// Returns simple list of ingredient names (legacy)
   ///
   /// **Rate Limiting**: Enforces hourly and daily limits per user.
+  /// Pro users (beta testers) get higher limits.
   /// Throws [IngredientDetectionHourlyLimitException] or [IngredientDetectionDailyLimitException]
   /// if user has exceeded their quota.
   Future<List<String>> detectIngredients(
     Uint8List imageData,
-    String userId,
-  ) async {
+    String userId, {
+    String? userEmail,
+  }) async {
     if (!_isInitialized || _model == null) {
       throw ModelNotInitializedException('Model has not been initialized');
     }
 
     // Check rate limit BEFORE making API call
-    await _rateLimiter.checkIngredientDetectionLimit(userId);
+    await _rateLimiter.checkIngredientDetectionLimit(
+      userId,
+      userEmail: userEmail,
+    );
 
     try {
       print('GeminiAIService: Starting ingredient detection');
@@ -199,11 +209,13 @@ class GeminiAIService {
   /// Generate recipe from ingredients and preferences using text prompting
   ///
   /// **Rate Limiting**: Enforces hourly and daily limits per user.
+  /// Pro users (beta testers) get higher limits.
   /// Throws [RecipeGenerationHourlyLimitException] or [RecipeGenerationDailyLimitException]
   /// if user has exceeded their quota.
   Future<Map<String, dynamic>> generateRecipe({
     required List<String> ingredients,
     required String userId,
+    String? userEmail,
     String? dietaryRestrictions,
     String? skillLevel,
     String? cuisinePreference,
@@ -214,7 +226,7 @@ class GeminiAIService {
     }
 
     // Check rate limit BEFORE making API call
-    await _rateLimiter.checkRecipeGenerationLimit(userId);
+    await _rateLimiter.checkRecipeGenerationLimit(userId, userEmail: userEmail);
 
     try {
       print('GeminiAIService: Starting recipe generation');
@@ -437,9 +449,15 @@ class GeminiAIService {
   }
 
   /// Stream chat response with context and history
+  ///
+  /// **Rate Limiting**: Enforces window and daily limits per user.
+  /// Pro users (beta testers) get higher limits.
+  /// Throws [ChatMessageWindowLimitException] or [ChatMessageDailyLimitException]
+  /// if user has exceeded their quota.
   Stream<ChatResponseChunk> streamChatResponse({
     required String userMessage,
     required String userId,
+    String? userEmail,
     String? systemPrompt,
     Map<String, dynamic>? context,
     List<Map<String, dynamic>>? conversationHistory,
@@ -447,6 +465,9 @@ class GeminiAIService {
     if (!_isInitialized || _model == null) {
       throw ModelNotInitializedException('Model has not been initialized');
     }
+
+    // Check rate limit BEFORE making API call
+    await _rateLimiter.checkChatMessageLimit(userId, userEmail: userEmail);
 
     try {
       // Construct prompt with context and history
@@ -483,9 +504,21 @@ class GeminiAIService {
       final promptText = fullPrompt.toString();
       print('GeminiAIService: Streaming chat response for user $userId');
 
-      // Use existing stream generator
-      yield* generateResponseStream(prompt: promptText);
+      // Use existing stream generator and track completion
+      bool streamCompleted = false;
+      await for (final chunk in generateResponseStream(prompt: promptText)) {
+        yield chunk;
+        streamCompleted = true;
+      }
+
+      // Increment counter after successful streaming
+      if (streamCompleted) {
+        await _rateLimiter.incrementChatMessage(userId);
+      }
     } catch (e) {
+      if (e is RateLimitException) {
+        rethrow;
+      }
       print('GeminiAIService: Chat streaming error: $e');
       throw InferenceException('Chat failed: $e');
     }

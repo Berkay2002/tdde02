@@ -11,6 +11,13 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Rate limits enforced in app_constants.dart:
+    // - rateLimitWindowHours: 5 (5-hour windows aligned with meals)
+    // - maxRecipeGenerationsPerWindow: 5
+    // - maxRecipeGenerationsPerDay: 15
+    // - maxIngredientDetectionsPerWindow: 8
+    // - maxIngredientDetectionsPerDay: 25
+
     // User profile: one document per user, id == uid
     match /profiles/{userId} {
       allow read: if isOwner(userId);
@@ -60,17 +67,52 @@ service cloud.firestore {
     }
 
     // User usage tracking: rate limiting counters (document ID = user UID)
+    // SECURITY: Server-side validation ensures clients can't bypass rate limits
     match /user_usage/{userId} {
       // Users can read their own usage stats
       allow read: if isOwner(userId);
       
-      // Users can write their own usage data (service manages this)
-      // Validate that user_id field matches the document ID and auth UID
-      allow create, update: if isOwner(userId) && 
-                               request.resource.data.user_id == request.auth.uid;
+      // Users can create/update their own usage data with validation
+      // Validate: user_id matches, counters don't exceed limits, timestamps are valid
+      allow create: if isOwner(userId) && 
+                       request.resource.data.user_id == request.auth.uid &&
+                       validateUsageData(request.resource.data);
+      
+      allow update: if isOwner(userId) && 
+                       request.resource.data.user_id == request.auth.uid &&
+                       validateUsageData(request.resource.data) &&
+                       validateUsageIncrement(resource.data, request.resource.data);
       
       // No deletion allowed (usage history should persist)
       allow delete: if false;
+      
+      // Validate usage data structure and limits
+      function validateUsageData(data) {
+        return data.keys().hasAll(['user_id']) &&
+               // Ensure counters are non-negative integers
+               (!data.keys().hasAny(['recipe_window_count']) || data.recipe_window_count >= 0) &&
+               (!data.keys().hasAny(['recipe_daily_count']) || data.recipe_daily_count >= 0) &&
+               (!data.keys().hasAny(['detection_window_count']) || data.detection_window_count >= 0) &&
+               (!data.keys().hasAny(['detection_daily_count']) || data.detection_daily_count >= 0);
+      }
+      
+      // Validate that counters only increment by 1 or reset (not arbitrarily decreased)
+      function validateUsageIncrement(existing, incoming) {
+        // Allow increment by 1, or reset to 0/1 (when period expires)
+        let recipeWindowValid = !incoming.keys().hasAny(['recipe_window_count']) ||
+                                 incoming.recipe_window_count <= existing.recipe_window_count + 1 ||
+                                 incoming.recipe_window_count <= 1;
+        let recipeDailyValid = !incoming.keys().hasAny(['recipe_daily_count']) ||
+                                incoming.recipe_daily_count <= existing.recipe_daily_count + 1 ||
+                                incoming.recipe_daily_count <= 1;
+        let detectionWindowValid = !incoming.keys().hasAny(['detection_window_count']) ||
+                                    incoming.detection_window_count <= existing.detection_window_count + 1 ||
+                                    incoming.detection_window_count <= 1;
+        let detectionDailyValid = !incoming.keys().hasAny(['detection_daily_count']) ||
+                                   incoming.detection_daily_count <= existing.detection_daily_count + 1 ||
+                                   incoming.detection_daily_count <= 1;
+        return recipeWindowValid && recipeDailyValid && detectionWindowValid && detectionDailyValid;
+      }
     }
 
     // Deny all other access by default

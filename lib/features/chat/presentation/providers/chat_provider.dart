@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/services/gemini_ai_service.dart';
 import '../../../../core/errors/rate_limit_exceptions.dart';
 import '../../../../shared/providers/services_provider.dart';
@@ -146,10 +147,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
           .map((m) => m.toHistoryEntry())
           .toList();
 
-      // Stream the AI response
+      // Stream the AI response with rate limiting
+      final user = FirebaseAuth.instance.currentUser;
       final stream = _aiService.streamChatResponse(
         userMessage: content,
         userId: _userId,
+        userEmail: user?.email,
         systemPrompt: chatContext.getSystemPrompt(),
         context: chatContext.toContextMap(),
         conversationHistory: history.isNotEmpty ? history : null,

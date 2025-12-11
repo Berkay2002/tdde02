@@ -2,7 +2,7 @@
 
 _Last updated: 2025-12-11_
 
-TDDE02 ("the App") respects your privacy. This policy explains what data we handle and why.
+Snapgredient ("the App") respects your privacy. This policy explains what data we handle and why.
 
 ## What We Collect
 - Photos you intentionally select and upload in the App.
@@ -34,4 +34,4 @@ TDDE02 ("the App") respects your privacy. This policy explains what data we hand
 - We may update this policy and will adjust the "Last updated" date above.
 
 ## Contact
-- Questions or requests: open an issue at https://github.com/Berkay2002/TDDE02.
+- Questions or requests: open an issue at https://github.com/Berkay2002/tdde02.

@@ -13,6 +13,8 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{array}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 
 \begin{document}
 
@@ -191,6 +193,54 @@ Enkäten (23 svar) visar:
     \item \textbf{Funktioner som efterfrågas i fritext:} spara/bokmärka recept, tids- och svårighetsfilter, portionsjustering och kalorier/makros, shopping- och resttips, måttanpassning till faktisk ingrediensmängd, och möjlighet att styra hur mycket av en ingrediens som ska användas.
 \end{itemize}
 Urvalet är snedvridet mot studenter och unga vuxna (21--30 år) eftersom länken spreds i och nära campus. Resultaten bör därför inte tolkas som representativa för äldre hushåll; behovsbilden för exempelvis barnfamiljer eller 50+ behöver valideras i nya tester.
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            ymin=0,
+            ymax=12,
+            bar width=12pt,
+            width=0.95\linewidth,
+            height=6cm,
+            enlarge x limits=0.2,
+            symbolic x coords={1--3 ggr/vecka,4--6 ggr/vecka,7+ ggr/vecka},
+            xtick=data,
+            ylabel={Antal svar},
+            title={Hur ofta lagar du mat hemma?},
+            nodes near coords,
+            nodes near coords align={vertical}
+        ]
+        \addplot coordinates {(1--3 ggr/vecka,11) (4--6 ggr/vecka,10) (7+ ggr/vecka,2)};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Självrapporterad matlagningsfrekvens (n=23).}
+    \label{fig:cooking-frequency}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            ymin=0,
+            ymax=18,
+            bar width=12pt,
+            width=0.7\linewidth,
+            height=6cm,
+            enlarge x limits=0.2,
+            symbolic x coords={Ja,Kanske,Nej},
+            xtick=data,
+            ylabel={Antal svar},
+            title={Vill få recept baserat på ingredienser hemma?},
+            nodes near coords,
+            nodes near coords align={vertical}
+        ]
+        \addplot coordinates {(Ja,16) (Kanske,5) (Nej,2)};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Intresse för recept baserat på befintliga ingredienser (n=23).}
+    \label{fig:ingredient-interest}
+\end{figure}
 Intervjuer och MVP-test planeras som nästa steg: en klickbar prototyp med fotouppladdning och tre filtreringsreglage (tid, diet, kompletteringsgrad) för att mäta tid till första recept och hur många som sparar förslag.
 
 
@@ -280,13 +330,25 @@ Tanken är att användaren ska kunna ändra på sina AI-genererade recept. Dessa
 
 \subsection{Beskrivning av Lean Canvas}
 
+	\textbf{Problem:} Idétorka vid matlagning, matsvinn och onödiga kompletteringsköp.\newline
+	\textbf{Kundsegment:} Unga vuxna (20--35), studenter, unga yrkesverksamma och gym-/hälsointresserade med begränsad tid och budget.\newline
+	\textbf{Unikt värdeerbjudande:} Fota kylskåpet och få genomförbara recept som minimerar kompletteringsköp och tar hänsyn till tid, diet och svårighetsgrad.\newline
+	\textbf{Lösning:} Mobilapp med kamerabaserad ingrediensigenkänning, receptmatchning, sparade favoriter och filter för tid/diet/svårighet.\newline
+	\textbf{Kanaler:} TikTok/Instagram (från kyl till tallrik), studentkårer, gym, App/Play Store-optimering, ambassadörer.\newline
+	\textbf{Intäktsströmmar:} Freemium-premium (filter, fler förslag, offline), partnerskap/sponsrat innehåll, ev. anonymiserade insikter.\newline
+	\textbf{Kostnadsstruktur:} Utveckling (app, backend, ML), drift (cloud/API), data- och modellkostnader, support och marknadsföring i sociala kanaler.\newline
+	\textbf{Nyckelresurser:} ML-modell för ingredienser, receptdatabas/matchning, app-UX, partner-API:er.\newline
+	\textbf{Nyckelaktiviteter:} Modellträning och utvärdering, UX-testning, innehåll/partnerintegration, aktiverings- och retentionsexperiment.\newline
+	\textbf{Nyckelpartner:} Recept- och dagligvaru-API:er, molnleverantör, ev. studentkårer/gym som kanalpartners.\newline
+	\textbf{Mått:} Tid till första recept, andel sparade recept, veckoretention, konvertering till premium, minskade kompletteringsköp.\newline
+	\textbf{Orättvis fördel:} Kamerabaserad inventering + receptmatchning med minimal komplettering, data om verkliga ingrediens- och preferensmönster, samt tidig community i studentsegmentet.
 
-% Exempel om ni vill lägga in en bild:
-% \begin{figure}[h]
-%     \centering
-%     \includegraphics[width=0.9\textwidth]{bilder/lean_canvas.png}
-%     \caption{Lean Canvas för [projektnamn]}
-% \end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/Lean-Canvas.jpg}
+    \caption{Lean Canvas för kyl-till-recept-appen.}
+    \label{fig:lean-canvas}
+\end{figure}
 
 % ================== 12. SLUTSATS ==================
 \section{Slutsats}

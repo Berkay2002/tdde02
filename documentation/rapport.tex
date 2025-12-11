@@ -305,15 +305,57 @@ Om vi mäter matsvinn så kan vi också mäta hur mycket matsvinn som har minska
 % ================== 9. FRAMTIDA UTVECKLINGSMÖJLIGHETER ==================
 \section{Framtida utvecklingsmöjligheter}
 % Nya kundsegment, teknisk utveckling, partners, expansion bortom första nischen.
-Lanseringen av appen är endast första steget mot att skapa ett heltäckande ekosystem för smart matlagning. Medan den initiala versionen fokuserar på kärnproblemet, att matcha befintliga ingredienser med recept, så kräver långsiktig bärkraft en expansion av både funktionalitet och affärsmodell.
+Lanseringen av appen är första steget mot ett bredare ekosystem för smart matlagning. Långsiktig bärkraft kräver parallell utveckling av produkt, intäktsströmmar och partnerskap. Nedan skissas konkreta spår som är tekniskt och affärsmässigt genomförbara, utöver det som redan finns i appen (kamerainventering, receptmatchning, inloggning, sparade favoriter och en kontextmedveten chatt som kan guida i recepten).
 
-För att säkerställa att vi inte bara attraherar utan även behåller våra användare över tid, måste vi utveckla appen från ett enkelt verktyg till en oumbärlig del av hushållsekonomin och hälsan. Detta inkluderar att realisera våra identifierade intäktsströmmar, såsom betalversioner och B2B-samarbeten (Business-to-Business). I detta avsnitt redogörs för visionen framåt, med fokus på teknisk innovation och strategiska partnerskap som ökar appens värde för både konsumenter och samarbetspartners.
+\subsection{Teknisk roadmap}
+\begin{itemize}
+    \item \textbf{Offline- och lågdatastöd:} Cache av recept och ingredienslista för butiker med dålig täckning eller användare med begränsad data.
+    \item \textbf{Multi-view inventering:} Automatisk sammanslagning av flera kyl-/skafferibilder för bättre igenkänning och kvantitetsestimat (t.ex. “halv mjölk”).
+    \item \textbf{Närings- och kostprofiler:} Personliga mål (protein, kcal, allergier) som driver receptval och portionsskalning.
+    \item \textbf{Resthantering:} Identifiera rester och föreslå sekundära rätter för att ytterligare minska svinn.
+    \item \textbf{Tids- och utrustningsfilter:} Recept som anpassas efter tillgänglig tid och köksutrustning (ugn, airfryer, micro).
+    \item \textbf{Privacy-by-design:} Edge-inferens för ingrediensigenkänning där möjligt; tydliga val för lokal lagring vs. moln.
+\end{itemize}
 
-\subsection{Integration med E-handel}
-Om vi i framtiden kan integrera B2B-samarbeten i appen så skulle det vara en inkomstström extra. Precis hur denna integration skulle se ut är inte klar, men det kan vara ett samarbete där om användaren skulle vilja så kan de koppla sin pentry till Ica, Coop, Lidl eller andra matkedjor för att generera recept med mat som är nedsatt hos matkedjorna. Detta skulle igen bidra till idén om att appen är ett sätt att spara pengar på.
+\subsection{Nya kundsegment och erbjudanden}
+\begin{itemize}
+    \item \textbf{Barnfamiljer:} Veckomenyer med automatiska inköpslistor och spårning av hållbarhetstider i kylen.
+    \item \textbf{50+ och seniorer:} Fokus på hälsa, enklare gränssnitt, större text och recept som minskar spill vid mindre hushåll.
+    \item \textbf{Hälso-/gymfokus:} Makro- och målfunktioner, koppling till aktivitetsappar för energibalans.
+    \item \textbf{Student- och budgetpaket:} “Billigaste komplettering” baserat på lokala priser eller kampanjer.
+\end{itemize}
 
-\subsection{Community-driven AI-träning}
-Tanken är att användaren ska kunna ändra på sina AI-genererade recept. Dessa ändringar skulle kunna lagras som en datapunkt där de kan användas för att träna AI-modellen till att ta bort krydda som de flesta användarna inte tycker om. Detta skulle också vara intressant data för att se om användare överlag ogillar specifika råvaror som restauranger eller butiker kanske hade varit intresserade av att känna till.
+\subsection{Partnerskap och dataflöden}
+\begin{itemize}
+    \item \textbf{Dagligvarukedjor och q-commerce:} Pris- och kampanj-API:er för att rekommendera billiga kompletteringsköp eller “ät det som är nedsatt”.
+    \item \textbf{Hämta-integration (B2B2C):} Möjlighet att skicka varukorg till butikens e-handel (ICA/Coop/Lidl) eller snabbköpsaktörer.
+    \item \textbf{Köksutrustningstillverkare:} “Tillaga med airfryer” eller “smart ugn”-stöd som differentierar recept och skapar co-marketing.
+    \item \textbf{Hållbarhetspartners:} Kommuner/initiativ kring matsvinn som kan använda aggregerad statistik i kampanjer.
+\end{itemize}
+
+\subsection{Datadriven förbättring och AI}
+\begin{itemize}
+    \item \textbf{Feedback-loopar:} Snabba betyg på ingrediensigenkänning och receptprecision för kontinuerlig modellförbättring.
+    \item \textbf{Supply-aware förslag:} Vikta recept efter vad som riskerar att gå ut först; prioritera “använd upp” i förslagen.
+    \item \textbf{Automatiska substitutförslag:} Ersätt ingredienser som saknas med rimliga alternativ (t.ex. grädde\rightarrow{}havregrädde) för att minska extra köp.
+    \item \textbf{Kalibrering mot användarutfall:} Viktning av framtida recept baserat på vilka tidigare förslag som faktiskt lagades eller sparades.
+    \item \textbf{Kvalitetssäkring av igenkänning:} Human-in-the-loop eller snabb bekräftelseruta för osäkra ingredienser (t.ex. vid svagt ljus) för att minska fel i flödet.
+\end{itemize}
+
+\subsection{Affärsmodellsutveckling}
+\begin{itemize}
+    \item \textbf{Premiumlager:} Offline-listor, fler filter, näringsmål och resthantering.
+    \item \textbf{Provision på korgar:} Affiliate eller referral-intäkter vid överföring av varukorg till butik.
+    \item \textbf{Sponsrat innehåll:} Märkesvaror eller kampanjer som matchas mot användarens befintliga ingredienser (transparent markerat).
+    \item \textbf{B2B-insikter:} Anonymiserade trenddata kring vilka ingredienser som ofta finns kvar respektive tar slut, där det är förenligt med integritet.
+\end{itemize}
+
+\subsection{Milstolpar och risker}
+\begin{itemize}
+    \item \textbf{MVP+ (nästa 3 månader):} Multi-view inventering, tids/dietfilter och första butikskoppling i testbädd.
+    \item \textbf{Skalning (6–12 månader):} Partner-API:er för priser, resthantering i produktion, premiumlager med näringsmål.
+    \item \textbf{Risker:} Felaktig igenkänning i dåligt ljus, begränsade pris-API:er, integritetsfrågor kring bilddata. Mitigering: edge-inferens, manuell bekräftelse av nyckelingredienser, tydliga consent-flöden.
+\end{itemize}
 
 
 % ================== 10. HANDLINGS- / GENOMFÖRANDEPLAN ==================
@@ -326,7 +368,6 @@ Tanken är att användaren ska kunna ändra på sina AI-genererade recept. Dessa
 
 % ================== 11. LEAN CANVAS ==================
 \section{Lean Canvas}
-% Här kan ni antingen beskriva varje ruta eller lägga in en figur.
 
 \subsection{Beskrivning av Lean Canvas}
 

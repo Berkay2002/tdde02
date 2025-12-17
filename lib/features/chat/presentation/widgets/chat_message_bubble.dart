@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/chat_message.dart';
 
@@ -58,16 +59,33 @@ class ChatMessageBubble extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Expanded(
-                            child: Text(
-                              message.content.isEmpty
-                                  ? 'Thinking...'
-                                  : message.content,
-                              style: TextStyle(
-                                color: _getTextColor(theme, isUser, isError),
-                                fontSize: 15,
-                                height: 1.4,
-                              ),
-                            ),
+                            child: message.content.isEmpty
+                                ? Text(
+                                    'Thinking...',
+                                    style: TextStyle(
+                                      color: _getTextColor(
+                                        theme,
+                                        isUser,
+                                        isError,
+                                      ),
+                                      fontSize: 15,
+                                      height: 1.4,
+                                    ),
+                                  )
+                                : MarkdownBody(
+                                    data: message.content,
+                                    selectable: true,
+                                    styleSheet: _getMarkdownStyleSheet(
+                                      theme,
+                                      isUser,
+                                      isError,
+                                    ),
+                                    onTapLink: (text, href, title) {
+                                      if (href != null) {
+                                        launchUrl(Uri.parse(href));
+                                      }
+                                    },
+                                  ),
                           ),
                           const SizedBox(width: 8),
                           SizedBox(
@@ -87,13 +105,19 @@ class ChatMessageBubble extends StatelessWidget {
                         ],
                       )
                     else
-                      Text(
-                        message.content,
-                        style: TextStyle(
-                          color: _getTextColor(theme, isUser, isError),
-                          fontSize: 15,
-                          height: 1.4,
+                      MarkdownBody(
+                        data: message.content,
+                        selectable: true,
+                        styleSheet: _getMarkdownStyleSheet(
+                          theme,
+                          isUser,
+                          isError,
                         ),
+                        onTapLink: (text, href, title) {
+                          if (href != null) {
+                            launchUrl(Uri.parse(href));
+                          }
+                        },
                       ),
                     if (message.groundingMetadata != null)
                       _buildGroundingSources(
@@ -200,6 +224,90 @@ class ChatMessageBubble extends StatelessWidget {
       return theme.colorScheme.onPrimary;
     }
     return theme.colorScheme.onSurface;
+  }
+
+  MarkdownStyleSheet _getMarkdownStyleSheet(
+    ThemeData theme,
+    bool isUser,
+    bool isError,
+  ) {
+    final textColor = _getTextColor(theme, isUser, isError);
+
+    return MarkdownStyleSheet(
+      p: TextStyle(color: textColor, fontSize: 15, height: 1.4),
+      h1: TextStyle(
+        color: textColor,
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        height: 1.3,
+      ),
+      h2: TextStyle(
+        color: textColor,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        height: 1.3,
+      ),
+      h3: TextStyle(
+        color: textColor,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        height: 1.3,
+      ),
+      h4: TextStyle(
+        color: textColor,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        height: 1.3,
+      ),
+      h5: TextStyle(
+        color: textColor,
+        fontSize: 15,
+        fontWeight: FontWeight.bold,
+        height: 1.3,
+      ),
+      h6: TextStyle(
+        color: textColor,
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        height: 1.3,
+      ),
+      em: TextStyle(color: textColor, fontStyle: FontStyle.italic),
+      strong: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+      code: TextStyle(
+        color: textColor,
+        fontSize: 14,
+        fontFamily: 'monospace',
+        backgroundColor: isUser
+            ? Colors.white.withOpacity(0.2)
+            : Colors.black.withOpacity(0.05),
+      ),
+      blockquote: TextStyle(
+        color: textColor.withOpacity(0.8),
+        fontSize: 15,
+        fontStyle: FontStyle.italic,
+      ),
+      blockquotePadding: const EdgeInsets.only(left: 12),
+      blockquoteDecoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: textColor.withOpacity(0.3), width: 3),
+        ),
+      ),
+      codeblockPadding: const EdgeInsets.all(8),
+      codeblockDecoration: BoxDecoration(
+        color: isUser
+            ? Colors.white.withOpacity(0.15)
+            : Colors.black.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      listBullet: TextStyle(color: textColor, fontSize: 15),
+      listIndent: 20,
+      a: TextStyle(
+        color: isUser
+            ? Colors.white.withOpacity(0.9)
+            : theme.colorScheme.primary,
+        decoration: TextDecoration.underline,
+      ),
+    );
   }
 
   String _formatTime(DateTime time) {
